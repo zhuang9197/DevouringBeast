@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65db5e5481054a948aa3c7d1e00c41e6, type: 3}
+  m_Name: Skill_Pierce
+  m_EditorClassIdentifier: 
+  skillName: "\u7A7F\u900F"
+  tag: 4
+  description: "\u7A7F\u900F\u654C\u4EBA\uFF0C\u6BCF\u7A7F\u900F\u4E00\u4E2A\u4F24\u5BB3\u9012\u51CF"
+  maxLevel: 5
+  currentLevel: 0
+  prerequisite: {fileID: 0}
+  levelValues:
+  - 0.8
+  - 0.75
+  - 0.7
+  - 0.65
+  - 0.6

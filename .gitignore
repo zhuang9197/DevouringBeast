@@ -1,0 +1,73 @@
+# Unity 项目通用 .gitignore
+
+# ============
+# Unity 生成文件
+# ============
+[Ll]ibrary/
+[Tt]emp/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+
+# ============
+# 项目特定缓存
+# ============
+Assets/AssetStoreTools*
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.vc.db
+
+# ============
+# Visual Studio / Rider / VS Code
+# ============
+.vs/
+.vscode/
+.idea/
+*.sln.DotSettings.user
+
+# ============
+# 操作系统文件
+# ============
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# ============
+# Git LFS 追踪的大文件（若使用）
+# ============
+# *.psd
+# *.fbx
+# *.tga
+# *.wav
+# *.mp3
+# *.png
+
+# ============
+# 其他临时文件
+# ============
+*.bak
+*.orig
+*.rpt
+*.log
+*.cache
+*.pid
+*.seed
+*.gitattributes

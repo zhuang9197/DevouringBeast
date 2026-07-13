@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65db5e5481054a948aa3c7d1e00c41e6, type: 3}
+  m_Name: Skill_FireBomb
+  m_EditorClassIdentifier: 
+  skillName: "\u708E\u7206\u5F39"
+  tag: 2
+  description: "\u547D\u4E2D\u540E\u7206\u70B8\uFF0C\u8303\u56F4\u4F24\u5BB3"
+  maxLevel: 1
+  currentLevel: 0
+  prerequisite: {fileID: 0}
+  levelValues:
+  - 20

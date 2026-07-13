@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65db5e5481054a948aa3c7d1e00c41e6, type: 3}
+  m_Name: Skill_FlameBall
+  m_EditorClassIdentifier: 
+  skillName: "\u706B\u7130\u5F39"
+  tag: 2
+  description: "\u547D\u4E2D\u540E\u70B9\u71C3\u654C\u4EBA"
+  maxLevel: 5
+  currentLevel: 0
+  prerequisite: {fileID: 0}
+  levelValues:
+  - 3
+  - 5
+  - 7
+  - 10
+  - 14

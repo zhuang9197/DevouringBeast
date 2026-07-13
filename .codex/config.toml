@@ -1,0 +1,26 @@
+[mcp_servers.UnityMCP]
+url = "http://127.0.0.1:9080/mcp"
+
+[mcp_servers.UnityMCP.tools.read_console]
+approval_mode = "approve"
+
+[mcp_servers.UnityMCP.tools.manage_asset]
+approval_mode = "approve"
+
+[mcp_servers.UnityMCP.tools.manage_prefabs]
+approval_mode = "approve"
+
+[mcp_servers.UnityMCP.tools.find_gameobjects]
+approval_mode = "approve"
+
+[mcp_servers.UnityMCP.tools.manage_editor]
+approval_mode = "approve"
+
+[mcp_servers.UnityMCP.tools.execute_code]
+approval_mode = "approve"
+
+[mcp_servers.UnityMCP.tools.manage_camera]
+approval_mode = "approve"
+
+[mcp_servers.UnityMCP.tools.refresh_unity]
+approval_mode = "approve"
