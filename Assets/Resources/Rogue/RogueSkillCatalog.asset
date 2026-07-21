@@ -1,0 +1,353 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 621d68d961d79944b9de83f8f8b9d770, type: 3}
+  m_Name: RogueSkillCatalog
+  m_EditorClassIdentifier: 
+  skills:
+  - id: 0
+    school: 0
+    displayName: "\u8DD1\u5FEB\u5FEB"
+    description: "\u63D0\u5347 1% \u79FB\u52A8\u901F\u5EA6\uFF1B\u6BCF\u7EA7\u989D\u5916\u63D0\u5347
+      1%\u3002"
+    iconName: normal_fast
+    maxLevel: 0
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 1
+    school: 0
+    displayName: "\u5927\u5587\u53ED"
+    description: "\u63D0\u5347 1% \u5438\u529B\u548C 1% \u5438\u529B\u4F24\u5BB3\uFF1B\u6BCF\u7EA7\u989D\u5916\u63D0\u5347
+      1%\u3002"
+    iconName: normal_suction
+    maxLevel: 0
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 2
+    school: 0
+    displayName: "\u5410\u5410\u5410"
+    description: "\u63D0\u5347 1% \u5410\u51FA\u7684\u80FD\u91CF\u7403\u4F24\u5BB3\uFF1B\u6BCF\u7EA7\u989D\u5916\u63D0\u5347
+      1%\u3002"
+    iconName: normal_power
+    maxLevel: 0
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 3
+    school: 1
+    displayName: "\u81F4\u547D\u6BD2\u7D20"
+    description: "\u547D\u4E2D\u589E\u52A0\u4E00\u5C42\u4E2D\u6BD2\uFF0C\u6BCF\u5C42\u6BCF\u79D2\u9020\u6210
+      5 \u70B9\u4F24\u5BB3\uFF0C\u6301\u7EED 5 \u79D2\uFF1B\u6BCF\u7EA7\u6BCF\u5C42\u4F24\u5BB3
+      +1\u3002"
+    iconName: poison_deadly
+    maxLevel: 5
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 4
+    school: 1
+    displayName: "\u795E\u7ECF\u6BD2\u7D20"
+    description: "\u547D\u4E2D\u6709 30% \u6982\u7387\u7729\u6655 1 \u79D2\uFF1B\u6BCF\u7EA7\u6982\u7387
+      +10%\u3002"
+    iconName: poison_numb
+    maxLevel: 5
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 5
+    school: 1
+    displayName: "\u4FB5\u8680\u6BD2\u7D20"
+    description: "\u547D\u4E2D\u589E\u52A0\u4FB5\u8680\uFF1B3 \u5C42\u540E\u518D\u6B21\u547D\u4E2D\u5F15\u7206\uFF0C\u9020\u6210\u4E09\u500D\u4F24\u5BB3\u548C\u5DF2\u635F\u751F\u547D\u503C\u4F24\u5BB3\u3002"
+    iconName: poison_erode
+    maxLevel: 5
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 6
+    school: 1
+    displayName: "\u8718\u86DB\u75C5\u6BD2"
+    description: "\u547D\u4E2D\u51CF\u901F 10%\uFF1B\u6BCF\u7EA7\u51CF\u901F\u6548\u679C
+      +5%\u3002"
+    iconName: poison_warp
+    maxLevel: 5
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 7
+    school: 1
+    displayName: "\u539F\u5B50\u5371\u673A-\u6BD2"
+    description: "\u5206\u88C2\u7684\u5C0F\u80FD\u91CF\u7403\u4E5F\u80FD\u9644\u5E26\u6BD2\u7CFB\u8089\u9E3D\u6548\u679C\u3002"
+    iconName: poison_legacy
+    maxLevel: 1
+    prerequisites: 0300000014000000
+    requiresMaxPrerequisites: 1
+    mythic: 1
+  - id: 8
+    school: 2
+    displayName: "\u708E\u7206\u7403"
+    description: "\u547D\u4E2D\u4F24\u5BB3\u63D0\u5347\u81F3 120%\uFF0C\u5E76\u9020\u6210
+      30% \u8303\u56F4\u7206\u70B8\u4F24\u5BB3\u3002"
+    iconName: fire_pyroblast
+    maxLevel: 1
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 9
+    school: 2
+    displayName: "\u708E\u7206\u7403-\u708E"
+    description: "\u6BCF\u7EA7\u63D0\u5347 10% \u708E\u7206\u7403\u7206\u70B8\u4F24\u5BB3\u3002"
+    iconName: fire_pyroblast_flame
+    maxLevel: 5
+    prerequisites: 08000000
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 10
+    school: 2
+    displayName: "\u708E\u7206\u7403-\u7206"
+    description: "\u6BCF\u7EA7\u63D0\u5347 10% \u708E\u7206\u7403\u7206\u70B8\u8303\u56F4\u3002"
+    iconName: fire_pyroblast_scope
+    maxLevel: 5
+    prerequisites: 08000000
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 11
+    school: 2
+    displayName: "\u71C3\u70E7\u74F6"
+    description: "\u547D\u4E2D\u707C\u70E7\u654C\u4EBA\uFF1B\u91CD\u590D\u547D\u4E2D\u63D0\u5347
+      10% \u707C\u70E7\u4F24\u5BB3\u4F46\u4E0D\u5EF6\u957F\u65F6\u95F4\u3002"
+    iconName: fire_bottle
+    maxLevel: 5
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 12
+    school: 2
+    displayName: "\u539F\u5B50\u5371\u673A-\u706B"
+    description: "\u5206\u88C2\u7684\u5C0F\u80FD\u91CF\u7403\u4E5F\u80FD\u9644\u5E26\u706B\u7CFB\u8089\u9E3D\u6548\u679C\u3002"
+    iconName: fire_legacy
+    maxLevel: 1
+    prerequisites: 0b00000014000000
+    requiresMaxPrerequisites: 1
+    mythic: 1
+  - id: 13
+    school: 3
+    displayName: "\u7FC5\u8180"
+    description: "\u5438\u5165\u65F6\u53EF\u4EE5\u79FB\u52A8\uFF0C\u4F46\u4E0D\u80FD\u8F6C\u5411\u3002"
+    iconName: evo_wing
+    maxLevel: 1
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 14
+    school: 3
+    displayName: "\u5927\u5634"
+    description: "\u63D0\u5347 3 \u79D2\u5438\u5165\u65F6\u95F4\uFF1B\u4E4B\u540E\u6BCF\u7EA7\u63D0\u5347
+      2 \u79D2\u3002"
+    iconName: evo_bigmouth
+    maxLevel: 3
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 15
+    school: 3
+    displayName: "\u5C16\u5634"
+    description: "\u5410\u51FA\u53EF\u4EE5\u84C4\u529B\uFF0C\u9996\u7EA7\u989D\u5916
+      10% \u4F24\u5BB3\uFF0C\u6BCF\u7EA7\u518D\u63D0\u5347 10%\u3002"
+    iconName: evo_charged
+    maxLevel: 3
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 16
+    school: 3
+    displayName: "\u591A\u5634"
+    description: "\u4E00\u6B21\u5410\u51FA\u4E24\u9897\u80FD\u91CF\u7403\uFF0C\u6BCF\u9897\u9020\u6210
+      60% \u4F24\u5BB3\u5E76\u9644\u5E26\u8089\u9E3D\u6548\u679C\u3002"
+    iconName: evo_moremouth
+    maxLevel: 1
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 17
+    school: 3
+    displayName: "\u591A\u5634-\u591A"
+    description: "\u6BCF\u7EA7\u989D\u5916\u589E\u52A0 1 \u9897\u80FD\u91CF\u7403\u3002"
+    iconName: evo_moremouth_more
+    maxLevel: 2
+    prerequisites: 10000000
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 18
+    school: 3
+    displayName: "\u591A\u5634-\u5F3A"
+    description: "\u6BCF\u7EA7\u63D0\u5347 10% \u591A\u5634\u80FD\u91CF\u7403\u4F24\u5BB3\u3002"
+    iconName: evo_moremouth_power
+    maxLevel: 5
+    prerequisites: 10000000
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 19
+    school: 4
+    displayName: "\u5206\u88C2"
+    description: "\u547D\u4E2D\u5206\u88C2\u4E3A\u4E24\u4E2A\u9020\u6210 30% \u4F24\u5BB3\u7684\u5C0F\u80FD\u91CF\u7403\uFF0C\u9ED8\u8BA4\u4E0D\u9644\u5E26\u8089\u9E3D\u6548\u679C\u3002"
+    iconName: super_split
+    maxLevel: 1
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 20
+    school: 4
+    displayName: "\u5206\u88C2-\u88C2\u53D8"
+    description: "\u6BCF\u7EA7\u989D\u5916\u589E\u52A0 1 \u9897\u5206\u88C2\u5C0F\u80FD\u91CF\u7403\u3002"
+    iconName: super_split_more
+    maxLevel: 3
+    prerequisites: 13000000
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 21
+    school: 4
+    displayName: "\u7A7F\u900F"
+    description: "\u53EF\u7A7F\u900F\u654C\u4EBA\uFF1B\u6BCF\u6B21\u7A7F\u900F\u4F24\u5BB3\u964D\u4F4E
+      20%\uFF0C\u6700\u591A\u964D\u4F4E 60%\u3002\u5347\u7EA7\u964D\u4F4E\u8870\u51CF\u3002"
+    iconName: super_piece
+    maxLevel: 4
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 0
+  - id: 22
+    school: 5
+    displayName: "\u5929\u4F7F"
+    description: "\u5931\u53BB\u5176\u4ED6\u6280\u80FD\u5E76\u6539\u4E3A\u65E0\u6D88\u8017\u8FDE\u7EED\u5410\u51FA\uFF1B\u5347\u7EA7\u8FDB\u5EA6\u6539\u4E3A\u51FB\u6740\u83B7\u5F97\u3002"
+    iconName: faith_angel
+    maxLevel: 0
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 1
+  - id: 23
+    school: 5
+    displayName: "\u6076\u9B54"
+    description: "\u5438\u529B\u4F24\u5BB3\u5927\u5E45\u63D0\u9AD8\u4F46\u4E0D\u80FD\u5438\u5165\u7269\u4F53\uFF1B\u5347\u7EA7\u8FDB\u5EA6\u6539\u4E3A\u51FB\u6740\u83B7\u5F97\u3002"
+    iconName: faith_demon
+    maxLevel: 0
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 1
+  - id: 24
+    school: 5
+    displayName: "\u6559\u7687"
+    description: "\u541E\u566C\u53D8\u4E3A\u6559\u5316\uFF0C\u540C\u65F6\u5410\u51FA\u9644\u5E26\u8089\u9E3D\u6548\u679C\u4E14\u5F3A\u5316\u7684\u80FD\u91CF\u7403\u3002"
+    iconName: faith_pope
+    maxLevel: 0
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 1
+  - id: 25
+    school: 5
+    displayName: "\u5973\u5DEB"
+    description: "\u541E\u566C\u7D2F\u79EF\u901A\u7075\u8FDB\u5EA6\uFF0C\u53E0\u6EE1\u540E\u53D8\u8EAB\u91CE\u517D\u541E\u541E\u6EDA\u52A8\u653B\u51FB\uFF1B\u53D8\u8EAB\u51CF\u4F24
+      20%\uFF0C\u5347\u7EA7\u63D0\u5347\u51CF\u4F24\u4E0E\u6EDA\u52A8\u4F24\u5BB3\u3002"
+    iconName: faith_witch
+    maxLevel: 0
+    prerequisites: 
+    requiresMaxPrerequisites: 0
+    mythic: 1
+  rogueSelectionBackground: {fileID: 21300000, guid: bfb46e5f3b517df4c8acd4f7adf4b265, type: 3}
+  buttonBackground: {fileID: 21300000, guid: 24e1370cee8dc5c47a883dbae8991109, type: 3}
+  poisoningIcon: {fileID: 21300000, guid: dfd5375190629264ca698fe596901739, type: 3}
+  burnIcon: {fileID: 21300000, guid: dc169dc07d32f2e478367aded88488b0, type: 3}
+  slowdownIcon: {fileID: 21300000, guid: 0bf1a994e60d20e4a81d607f9c5103b7, type: 3}
+  dizzinessIcon: {fileID: 21300000, guid: f300b74271d9dc74eb17efe472fd3cee, type: 3}
+  erosionIcon: {fileID: 21300000, guid: 01b86fdfc229f524f856fa4c40586586, type: 3}
+  skillIcons:
+  - {fileID: -1834384168, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 1890729244, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: -36375205, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 752601275, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 418712894, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 2035992106, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: -1646373469, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 103468264, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: -148057732, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 55744089, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: -596605067, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: -1594321890, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 100373835, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 784069034, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 2007345384, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 1393786345, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 180831601, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: -198390187, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 1822292980, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: -1237827271, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 1737304741, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: -1712623927, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 203167036, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 891152605, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 1356075383, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 574212206, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: -1570154030, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: -245499389, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 1106063324, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: 312752899, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: -803120186, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  - {fileID: -442289397, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
+  beastFront: {fileID: 21300000, guid: 84c3ecbf584a91849b370bc821d80a90, type: 3}
+  beastBack: {fileID: 21300000, guid: 8d49cf0cf8f307f48bb957b3e7359c1a, type: 3}
+  beastSide: {fileID: 21300000, guid: 78f8ebb79a67d9c43809366b6bccc874, type: 3}
+  beastFrontRoll:
+  - {fileID: 1181365867, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
+  - {fileID: 1598568844, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
+  - {fileID: 651205277, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
+  - {fileID: -1724915046, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
+  - {fileID: -1880399125, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
+  - {fileID: 1806591254, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
+  - {fileID: 280984557, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
+  - {fileID: -1057616504, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
+  - {fileID: -2133956237, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
+  - {fileID: 659088438, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
+  - {fileID: -1203916821, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
+  beastBackRoll:
+  - {fileID: 464737321, guid: 719b79848e45af6439a46471866c3405, type: 3}
+  - {fileID: -805154315, guid: 719b79848e45af6439a46471866c3405, type: 3}
+  - {fileID: -151678553, guid: 719b79848e45af6439a46471866c3405, type: 3}
+  - {fileID: -95844610, guid: 719b79848e45af6439a46471866c3405, type: 3}
+  - {fileID: 267917419, guid: 719b79848e45af6439a46471866c3405, type: 3}
+  - {fileID: -286337171, guid: 719b79848e45af6439a46471866c3405, type: 3}
+  - {fileID: 931601976, guid: 719b79848e45af6439a46471866c3405, type: 3}
+  - {fileID: -1124336453, guid: 719b79848e45af6439a46471866c3405, type: 3}
+  - {fileID: 261925970, guid: 719b79848e45af6439a46471866c3405, type: 3}
+  - {fileID: -1251394395, guid: 719b79848e45af6439a46471866c3405, type: 3}
+  - {fileID: -904561616, guid: 719b79848e45af6439a46471866c3405, type: 3}
+  - {fileID: -129725460, guid: 719b79848e45af6439a46471866c3405, type: 3}
+  - {fileID: 127504435, guid: 719b79848e45af6439a46471866c3405, type: 3}
+  beastSideRoll:
+  - {fileID: -867113762, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
+  - {fileID: 560571115, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
+  - {fileID: 1640333022, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
+  - {fileID: 991218528, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
+  - {fileID: 1164612200, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
+  - {fileID: -1917107786, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
+  - {fileID: -389325226, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
+  - {fileID: -1208744613, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
+  - {fileID: -1580879485, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
+  - {fileID: -1172008297, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
+  - {fileID: 2049509907, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
+  - {fileID: -1702053761, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
+  progressBar: {fileID: 660413493, guid: 80347a96a3162e8488b88dbbbea46db7, type: 3}
+  progressFill: {fileID: 1411078167, guid: 80347a96a3162e8488b88dbbbea46db7, type: 3}
+  joystick: {fileID: -1080228524, guid: 80347a96a3162e8488b88dbbbea46db7, type: 3}
+  suckButton: {fileID: -486020411, guid: 80347a96a3162e8488b88dbbbea46db7, type: 3}
+  spitButton: {fileID: -1491789022, guid: 80347a96a3162e8488b88dbbbea46db7, type: 3}
+  swallowButton: {fileID: -340074489, guid: 80347a96a3162e8488b88dbbbea46db7, type: 3}
+  healthBar: {fileID: 21300000, guid: 5f3edb759e72ba040b206398e5968e22, type: 3}
+  healthFill: {fileID: 21300000, guid: 9dca94a4f8be648448b069b174c43245, type: 3}

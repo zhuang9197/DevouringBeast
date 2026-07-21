@@ -30,6 +30,10 @@ namespace DevouringBeast
         private int _lastAnimHash;
 
         public bool IsPlaying => _isPlaying;
+        public int CurrentFrame => _currentFrame;
+        public int StartFrame => _startFrame;
+        public int EndFrame => _endFrame;
+        public bool HasPendingLoopRange => _hasLoopRange;
 
         private void Awake()
         {

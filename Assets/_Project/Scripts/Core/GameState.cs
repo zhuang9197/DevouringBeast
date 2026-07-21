@@ -7,6 +7,7 @@ namespace DevouringBeast
     {
         Menu,
         Playing,
+        RogueChoosing,
         Paused,
         GameOver
     }

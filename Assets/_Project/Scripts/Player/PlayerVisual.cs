@@ -19,8 +19,9 @@ namespace DevouringBeast
         [Header("标签颜色")]
         [SerializeField] private Color poisonColor = Color.green;
         [SerializeField] private Color fireColor = Color.red;
-        [SerializeField] private Color natureColor = Color.blue;
-        [SerializeField] private Color psychicColor = Color.yellow;
+        [SerializeField] private Color evolutionColor = new Color(0.501961f, 0f, 1f, 1f);
+        [SerializeField] private Color superpowerColor = Color.yellow;
+        [SerializeField] private Color faithColor = Color.blue;
         private static readonly Color DefaultColor = Color.white;
 
         private SwallowContainer _container;
@@ -67,7 +68,7 @@ namespace DevouringBeast
                 if (ratio > 0f)
                 {
                     Color tagColor = GetTagColor(tag);
-                    blended = Color.Lerp(blended, tagColor, ratio * 0.8f); // 最多 80% 着色
+                    blended = Color.Lerp(blended, tagColor, ratio * 0.9f); // 最多 80% 着色
                 }
             }
 
@@ -80,8 +81,9 @@ namespace DevouringBeast
             {
                 ItemTag.Poison => poisonColor,
                 ItemTag.Fire => fireColor,
-                ItemTag.Nature => natureColor,
-                ItemTag.Psychic => psychicColor,
+                ItemTag.Evolution => evolutionColor,
+                ItemTag.Superpower => superpowerColor,
+                ItemTag.Faith => faithColor,
                 _ => DefaultColor
             };
         }

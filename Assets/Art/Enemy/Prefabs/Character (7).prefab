@@ -311,10 +311,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 336e60dbc2201a544b983c9356b9ccec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  <Tag>k__BackingField: 3
+  <Tag>k__BackingField: 5
   <Mass>k__BackingField: 10
-  <AliveInhaleThreshold>k__BackingField: 50
   <DeadInhaleThreshold>k__BackingField: 10
+  <AliveInhaleThreshold>k__BackingField: 50
 --- !u!114 &-6977829070636343057
 MonoBehaviour:
   m_ObjectHideFlags: 0

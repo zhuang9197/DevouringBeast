@@ -1,82 +1,101 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace DevouringBeast
 {
-    /// <summary>
-    /// 虚拟摇杆 — 处理触屏移动输入
-    /// 挂载到屏幕左下区域的 UI Image 上，通过 EventSystem 检测拖拽
-    /// </summary>
-    public class VirtualJoystick : MonoBehaviour, IDragHandler, IPointerDownHandler, IPointerUpHandler
+    public sealed class VirtualJoystick : MonoBehaviour, IDragHandler, IPointerDownHandler, IPointerUpHandler
     {
-        [Header("摇杆参数")]
-        [Tooltip("摇杆最大活动半径（像素）")]
-        [SerializeField] private float maxRadius = 120f;
-        [Tooltip("死区半径（像素），小于此距离输出零")]
-        [SerializeField] private float deadZone = 20f;
+        [SerializeField, Min(20f)] private float maxRadius = 120f;
+        [SerializeField, Min(0f)] private float deadZone = 20f;
+        [SerializeField, Min(0f)] private float activationDragDistance = 12f;
 
-        /// <summary>当前归一化输出方向 (-1~1)</summary>
+        private RectTransform _rect;
+        private Image _image;
+        private Vector2 _startScreenPosition;
+        private bool _tracking;
+        private bool _visible;
+
         public Vector2 Input { get; private set; }
-
-        private Vector2 _originPos;
-        private RectTransform _rectTransform;
-        private bool _isDragging;
+        public bool IsVisible => _visible;
+        public Vector2 ScreenPosition => _rect != null ? (Vector2)_rect.position : Vector2.zero;
 
         private void Awake()
         {
-            _rectTransform = GetComponent<RectTransform>();
-            _originPos = _rectTransform.anchoredPosition;
-        }
-
-        public void OnPointerDown(PointerEventData eventData)
-        {
-            _isDragging = true;
-            OnDrag(eventData);
-        }
-
-        public void OnDrag(PointerEventData eventData)
-        {
-            if (!_isDragging) return;
-
-            // 获取屏幕坐标差值
-            Vector2 touchPos;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                _rectTransform.parent as RectTransform,
-                eventData.position,
-                eventData.pressEventCamera,
-                out touchPos);
-
-            Vector2 delta = touchPos - _originPos;
-
-            // 限制最大半径
-            if (delta.magnitude > maxRadius)
+            _rect = GetComponent<RectTransform>();
+            _image = GetComponent<Image>();
+            RogueSkillCatalog catalog = Resources.Load<RogueSkillCatalog>("Rogue/RogueSkillCatalog");
+            if (_image != null)
             {
-                delta = delta.normalized * maxRadius;
+                if (catalog != null) _image.sprite=catalog.joystick;
+                _image.preserveAspect=true;
+                _image.color=Color.white;
+                _image.raycastTarget=false;
             }
-
-            // 移动摇杆视觉
-            _rectTransform.anchoredPosition = _originPos + delta;
-
-            // 计算归一化输入（含死区）
-            if (delta.magnitude < deadZone)
-            {
-                Input = Vector2.zero;
-            }
-            else
-            {
-                // 超过死区部分重新映射到 0~1
-                float adjustedMag = (delta.magnitude - deadZone) / (maxRadius - deadZone);
-                adjustedMag = Mathf.Clamp01(adjustedMag);
-                Input = delta.normalized * adjustedMag;
-            }
+            if (_rect.sizeDelta.sqrMagnitude < 100f) _rect.sizeDelta = new Vector2(150f,150f);
+            SetVisible(false);
         }
 
-        public void OnPointerUp(PointerEventData eventData)
+        private void Update()
         {
-            _isDragging = false;
-            Input = Vector2.zero;
-            // 摇杆回中
-            _rectTransform.anchoredPosition = _originPos;
+            if (!GameManager.Instance.IsPlaying) { Cancel(); return; }
+            bool handledTouch = false;
+            if (Touchscreen.current != null)
+            {
+                var touch=Touchscreen.current.primaryTouch;
+                if (touch.press.wasPressedThisFrame) { Begin(touch.position.ReadValue()); handledTouch=true; }
+                if (_tracking && touch.press.isPressed) { Move(touch.position.ReadValue()); handledTouch=true; }
+                if (_tracking && touch.press.wasReleasedThisFrame) { Cancel(); handledTouch=true; }
+                if (handledTouch) return;
+            }
+#if UNITY_EDITOR || UNITY_STANDALONE
+            if (Mouse.current != null)
+            {
+                if (Mouse.current.leftButton.wasPressedThisFrame) Begin(Mouse.current.position.ReadValue());
+                if (_tracking && Mouse.current.leftButton.isPressed) Move(Mouse.current.position.ReadValue());
+                if (_tracking && Mouse.current.leftButton.wasReleasedThisFrame) Cancel();
+            }
+#endif
         }
+
+        private void Begin(Vector2 screenPosition)
+        {
+            if (screenPosition.x > Screen.width * 0.5f) return;
+            _tracking=true; _visible=false; Input=Vector2.zero; _startScreenPosition=screenPosition;
+        }
+
+        private void Move(Vector2 screenPosition)
+        {
+            Vector2 delta=screenPosition-_startScreenPosition;
+            if (!_visible && delta.magnitude < activationDragDistance) return;
+            if (!_visible)
+            {
+                _rect.position=_startScreenPosition;
+                SetVisible(true);
+            }
+            float magnitude=Mathf.Min(delta.magnitude,maxRadius);
+            Input=magnitude<deadZone ? Vector2.zero : delta.normalized*Mathf.InverseLerp(deadZone,maxRadius,magnitude);
+            if (delta.sqrMagnitude>0.01f)
+            {
+                float angle=Mathf.Atan2(delta.y,delta.x)*Mathf.Rad2Deg-90f;
+                _rect.localRotation=Quaternion.Euler(0f,0f,angle);
+            }
+        }
+
+        private void Cancel()
+        {
+            _tracking=false; Input=Vector2.zero; SetVisible(false); _rect.localRotation=Quaternion.identity;
+        }
+
+        private void SetVisible(bool value)
+        {
+            _visible=value;
+            if (_image != null) _image.enabled=value;
+        }
+
+        public void OnPointerDown(PointerEventData eventData) => Begin(eventData.position);
+        public void OnDrag(PointerEventData eventData) { if (_tracking) Move(eventData.position); }
+        public void OnPointerUp(PointerEventData eventData) => Cancel();
     }
 }

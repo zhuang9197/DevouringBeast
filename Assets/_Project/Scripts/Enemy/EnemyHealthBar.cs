@@ -68,7 +68,10 @@ namespace DevouringBeast
             RectTransform backgroundRect = backgroundObject.GetComponent<RectTransform>();
             Stretch(backgroundRect);
             Image background = backgroundObject.GetComponent<Image>();
-            background.color = new Color(0.08f, 0.08f, 0.08f, 0.9f);
+            RogueSkillCatalog catalog = Resources.Load<RogueSkillCatalog>("Rogue/RogueSkillCatalog");
+            background.sprite = catalog != null ? catalog.healthBar : null;
+            background.type = background.sprite != null ? Image.Type.Sliced : Image.Type.Simple;
+            background.color = Color.white;
             background.raycastTarget = false;
 
             GameObject fillObject = new GameObject("Fill", typeof(RectTransform), typeof(Image));
@@ -80,7 +83,10 @@ namespace DevouringBeast
             healthFillRect.offsetMin = new Vector2(0.025f, 0.025f);
             healthFillRect.offsetMax = new Vector2(-0.025f, -0.025f);
             Image healthFill = fillObject.GetComponent<Image>();
-            healthFill.color = Color.green;
+            healthFill.sprite = catalog != null ? catalog.healthFill : null;
+            healthFill.type = Image.Type.Filled;
+            healthFill.fillMethod = Image.FillMethod.Horizontal;
+            healthFill.color = Color.white;
             healthFill.raycastTarget = false;
 
             EnemyHealthBar healthBar = barObject.AddComponent<EnemyHealthBar>();
@@ -123,21 +129,23 @@ namespace DevouringBeast
                 return;
 
             float healthPercent = Mathf.Clamp01(_enemy.HealthPercent);
-            if (fillRect != null)
+            if (fillImage != null) fillImage.fillAmount = healthPercent;
+            if (fillRect != null && (fillImage == null || fillImage.type != Image.Type.Filled))
             {
                 fillRect.anchorMax = new Vector2(healthPercent, 1f);
                 fillRect.offsetMax = new Vector2(-0.025f, -0.025f);
             }
 
-            if (fillImage != null)
-            {
-                fillImage.color = healthPercent > 0.5f
-                    ? Color.Lerp(Color.yellow, Color.green, (healthPercent - 0.5f) * 2f)
-                    : Color.Lerp(Color.red, Color.yellow, healthPercent * 2f);
-            }
+            if (fillImage != null) fillImage.color = Color.white;
 
             if (container != null && _enemy.IsDead)
                 container.SetActive(false);
+        }
+
+        public void ResetForReuse()
+        {
+            if (container != null) container.SetActive(true);
+            if (fillImage != null) fillImage.fillAmount = 1f;
         }
     }
 }

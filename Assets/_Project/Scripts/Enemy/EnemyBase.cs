@@ -22,11 +22,16 @@ namespace DevouringBeast
         [SerializeField] protected float corpseDuration = 10f;
         [SerializeField] protected float corpseFlickerStart = 3f;
         [SerializeField] protected float flickerInterval = 0.15f;
+        [Header("掉落")]
+        [SerializeField, Range(0f, 1f)] private float bloodDropChance = 0.25f;
+        [SerializeField, Range(0f, 1f)] private float bigBloodChance = 0.08f;
 
         protected InhaleableItem _item;
         protected bool _isDead;
         protected float _currentHealth;
         protected float _maxHealth;
+        private Quaternion _initialSpriteRotation;
+        private EnemyData _runtimeData;
 
         public bool IsDead => _isDead;
         public EnemyData Data => data;
@@ -35,6 +40,7 @@ namespace DevouringBeast
         public float MaxHealth => _maxHealth;
 
         public event Action<EnemyBase> OnDeath;
+        public static event Action<EnemyBase> OnAnyEnemyDeath;
 
         protected virtual void Awake()
         {
@@ -43,6 +49,17 @@ namespace DevouringBeast
                 spriteRenderer = GetComponentInChildren<SpriteRenderer>();
             if (animator == null)
                 animator = GetComponentInChildren<Animator>();
+            if (spriteRenderer != null) _initialSpriteRotation = spriteRenderer.transform.localRotation;
+        }
+
+        public EnemyData GetOrCreateRuntimeData()
+        {
+            if (_runtimeData == null)
+            {
+                _runtimeData = ScriptableObject.CreateInstance<EnemyData>();
+                _runtimeData.hideFlags = HideFlags.DontSave;
+            }
+            return _runtimeData;
         }
 
         /// <summary>
@@ -50,7 +67,9 @@ namespace DevouringBeast
         /// </summary>
         public virtual void Initialize(EnemyData enemyData)
         {
+            StopAllCoroutines();
             data = enemyData;
+            _isDead = false;
             _maxHealth = data.maxHealth;
             _currentHealth = _maxHealth;
 
@@ -62,15 +81,28 @@ namespace DevouringBeast
                 _item.AliveInhaleThreshold = data.aliveInhaleThreshold;
                 _item.DeadInhaleThreshold = data.deadInhaleThreshold;
                 _item.IsAlive = true;
+                _item.ResetForReuse();
             }
 
             // 配置 AnimatorController
             if (animator != null && data.animatorController != null)
             {
                 animator.runtimeAnimatorController = data.animatorController;
+                animator.enabled = true;
+                animator.Rebind();
+                animator.Update(0f);
             }
 
-            EnemyHealthBar.EnsureFor(this);
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.enabled = true;
+                spriteRenderer.transform.localRotation = _initialSpriteRotation;
+            }
+            EnemyAI ai = GetComponent<EnemyAI>();
+            if (ai != null) ai.ResetForReuse();
+
+            EnemyHealthBar.EnsureFor(this).ResetForReuse();
+            EnemyStatusEffects.EnsureFor(this).ResetForReuse();
         }
 
         protected virtual void Start()
@@ -87,6 +119,7 @@ namespace DevouringBeast
             }
 
             EnemyHealthBar.EnsureFor(this);
+            EnemyStatusEffects.EnsureFor(this);
         }
 
         public virtual void TakeDamage(float damage)
@@ -110,9 +143,35 @@ namespace DevouringBeast
             _currentHealth = Mathf.Min(_maxHealth, _currentHealth + amount);
         }
 
+        public void EmpowerForNextWave(WaveConfig config, int nextWave)
+        {
+            if (_isDead || data == null || config == null) return;
+            data.attackDamage = Mathf.Max(data.attackDamage, config.GetAttackDamage(nextWave, data.enemyType));
+            data.moveSpeed *= Mathf.Max(1f, config.normalSpeedScale);
+            data.attackRange *= Mathf.Max(1f, config.survivorAttackRangeScale);
+            data.detectRange *= Mathf.Max(1f, config.survivorDetectRangeScale);
+            data.attackCooldown = Mathf.Max(0.2f,
+                data.attackCooldown / Mathf.Max(1f, config.survivorAttackSpeedScale));
+            float resistance = Mathf.Max(1f, config.survivorInhaleResistanceScale);
+            data.aliveInhaleThreshold *= resistance;
+            data.deadInhaleThreshold *= resistance;
+            data.killMass *= resistance;
+            data.deadMass *= resistance;
+            if (_item != null)
+            {
+                _item.AliveInhaleThreshold = data.aliveInhaleThreshold;
+                _item.DeadInhaleThreshold = data.deadInhaleThreshold;
+                _item.Mass = data.killMass;
+            }
+        }
+
         protected virtual void Die()
         {
-            _isDead = true;
+            
+            AudioManager.Instance.PlaySfx(
+                data != null && data.enemyType == EnemyType.Boss ? AudioCue.BossDie : AudioCue.EnemyDie);
+
+_isDead = true;
 
             // 更新 InhaleableItem：死后质量和阈值
             if (_item != null)
@@ -137,6 +196,13 @@ namespace DevouringBeast
             }
 
             OnDeath?.Invoke(this);
+            OnAnyEnemyDeath?.Invoke(this);
+
+            float dropRoll = UnityEngine.Random.value;
+            if (dropRoll < bigBloodChance)
+                BloodDrop.Spawn(transform.position, true);
+            else if (dropRoll < bigBloodChance + bloodDropChance)
+                BloodDrop.Spawn(transform.position, false);
 
             // 启动尸体消失协程
             StartCoroutine(CorpseDecayRoutine());
@@ -159,7 +225,14 @@ namespace DevouringBeast
             }
 
             // 消失
-            Destroy(gameObject);
+            EnemyPoolMember poolMember = GetComponent<EnemyPoolMember>();
+            if (poolMember != null) poolMember.Release();
+            else Destroy(gameObject);
+        }
+
+        private void OnDestroy()
+        {
+            if (_runtimeData != null) Destroy(_runtimeData);
         }
     }
 }

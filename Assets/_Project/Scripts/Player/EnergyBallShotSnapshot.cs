@@ -3,136 +3,109 @@ using System.Collections.Generic;
 
 namespace DevouringBeast
 {
-    /// <summary>
-    /// 发射瞬间生成的只读数据快照。弹体飞行期间不再读取玩家的实时属性。
-    /// </summary>
     public sealed class EnergyBallShotSnapshot
     {
-        [Serializable]
-        public readonly struct SkillEntry
-        {
-            public SkillEntry(string name, ItemTag tag, int level, float value)
-            {
-                Name = name ?? string.Empty;
-                Tag = tag;
-                Level = level;
-                Value = value;
-            }
+        private readonly Dictionary<RogueSkillId, int> _levels;
 
-            public string Name { get; }
-            public ItemTag Tag { get; }
-            public int Level { get; }
-            public float Value { get; }
-        }
-
-        private readonly SkillEntry[] _skills;
-
-        public EnergyBallShotSnapshot(
-            float damage,
-            float speed,
-            float maxDistance,
-            IEnumerable<RogueSkillData> ownedSkills)
+        public EnergyBallShotSnapshot(float damage, float speed, float maxDistance,
+            IReadOnlyDictionary<RogueSkillId, int> levels, bool isSplitProjectile = false)
         {
             Damage = Math.Max(0f, damage);
             Speed = Math.Max(0f, speed);
             MaxDistance = Math.Max(0.01f, maxDistance);
-
-            List<SkillEntry> entries = new List<SkillEntry>();
-            if (ownedSkills != null)
-            {
-                foreach (RogueSkillData skill in ownedSkills)
-                {
-                    if (skill == null || skill.currentLevel <= 0)
-                        continue;
-
-                    entries.Add(new SkillEntry(
-                        skill.skillName,
-                        skill.tag,
-                        skill.currentLevel,
-                        skill.CurrentValue));
-                }
-            }
-
-            _skills = entries.ToArray();
-            CacheProjectileEffects();
+            IsSplitProjectile = isSplitProjectile;
+            _levels = levels != null ? new Dictionary<RogueSkillId, int>(levels) : new Dictionary<RogueSkillId, int>();
+            CacheEffects();
         }
 
         public float Damage { get; }
         public float Speed { get; }
         public float MaxDistance { get; }
-        public IReadOnlyList<SkillEntry> Skills => _skills;
-
+        public bool IsSplitProjectile { get; }
         public int PierceCount { get; private set; }
+        public float PierceDamageLoss { get; private set; }
         public int SplitProjectileCount { get; private set; }
-        public int MaxSplitGenerations { get; private set; }
+        public float SplitDamageMultiplier { get; private set; }
+        public bool SplitCarriesPoison { get; private set; }
+        public bool SplitCarriesFire { get; private set; }
         public float PoisonDamagePerSecond { get; private set; }
         public float PoisonDuration { get; private set; }
+        public float StunChance { get; private set; }
+        public float StunDuration { get; private set; }
+        public float SlowPercent { get; private set; }
+        public float SlowDuration { get; private set; }
+        public int ErosionMaxStacks { get; private set; }
+        public float ErosionDamageMultiplier { get; private set; }
+        public float ErosionMissingHealthPercent { get; private set; }
         public float ExplosionRadius { get; private set; }
+        public float PrimaryHitMultiplier { get; private set; }
         public float ExplosionDamageMultiplier { get; private set; }
+        public float BurnDamagePerSecond { get; private set; }
+        public float BurnDuration { get; private set; }
+        public float BurnGrowthPerHit { get; private set; }
 
-        public bool HasPoison => PoisonDamagePerSecond > 0f && PoisonDuration > 0f;
-        public bool HasSplit => SplitProjectileCount > 1 && MaxSplitGenerations > 0;
-        public bool HasExplosion => ExplosionRadius > 0f && ExplosionDamageMultiplier > 0f;
+        public bool HasPoison => PoisonDamagePerSecond > 0f && (!IsSplitProjectile || SplitCarriesPoison);
+        public bool HasStun => StunChance > 0f && (!IsSplitProjectile || SplitCarriesPoison);
+        public bool HasSlow => SlowPercent > 0f && (!IsSplitProjectile || SplitCarriesPoison);
+        public bool HasErosion => ErosionMaxStacks > 0 && (!IsSplitProjectile || SplitCarriesPoison);
+        public bool HasExplosion => ExplosionRadius > 0f && (!IsSplitProjectile || SplitCarriesFire);
+        public bool HasBurn => BurnDamagePerSecond > 0f && (!IsSplitProjectile || SplitCarriesFire);
+        public bool HasSplit => !IsSplitProjectile && SplitProjectileCount > 0;
 
-        public bool TryGetSkill(string nameFragment, out SkillEntry entry)
+        public int GetLevel(RogueSkillId id) => _levels.TryGetValue(id, out int level) ? level : 0;
+
+        public EnergyBallShotSnapshot CreateSplitSnapshot()
         {
-            if (!string.IsNullOrWhiteSpace(nameFragment))
-            {
-                for (int i = 0; i < _skills.Length; i++)
-                {
-                    if (_skills[i].Name.IndexOf(nameFragment, StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        entry = _skills[i];
-                        return true;
-                    }
-                }
-            }
-
-            entry = default;
-            return false;
+            return new EnergyBallShotSnapshot(Damage * SplitDamageMultiplier, Speed, MaxDistance, _levels, true);
         }
 
-        private void CacheProjectileEffects()
+        private void CacheEffects()
         {
-            if (TryGetEither("穿透", "pierce", out SkillEntry pierce))
-                PierceCount = ResolveCount(pierce, 1, 8);
-
-            if (TryGetEither("分裂", "split", out SkillEntry split))
+            int piece = GetLevel(RogueSkillId.SuperPiece);
+            if (piece > 0)
             {
-                SplitProjectileCount = ResolveCount(split, 2, 6);
-                SplitProjectileCount = Math.Max(2, SplitProjectileCount);
-                MaxSplitGenerations = Math.Min(2, Math.Max(1, split.Level));
+                PierceCount = 64;
+                PierceDamageLoss = Math.Max(0.1f, 0.2f - 0.05f * Math.Min(2, piece - 1));
             }
 
-            if (TryGetEither("中毒", "poison", out SkillEntry poison))
+            int split = GetLevel(RogueSkillId.SuperSplit);
+            if (split > 0)
             {
-                float damageRatio = poison.Value > 0f && poison.Value <= 1f
-                    ? poison.Value
-                    : 0.15f + 0.05f * Math.Max(0, poison.Level - 1);
+                SplitProjectileCount = 2 + GetLevel(RogueSkillId.SuperSplitMore);
+                SplitDamageMultiplier = 0.3f;
+            }
+            SplitCarriesPoison = GetLevel(RogueSkillId.PoisonLegacy) > 0;
+            SplitCarriesFire = GetLevel(RogueSkillId.FireLegacy) > 0;
 
-                PoisonDamagePerSecond = Math.Max(0.01f, Damage * damageRatio);
-                PoisonDuration = 2f + 0.5f * Math.Max(1, poison.Level);
+            int poison = GetLevel(RogueSkillId.PoisonDeadly);
+            if (poison > 0) { PoisonDamagePerSecond = 4f + poison; PoisonDuration = 5f; }
+            int numb = GetLevel(RogueSkillId.PoisonNumb);
+            if (numb > 0) { StunChance = 0.2f + numb * 0.1f; StunDuration = 1f; }
+            int warp = GetLevel(RogueSkillId.PoisonWarp);
+            if (warp > 0) { SlowPercent = 0.05f + warp * 0.05f; SlowDuration = 5f; }
+            int erosion = GetLevel(RogueSkillId.PoisonErode);
+            if (erosion > 0)
+            {
+                ErosionMaxStacks = 3;
+                ErosionDamageMultiplier = 3f;
+                ErosionMissingHealthPercent = 0.03f + erosion * 0.02f;
             }
 
-            if (TryGetEither("爆炸", "explosion", out SkillEntry explosion))
+            if (GetLevel(RogueSkillId.FirePyroblast) > 0)
             {
-                ExplosionRadius = Math.Min(3.5f, 1.5f + 0.25f * Math.Max(1, explosion.Level));
-                ExplosionDamageMultiplier = explosion.Value > 0f && explosion.Value <= 2f
-                    ? explosion.Value
-                    : 0.5f + 0.1f * Math.Max(0, explosion.Level - 1);
+                PrimaryHitMultiplier = 1.2f;
+                ExplosionDamageMultiplier = 0.3f + GetLevel(RogueSkillId.FirePyroblastFlame) * 0.1f;
+                ExplosionRadius = 1.5f * (1f + GetLevel(RogueSkillId.FirePyroblastScope) * 0.1f);
             }
-        }
+            else PrimaryHitMultiplier = 1f;
 
-        private bool TryGetEither(string first, string second, out SkillEntry entry)
-        {
-            return TryGetSkill(first, out entry) || TryGetSkill(second, out entry);
-        }
-
-        private static int ResolveCount(SkillEntry entry, int fallback, int maximum)
-        {
-            int valueCount = entry.Value >= 1f ? (int)Math.Round(entry.Value) : 0;
-            int resolved = valueCount > 0 ? valueCount : Math.Max(fallback, entry.Level);
-            return Math.Min(maximum, Math.Max(0, resolved));
+            int bottle = GetLevel(RogueSkillId.FireBottle);
+            if (bottle > 0)
+            {
+                BurnDamagePerSecond = 4f + bottle;
+                BurnDuration = 15f + bottle * 5f;
+                BurnGrowthPerHit = 0.1f;
+            }
         }
     }
 }

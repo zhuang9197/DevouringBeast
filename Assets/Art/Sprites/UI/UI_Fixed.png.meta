@@ -1,0 +1,330 @@
+fileFormatVersion: 2
+guid: 80347a96a3162e8488b88dbbbea46db7
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 3
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: joystick
+      rect:
+        serializedVersion: 2
+        x: 31
+        y: 286
+        width: 194
+        height: 194
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0e8a67e923871074b916bc049204beeb
+      internalID: -1080228524
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: progress_bar
+      rect:
+        serializedVersion: 2
+        x: 556
+        y: 360
+        width: 168
+        height: 46
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1b16459129013ec4da3b7f7638f18591
+      internalID: 660413493
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: spit
+      rect:
+        serializedVersion: 2
+        x: 53
+        y: 46
+        width: 147
+        height: 147
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 62e10697c3d00164b86a84faf0009683
+      internalID: -1491789022
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: swallow
+      rect:
+        serializedVersion: 2
+        x: 314
+        y: 52
+        width: 131
+        height: 131
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f3bf8cae4b28c4f46be7f91be0bfd724
+      internalID: -340074489
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: suck
+      rect:
+        serializedVersion: 2
+        x: 562
+        y: 41
+        width: 151
+        height: 151
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 69e10254c97ca134089bac4271174735
+      internalID: -486020411
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: progress_fill
+      rect:
+        serializedVersion: 2
+        x: 313
+        y: 372
+        width: 59
+        height: 22
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 78b64e137d937fc46a5f9f54567776de
+      internalID: 1411078167
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    nameFileIdTable:
+      UI_Fixed_10: -2070447056
+      UI_Fixed_11: 222022838
+      UI_Fixed_12: 630894798
+      UI_Fixed_13: -502830148
+      UI_Fixed_14: -1594518481
+      UI_Fixed_15: -291599849
+      UI_Fixed_16: 1248699999
+      UI_Fixed_17: 1360311949
+      UI_Fixed_18: -289417398
+      UI_Fixed_19: 456103498
+      UI_Fixed_2: -1864842553
+      UI_Fixed_20: 2136461857
+      UI_Fixed_21: -613315557
+      UI_Fixed_22: 220717551
+      UI_Fixed_23: 875946381
+      UI_Fixed_24: -1148611925
+      UI_Fixed_25: 1852141411
+      UI_Fixed_26: 1075727977
+      UI_Fixed_27: 1667856882
+      UI_Fixed_28: 543104678
+      UI_Fixed_29: -1207446265
+      UI_Fixed_3: -829974553
+      UI_Fixed_30: -23852384
+      UI_Fixed_31: 624432311
+      UI_Fixed_32: 1475161218
+      UI_Fixed_33: 1907358153
+      UI_Fixed_34: 253548405
+      UI_Fixed_35: 620725262
+      UI_Fixed_36: 546575192
+      UI_Fixed_37: 336903953
+      UI_Fixed_38: -282925099
+      UI_Fixed_39: -1075976312
+      UI_Fixed_4: -526780554
+      UI_Fixed_40: -1689233506
+      UI_Fixed_41: -247856025
+      UI_Fixed_42: -1527052878
+      UI_Fixed_43: -2014693199
+      UI_Fixed_44: -1938792183
+      UI_Fixed_45: 1010106715
+      UI_Fixed_46: 1441436067
+      UI_Fixed_47: 1416394706
+      UI_Fixed_48: 433612637
+      UI_Fixed_49: -90235840
+      UI_Fixed_5: -807388732
+      UI_Fixed_50: 828250212
+      UI_Fixed_51: 113139951
+      UI_Fixed_52: 1164492661
+      UI_Fixed_53: -985588891
+      UI_Fixed_54: 94337548
+      UI_Fixed_55: -1487309853
+      UI_Fixed_56: 425892450
+      UI_Fixed_57: -1559047952
+      UI_Fixed_58: 1219622632
+      UI_Fixed_59: -975767535
+      UI_Fixed_60: 677683710
+      UI_Fixed_61: -1928351637
+      UI_Fixed_62: -62912578
+      UI_Fixed_63: -42077599
+      UI_Fixed_64: 336296873
+      UI_Fixed_65: 9007737
+      UI_Fixed_66: 1292046886
+      UI_Fixed_67: -1696588380
+      UI_Fixed_7: -735485307
+      UI_Fixed_70: 697348331
+      UI_Fixed_72: -993320617
+      UI_Fixed_73: 655609520
+      UI_Fixed_74: 1896126224
+      UI_Fixed_75: -1599283254
+      UI_Fixed_76: -1207405454
+      UI_Fixed_8: -1160768030
+      UI_Fixed_9: 2096315847
+      joystick: -1080228524
+      progress_bar: 660413493
+      progress_fill: 1411078167
+      spit: -1491789022
+      suck: -486020411
+      swallow: -340074489
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

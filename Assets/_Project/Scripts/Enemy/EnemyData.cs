@@ -23,14 +23,15 @@ namespace DevouringBeast
 
         [Header("战斗属性")]
         public float maxHealth = 100f;
-        public float attackDamage = 10f;
+        public float attackDamage = 1f;
         public float moveSpeed = 3f;
         public float attackRange = 1.5f;
-        public float attackCooldown = 1.5f;
+        [Tooltip("两次攻击动画开始之间的间隔（秒）")]
+        public float attackCooldown = 0.9f;
         public float detectRange = 8f;
 
         [Header("吸入属性")]
-        public ItemTag tag = ItemTag.None;
+        public ItemTag tag = ItemTag.Normal;
         public float killMass = 20f;       // 击杀质量（活着时吸入）
         public float deadMass = 5f;        // 阵亡质量（死后吸入）
         public float aliveInhaleThreshold = 50f;

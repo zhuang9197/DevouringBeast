@@ -21,6 +21,7 @@ namespace DevouringBeast
         [SerializeField] private PlayerInhale playerInhale;
         [SerializeField] private PlayerSpit playerSpit;
         [SerializeField] private SwallowContainer swallowContainer;
+        private RogueSkillManager _rogueSkills;
 
         private InputAction _moveAction;
         private InputAction _inhaleSpitAction;
@@ -29,6 +30,8 @@ namespace DevouringBeast
 
         // 键盘当前移动值
         private Vector2 _keyboardMove;
+        private bool _primaryActionHeld;
+        private bool _swallowActionHeld;
 
         private void Awake()
         {
@@ -40,6 +43,8 @@ namespace DevouringBeast
                 playerSpit = GetComponent<PlayerSpit>();
             if (swallowContainer == null)
                 swallowContainer = GetComponent<SwallowContainer>();
+            _rogueSkills = GetComponent<RogueSkillManager>();
+            GameplayHudController.EnsureFor(gameObject);
 
             var map = inputActionsAsset.FindActionMap("Player");
             _moveAction = map.FindAction("Move");
@@ -55,6 +60,7 @@ namespace DevouringBeast
             _inhaleSpitAction.started += OnInhaleSpitStarted;
             _inhaleSpitAction.canceled += OnInhaleSpitCanceled;
             _swallowAction.started += OnSwallowStarted;
+            _swallowAction.canceled += OnSwallowCanceled;
             _pauseAction.started += OnPauseStarted;
 
             _moveAction.Enable();
@@ -70,16 +76,25 @@ namespace DevouringBeast
             _inhaleSpitAction.started -= OnInhaleSpitStarted;
             _inhaleSpitAction.canceled -= OnInhaleSpitCanceled;
             _swallowAction.started -= OnSwallowStarted;
+            _swallowAction.canceled -= OnSwallowCanceled;
             _pauseAction.started -= OnPauseStarted;
 
             _moveAction.Disable();
             _inhaleSpitAction.Disable();
             _swallowAction.Disable();
             _pauseAction.Disable();
+            _primaryActionHeld = false;
+            _swallowActionHeld = false;
         }
 
         private void Update()
         {
+            if (!GameManager.Instance.IsPlaying)
+            {
+                _keyboardMove = Vector2.zero;
+                playerController.SetMoveInput(Vector2.zero);
+                return;
+            }
             // 触屏摇杆输入（每帧轮询，覆盖键盘输入）
             if (virtualJoystick != null && virtualJoystick.Input != Vector2.zero)
             {
@@ -101,6 +116,7 @@ namespace DevouringBeast
 
         private void OnMovePerformed(InputAction.CallbackContext ctx)
         {
+            if (!GameManager.Instance.IsPlaying) return;
             _keyboardMove = ctx.ReadValue<Vector2>();
         }
 
@@ -114,9 +130,9 @@ namespace DevouringBeast
             HandleInhaleSpitPress();
         }
 
-        private void OnInhaleSpitCanceled(InputAction.CallbackContext ctx)
+private void OnInhaleSpitCanceled(InputAction.CallbackContext ctx)
         {
-            playerInhale.StopInhale();
+            HandleInhaleSpitRelease();
         }
 
         private void OnSwallowStarted(InputAction.CallbackContext ctx)
@@ -124,8 +140,14 @@ namespace DevouringBeast
             HandleSwallowPress();
         }
 
+        private void OnSwallowCanceled(InputAction.CallbackContext ctx)
+        {
+            HandleSwallowRelease();
+        }
+
         private void OnPauseStarted(InputAction.CallbackContext ctx)
         {
+            if (GameManager.Instance.CurrentState == GameState.RogueChoosing || GameManager.Instance.IsGameOver) return;
             if (GameManager.Instance.IsPlaying)
                 GameManager.Instance.PauseGame();
             else if (GameManager.Instance.IsPaused)
@@ -137,32 +159,88 @@ namespace DevouringBeast
         #region 触屏按钮公开方法（供 UI Button.onClick 调用）
 
         /// <summary>吸入/吐出按钮按下（PointerDown 或 Click）</summary>
-        public void HandleInhaleSpitPress()
+public void HandleInhaleSpitPress()
         {
             if (!GameManager.Instance.IsPlaying) return;
+            if (_primaryActionHeld || _swallowActionHeld) return;
+            playerController?.NotifyPlayerActivity();
+            if (playerController != null && playerController.IsBeastForm) return;
+            _primaryActionHeld = true;
+            if (playerInhale != null && playerInhale.IsInhaling) return;
 
-            if (swallowContainer != null && swallowContainer.HasItems)
-                playerSpit.Spit();
-            else
-                playerInhale.StartInhale();
-        }
+            if (_rogueSkills != null && _rogueSkills.Has(RogueSkillId.FaithAngel))
+            {
+                playerSpit.StartAngelFire();
+                return;
+            }
 
-        /// <summary>吸入/吐出按钮松开（PointerUp）</summary>
-        public void HandleInhaleSpitRelease()
-        {
-            playerInhale.StopInhale();
-        }
-
-        /// <summary>吞噬按钮按下</summary>
-        public void HandleSwallowPress()
-        {
-            if (!GameManager.Instance.IsPlaying) return;
+            if (_rogueSkills != null && _rogueSkills.Has(RogueSkillId.FaithPope))
+            {
+                if (swallowContainer != null && swallowContainer.HasItems)
+                {
+                    swallowContainer.Consume();
+                    playerSpit.Spit();
+                    AudioManager.Instance.PlaySfx(AudioCue.Swallow);
+                }
+                return;
+            }
 
             if (swallowContainer != null && swallowContainer.HasItems)
             {
-                swallowContainer.Consume();
-                swallowContainer.CheckAndNotify();
+                if (playerSpit.CanCharge) playerSpit.StartCharge();
+                else playerSpit.Spit();
             }
+            else
+            {
+                playerInhale.StartInhale();
+            }
+        }
+
+        /// <summary>吸入/吐出按钮松开（PointerUp）</summary>
+public void HandleInhaleSpitRelease()
+        {
+            if (!_primaryActionHeld) return;
+            _primaryActionHeld = false;
+            playerSpit?.StopAngelFire();
+            if (playerSpit != null && playerSpit.IsCharging)
+            {
+                playerSpit.Spit();
+                playerSpit.StopCharge();
+            }
+            else if (playerInhale != null)
+            {
+                playerInhale.StopInhale();
+            }
+        }
+
+        /// <summary>吞噬按钮按下</summary>
+public void HandleSwallowPress()
+        {
+            if (!GameManager.Instance.IsPlaying) return;
+            if (_primaryActionHeld || _swallowActionHeld) return;
+            playerController?.NotifyPlayerActivity();
+            if (playerController != null && playerController.IsBeastForm) return;
+            if (playerInhale != null && playerInhale.IsInhaling) return;
+            _swallowActionHeld = true;
+
+            if (_rogueSkills != null && _rogueSkills.Has(RogueSkillId.FaithAngel))
+            {
+                playerSpit.Spit();
+                return;
+            }
+
+            if (swallowContainer != null && swallowContainer.CanConsume)
+            {
+                swallowContainer.Consume();
+                AudioManager.Instance.PlaySfx(AudioCue.Swallow);
+                if (_rogueSkills != null && _rogueSkills.Has(RogueSkillId.FaithPope)) playerSpit.Spit();
+                _rogueSkills?.NotifySwallow();
+            }
+        }
+
+        public void HandleSwallowRelease()
+        {
+            _swallowActionHeld = false;
         }
 
         #endregion

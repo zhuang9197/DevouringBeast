@@ -13,6 +13,7 @@ namespace DevouringBeast
         [Header("视觉效果")]
         [SerializeField] private ParticleSystem trailParticles;
         [SerializeField] private GameObject hitVfxPrefab;
+        [SerializeField, Min(0.05f)] private float splitSpawnPadding = 0.35f;
 
         private readonly HashSet<int> _hitEnemies = new HashSet<int>();
         private readonly HashSet<int> _explosionEnemies = new HashSet<int>();
@@ -25,8 +26,9 @@ namespace DevouringBeast
         private Vector2 _spawnPosition;
         private Transform _owner;
         private Action<EnergyBall> _releaseAction;
-        private Action<Vector3, Vector2, EnergyBallShotSnapshot, int> _splitSpawnAction;
+        private Action<Vector3, Vector2, EnergyBallShotSnapshot, int, int> _splitSpawnAction;
         private int _remainingPierces;
+        private int _piercedEnemies;
         private int _splitGeneration;
         private bool _hasSplit;
         private bool _initialized;
@@ -57,8 +59,9 @@ namespace DevouringBeast
             EnergyBallShotSnapshot snapshot,
             Transform owner,
             Action<EnergyBall> releaseAction,
-            Action<Vector3, Vector2, EnergyBallShotSnapshot, int> splitSpawnAction,
-            int splitGeneration = 0)
+            Action<Vector3, Vector2, EnergyBallShotSnapshot, int, int> splitSpawnAction,
+            int splitGeneration = 0,
+            int ignoredEnemyId = 0)
         {
             if (snapshot == null)
                 throw new ArgumentNullException(nameof(snapshot));
@@ -72,11 +75,14 @@ namespace DevouringBeast
             _releaseAction = releaseAction;
             _splitSpawnAction = splitSpawnAction;
             _remainingPierces = snapshot.PierceCount;
+            _piercedEnemies = 0;
             _splitGeneration = Mathf.Max(0, splitGeneration);
             _hasSplit = false;
             _initialized = true;
             _released = false;
             _hitEnemies.Clear();
+            if (ignoredEnemyId != 0)
+                _hitEnemies.Add(ignoredEnemyId);
 
             float angle = Mathf.Atan2(_direction.y, _direction.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0f, 0f, angle);
@@ -165,17 +171,33 @@ namespace DevouringBeast
                 return;
 
             int enemyId = enemy.GetInstanceID();
-            if (!_hitEnemies.Add(enemyId))
+            
+            AudioManager.Instance.PlaySfx(
+                _snapshot.HasExplosion ? AudioCue.Bomb : AudioCue.Hit);
+
+if (!_hitEnemies.Add(enemyId))
                 return;
 
-            enemy.TakeDamage(_snapshot.Damage);
+            float pierceMultiplier = Mathf.Max(0.4f, 1f - _snapshot.PierceDamageLoss * _piercedEnemies);
+            float hitDamage = _snapshot.Damage * _snapshot.PrimaryHitMultiplier * pierceMultiplier;
+            EnemyStatusEffects status = EnemyStatusEffects.EnsureFor(enemy);
+            if (_snapshot.HasErosion)
+            {
+                hitDamage += status.ApplyErosion(
+                    _snapshot.Damage,
+                    _snapshot.ErosionMaxStacks,
+                    _snapshot.ErosionDamageMultiplier,
+                    _snapshot.ErosionMissingHealthPercent);
+            }
+            enemy.TakeDamage(hitDamage);
             ApplyStatusEffects(enemy);
             ApplyExplosion(enemy);
-            SpawnSplitProjectiles();
+            SpawnSplitProjectiles(enemy);
 
             if (_remainingPierces > 0)
             {
                 _remainingPierces--;
+                _piercedEnemies++;
                 return;
             }
 
@@ -214,20 +236,18 @@ namespace DevouringBeast
 
         private void ApplyStatusEffects(EnemyBase enemy)
         {
-            if (!_snapshot.HasPoison || enemy.IsDead)
-                return;
-
-            EnemyStatusEffects status = enemy.GetComponent<EnemyStatusEffects>();
-            if (status == null)
-                status = enemy.gameObject.AddComponent<EnemyStatusEffects>();
-
-            status.ApplyPoison(_snapshot.PoisonDamagePerSecond, _snapshot.PoisonDuration);
+            if (enemy.IsDead) return;
+            EnemyStatusEffects status = EnemyStatusEffects.EnsureFor(enemy);
+            if (_snapshot.HasPoison) status.ApplyPoison(_snapshot.PoisonDamagePerSecond, _snapshot.PoisonDuration);
+            if (_snapshot.HasBurn) status.ApplyBurn(_snapshot.BurnDamagePerSecond, _snapshot.BurnDuration, _snapshot.BurnGrowthPerHit);
+            if (_snapshot.HasSlow) status.ApplySlow(_snapshot.SlowPercent, _snapshot.SlowDuration);
+            if (_snapshot.HasStun && UnityEngine.Random.value <= _snapshot.StunChance)
+                status.ApplyStun(_snapshot.StunDuration);
         }
 
-        private void SpawnSplitProjectiles()
+        private void SpawnSplitProjectiles(EnemyBase sourceEnemy)
         {
-            if (_hasSplit || !_snapshot.HasSplit || _splitSpawnAction == null ||
-                _splitGeneration >= _snapshot.MaxSplitGenerations)
+            if (_hasSplit || !_snapshot.HasSplit || _splitSpawnAction == null || _splitGeneration > 0)
             {
                 return;
             }
@@ -237,17 +257,31 @@ namespace DevouringBeast
             const float totalArc = 70f;
             float step = count > 1 ? totalArc / (count - 1) : 0f;
             float startAngle = -totalArc * 0.5f;
+            Vector3 splitOrigin = transform.position + (Vector3)(_direction * splitSpawnPadding);
+
+            Collider2D[] sourceColliders = sourceEnemy.GetComponentsInChildren<Collider2D>();
+            if (sourceColliders.Length > 0)
+            {
+                Bounds bounds = sourceColliders[0].bounds;
+                for (int colliderIndex = 1; colliderIndex < sourceColliders.Length; colliderIndex++)
+                    bounds.Encapsulate(sourceColliders[colliderIndex].bounds);
+
+                float projectedExtent = Mathf.Abs(_direction.x) * bounds.extents.x +
+                    Mathf.Abs(_direction.y) * bounds.extents.y;
+                splitOrigin = bounds.center + (Vector3)(_direction * (projectedExtent + splitSpawnPadding));
+            }
 
             for (int i = 0; i < count; i++)
             {
                 float angle = startAngle + step * i;
                 Vector2 splitDirection = Quaternion.Euler(0f, 0f, angle) * _direction;
-                Vector3 spawnPosition = transform.position + (Vector3)(splitDirection * 0.15f);
+                Vector3 spawnPosition = splitOrigin + (Vector3)(splitDirection * 0.05f);
                 _splitSpawnAction(
                     spawnPosition,
                     splitDirection,
-                    _snapshot,
-                    _splitGeneration + 1);
+                    _snapshot.CreateSplitSnapshot(),
+                    _splitGeneration + 1,
+                    sourceEnemy.GetInstanceID());
             }
         }
 

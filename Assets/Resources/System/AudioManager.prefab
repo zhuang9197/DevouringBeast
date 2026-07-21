@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5538786743271659162
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6438302764847955572}
+  - component: {fileID: 7392759440178871429}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6438302764847955572
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5538786743271659162}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7392759440178871429
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5538786743271659162}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d4ead153a162cf4cb244e9d07d19b1e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  normal: {fileID: 8300000, guid: 97ed0701ff1bc9947939264375997329, type: 3}
+  battle: {fileID: 8300000, guid: 5387e75361bfb1d40bce1bef88e287c2, type: 3}
+  boss: {fileID: 8300000, guid: 84088e5c636b8d449b08b98947a39b1d, type: 3}
+  split: {fileID: 8300000, guid: c05033185c441134a92f84f22de2fb00, type: 3}
+  bigSplit: {fileID: 8300000, guid: 0c1cf414467996a4b8c7ea0f3bb2579f, type: 3}
+  charged: {fileID: 8300000, guid: 3b12f48dbd39bb141909511b18b57d00, type: 3}
+  hurt: {fileID: 8300000, guid: 9b255ce4844cb304c82d2c1d492bbe71, type: 3}
+  die: {fileID: 8300000, guid: f43684fa2517ae348b8b94b333772310, type: 3}
+  idle: {fileID: 8300000, guid: e638fa397a0e629438359384da284d4d, type: 3}
+  run: {fileID: 8300000, guid: 086ddb3ecdd534e43a5d39f85ebab147, type: 3}
+  walk: {fileID: 8300000, guid: 77a6ba0df2bb1fa49bb234fae588dd03, type: 3}
+  suck: {fileID: 8300000, guid: ce111f5815c522e42876990d27b1f186, type: 3}
+  swallow: {fileID: 8300000, guid: e624b157fb2796e40bc747f028ff59a4, type: 3}
+  roll: {fileID: 8300000, guid: d14f371301c95e042a70d2599e2c5209, type: 3}
+  beastHit: {fileID: 8300000, guid: 0c7af16182327d64ab528b12891770b6, type: 3}
+  bossDie: {fileID: 8300000, guid: b7e62b7b5898aa1478d8b3644b770261, type: 3}
+  enemyDie: {fileID: 8300000, guid: 3a711ee38df16534da8d91bb1a77574f, type: 3}
+  hit: {fileID: 8300000, guid: 0c7af16182327d64ab528b12891770b6, type: 3}
+  bomb: {fileID: 8300000, guid: 22f6a346bd6157c4b91b8d99c700dd0a, type: 3}
+  levelUp: {fileID: 8300000, guid: 3159f47af2f3b624ca92480044eee253, type: 3}
+  uiClick: {fileID: 8300000, guid: 82c4983df43e2de4790f858986b43b00, type: 3}
+  rogueSelect: {fileID: 8300000, guid: db7a88511fed9a645bf9a13475562dec, type: 3}
+  defaultBgmVolume: 0.75
+  defaultSfxVolume: 1
+  bgmFadeDuration: 0.35

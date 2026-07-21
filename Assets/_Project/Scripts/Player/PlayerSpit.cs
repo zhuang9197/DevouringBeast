@@ -24,7 +24,8 @@ namespace DevouringBeast
 
         [Header("蓄力（尖嘴技能）")]
         [SerializeField] private float maxChargeTime = 1.5f;
-        [SerializeField] private float maxChargeBonus = 0.3f; // 30% 额外伤害
+                [SerializeField, Min(0f)] private float bigMassThreshold = 30f;
+[SerializeField] private float maxChargeBonus = 0.3f; // 30% 额外伤害
 
         [Header("事件")]
         [SerializeField] private VoidEventChannel onSpit;
@@ -37,13 +38,21 @@ namespace DevouringBeast
 
         private float _chargeTimer;
         private bool _isCharging;
+        private float _nextAngelShotTime;
+        private float _skillDamageMultiplier = 1f;
+        private bool _angelFireHeld;
 
         public float SpitSpeed
         {
             get => spitSpeed;
             set => spitSpeed = value;
         }
-        public float BaseDamage
+        
+        public bool IsCharging => _isCharging;
+        public bool CanCharge => _skillManager != null && _skillManager.Has(RogueSkillId.EvolutionCharged);
+        public bool CanSpitWithoutItems => _skillManager != null &&
+            (_skillManager.Has(RogueSkillId.FaithAngel) || _skillManager.Has(RogueSkillId.FaithPope));
+public float BaseDamage
         {
             get => baseDamage;
             set => baseDamage = value;
@@ -59,38 +68,45 @@ namespace DevouringBeast
         /// <summary>
         /// 吐出能量球
         /// </summary>
-        public void Spit()
+public void Spit()
         {
-            if (!_container.HasItems) return;
+            if (_playerController != null && _playerController.IsInhaling) return;
+            if (!_container.HasItems && !CanSpitWithoutItems) return;
+            if (CanSpitWithoutItems && Time.time < _nextAngelShotTime) return;
             if (!EnsurePool()) return;
 
-            var items = _container.ClearItems();
+            bool chargedShot = _isCharging && CanCharge;
+            var items = _container.HasItems ? _container.ClearItems() : new List<InhaleableItem>();
 
-            // 计算伤害：基础伤害 + 质量加成
             float totalMass = 0f;
-            foreach (var item in items) totalMass += item.Mass;
+            foreach (var item in items)
+            {
+                if (item != null)
+                {
+                    totalMass += item.Mass;
+                    item.ReleaseFromMouth();
+                }
+            }
 
-            float damage = baseDamage + totalMass * damagePerMass;
+            float damage = (baseDamage + totalMass * damagePerMass) * _skillDamageMultiplier;
+            if (_skillManager != null && _skillManager.Has(RogueSkillId.FaithPope) && totalMass <= 0f)
+                damage = baseDamage * _skillDamageMultiplier;
+            damage *= 1f + GetChargeBonus();
 
-            // 蓄力加成（尖嘴技能）
-            float chargeBonus = GetChargeBonus();
-            damage *= (1f + chargeBonus);
-
-            // 技能加成：多嘴 -> 多颗能量球
             int ballCount = GetBallCount();
-            float perBallDamage = damage / ballCount;
-
-            // 每次吐出都重新复制当前技能与最终弹体属性。
+            float perBallDamage = damage * GetPerBallDamageMultiplier(ballCount);
             EnergyBallShotSnapshot snapshot = _skillManager != null
                 ? _skillManager.CreateEnergyBallSnapshot(perBallDamage, spitSpeed, maxFlyDistance)
                 : new EnergyBallShotSnapshot(perBallDamage, spitSpeed, maxFlyDistance, null);
 
+            AudioManager.Instance.PlaySfx(
+                chargedShot || totalMass >= bigMassThreshold ? AudioCue.BigSplit : AudioCue.Split);
+
             for (int i = 0; i < ballCount; i++)
-            {
                 SpawnEnergyBall(snapshot, i, ballCount);
-            }
 
             onSpit?.RaiseEvent();
+            if (CanSpitWithoutItems) _nextAngelShotTime = Time.time + 0.5f;
         }
 
         private float GetChargeBonus()
@@ -102,12 +118,36 @@ namespace DevouringBeast
 
         private int GetBallCount()
         {
-            // 多嘴技能每级增加一颗，限制数量避免弹幕失控。
-            int multiMouthLevel = _skillManager != null
-                ? _skillManager.GetOwnedSkillLevel("多嘴")
-                : 0;
-            return Mathf.Clamp(1 + multiMouthLevel, 1, 6);
+            if (_skillManager == null || !_skillManager.Has(RogueSkillId.EvolutionMoreMouth)) return 1;
+            return Mathf.Clamp(2 + _skillManager.GetLevel(RogueSkillId.EvolutionMoreMouthMore), 2, 4);
         }
+
+        private float GetPerBallDamageMultiplier(int ballCount)
+        {
+            if (ballCount <= 1) return 1f;
+            return 0.6f * (1f + (_skillManager != null ? _skillManager.GetLevel(RogueSkillId.EvolutionMoreMouthPower) * 0.1f : 0f));
+        }
+
+        public void RefreshSkillModifiers()
+        {
+            if (_skillManager == null) return;
+            _skillDamageMultiplier = 1f + _skillManager.GetLevel(RogueSkillId.NormalPower) * 0.01f;
+            if (_skillManager.Has(RogueSkillId.FaithAngel))
+                _skillDamageMultiplier *= 1f + _skillManager.GetLevel(RogueSkillId.FaithAngel) * 0.1f;
+            if (_skillManager.Has(RogueSkillId.FaithPope))
+                _skillDamageMultiplier *= 1.5f + _skillManager.GetLevel(RogueSkillId.FaithPope) * 0.1f;
+            int chargedLevel = _skillManager.GetLevel(RogueSkillId.EvolutionCharged);
+            maxChargeBonus = chargedLevel * 0.1f;
+        }
+
+        public void StartAngelFire()
+        {
+            if (!CanSpitWithoutItems || _angelFireHeld) return;
+            _angelFireHeld = true;
+            Spit();
+        }
+
+        public void StopAngelFire() => _angelFireHeld = false;
 
         private void SpawnEnergyBall(EnergyBallShotSnapshot snapshot, int index, int total)
         {
@@ -135,7 +175,8 @@ namespace DevouringBeast
             Vector3 position,
             Vector2 direction,
             EnergyBallShotSnapshot snapshot,
-            int generation)
+            int generation,
+            int ignoredEnemyId)
         {
             if (!EnsurePool()) return;
 
@@ -146,7 +187,8 @@ namespace DevouringBeast
                 transform,
                 ReleaseEnergyBall,
                 SpawnSplitEnergyBall,
-                generation);
+                generation,
+                ignoredEnemyId);
         }
 
         private void ReleaseEnergyBall(EnergyBall ball)
@@ -183,11 +225,11 @@ namespace DevouringBeast
             return true;
         }
 
-        private void OnDestroy()
+private void OnDestroy()
         {
+            AudioManager.Existing?.StopLoop(AudioCue.Charged);
             if (_energyBallPool != null)
                 _energyBallPool.Clear();
-
             if (_poolRoot != null)
                 Destroy(_poolRoot.gameObject);
         }
@@ -195,18 +237,22 @@ namespace DevouringBeast
         /// <summary>
         /// 开始蓄力（尖嘴技能）
         /// </summary>
-        public void StartCharge()
+public void StartCharge()
         {
+            if (_isCharging || !CanCharge || _container == null || (!_container.HasItems && !CanSpitWithoutItems)) return;
             _isCharging = true;
             _chargeTimer = 0f;
+            AudioManager.Instance.PlayLoop(AudioCue.Charged);
         }
 
         /// <summary>
         /// 停止蓄力
         /// </summary>
-        public void StopCharge()
+public void StopCharge()
         {
+            if (!_isCharging) return;
             _isCharging = false;
+            AudioManager.Instance.StopLoop(AudioCue.Charged);
         }
 
         private void Update()
@@ -215,6 +261,7 @@ namespace DevouringBeast
             {
                 _chargeTimer += Time.deltaTime;
             }
+            if (_angelFireHeld && Time.time >= _nextAngelShotTime) Spit();
         }
     }
 }

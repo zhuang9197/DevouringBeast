@@ -16,6 +16,11 @@ namespace DevouringBeast
         [SerializeField] private float maxInhaleDuration = 3f;
         [SerializeField] private float maxSuctionForce = 100f;
         [SerializeField] private float suctionRampTime = 1.5f;
+        [SerializeField, Min(0.05f)] private float intakeDistance = 0.65f;
+        [SerializeField, Min(0.1f)] private float minimumPullSpeed = 1f;
+        [SerializeField, Min(0.1f)] private float maximumPullSpeed = 16f;
+        [SerializeField, Min(0f)] private float suctionMassSpeedFactor = 0.35f;
+        [SerializeField, Range(1f, 1.5f)] private float aliveEnemyMaxSpeedBoost = 1.25f;
 
         [Header("层级")]
         [SerializeField] private LayerMask inhaleableLayer;
@@ -35,10 +40,14 @@ namespace DevouringBeast
         private float _currentSuctionForce;
         private bool _suctionMaxed;
         private readonly List<InhaleableItem> _detectedItems = new(8);
+        private float _skillSuctionMultiplier = 1f;
+        private float _skillDamageMultiplier = 1f;
+        private float _bonusInhaleDuration;
+        private bool _damageOnlyMode;
 
         // 属性
         public bool IsInhaling => _isInhaling;
-        public float Progress => _isInhaling ? _inhaleTimer / maxInhaleDuration : 0f;
+        public float Progress => _isInhaling ? _inhaleTimer / (maxInhaleDuration + _bonusInhaleDuration) : 0f;
         public float CurrentSuctionForce => _currentSuctionForce;
         public float MaxSuctionForce
         {
@@ -50,6 +59,10 @@ namespace DevouringBeast
             get => maxInhaleDuration;
             set => maxInhaleDuration = value;
         }
+        public float SkillSuctionMultiplier { get => _skillSuctionMultiplier; set => _skillSuctionMultiplier = Mathf.Max(0f, value); }
+        public float SkillDamageMultiplier { get => _skillDamageMultiplier; set => _skillDamageMultiplier = Mathf.Max(0f, value); }
+        public float BonusInhaleDuration { get => _bonusInhaleDuration; set => _bonusInhaleDuration = Mathf.Max(0f, value); }
+        public bool DamageOnlyMode { get => _damageOnlyMode; set => _damageOnlyMode = value; }
 
         public event Action<float> OnProgressChanged;
         public event Action<bool> OnSuctionMaxedChanged; // true=达到最大, false=未达到
@@ -69,7 +82,7 @@ namespace DevouringBeast
 
             // 计算吸力：前半段递增，后半段满
             float rampProgress = Mathf.Clamp01(_inhaleTimer / suctionRampTime);
-            _currentSuctionForce = maxSuctionForce * rampProgress;
+            _currentSuctionForce = maxSuctionForce * _skillSuctionMultiplier * rampProgress;
 
             // 通知吸力是否达到最大
             bool maxed = rampProgress >= 1f;
@@ -89,7 +102,7 @@ namespace DevouringBeast
             ProcessSuction();
 
             // 进度条耗尽自动停止
-            if (_inhaleTimer >= maxInhaleDuration)
+            if (_inhaleTimer >= maxInhaleDuration + _bonusInhaleDuration)
             {
                 StopInhale();
             }
@@ -98,7 +111,7 @@ namespace DevouringBeast
         /// <summary>
         /// 开始吸入
         /// </summary>
-        public void StartInhale()
+public void StartInhale()
         {
             if (_isInhaling) return;
 
@@ -108,18 +121,20 @@ namespace DevouringBeast
             _suctionMaxed = false;
             _playerController.IsInhaling = true;
             _playerController.SetSuctionMaxed(false);
+            AudioManager.Instance.PlayLoop(AudioCue.Suck);
             onInhaleStart?.RaiseEvent();
         }
 
         /// <summary>
         /// 停止吸入
         /// </summary>
-        public void StopInhale()
+public void StopInhale()
         {
             if (!_isInhaling) return;
 
             _isInhaling = false;
             _playerController.IsInhaling = false;
+            AudioManager.Instance.StopLoop(AudioCue.Suck);
             onInhaleStop?.RaiseEvent();
             OnProgressChanged?.Invoke(0f);
         }
@@ -134,40 +149,61 @@ namespace DevouringBeast
 
             foreach (var hit in hits)
             {
+                var item = hit.GetComponentInParent<InhaleableItem>();
+                if (item == null || _detectedItems.Contains(item)) continue;
+
                 // 角度过滤：只检测前方锥形范围
-                Vector2 dirToTarget = (hit.transform.position - transform.position).normalized;
+                Vector2 dirToTarget = (item.transform.position - transform.position).normalized;
                 float angle = Vector2.Angle(_playerController.FacingDirection, dirToTarget);
                 if (angle <= inhaleAngle * 0.5f)
-                {
-                    var item = hit.GetComponent<InhaleableItem>();
-                    if (item != null)
-                    {
-                        _detectedItems.Add(item);
-                    }
-                }
+                    _detectedItems.Add(item);
             }
         }
 
+        [Header("吸力伤害")]
+        [Tooltip("吸力转为伤害的系数（force * 此值 = 每秒伤害）")]
+        [SerializeField] private float suctionDamageMultiplier = 0.5f;
+
         /// <summary>
-        /// 处理吸力：吸入或拉近
+        /// 处理吸力：存活敌人转为伤害+拉近，阵亡后吸入
         /// </summary>
         private void ProcessSuction()
         {
+            float dt = Time.deltaTime;
+
             foreach (var item in _detectedItems)
             {
-                if (item == null) continue;
+                if (item == null || item.IsBeingInhaled) continue;
 
-                float threshold = item.CurrentThreshold;
-
-                if (_currentSuctionForce >= threshold)
+                if (item.IsAlive)
                 {
-                    // 吸入成功
-                    InhaleItem(item);
+                    // 存活：吸力转为伤害
+                    var enemy = item.GetComponent<EnemyBase>();
+                    if (enemy != null && !enemy.IsDead)
+                    {
+                        float damage = _currentSuctionForce * suctionDamageMultiplier * _skillDamageMultiplier * dt;
+                        enemy.TakeDamage(damage);
+                        EnemyAI ai = enemy.GetComponent<EnemyAI>();
+                        if (ai != null)
+                        {
+                            float ratio = _currentSuctionForce / Mathf.Max(1f, item.Mass * 10f);
+                            ai.ApplySuctionChaseBoost(Mathf.Lerp(1f, aliveEnemyMaxSpeedBoost, Mathf.Clamp01(ratio)));
+                        }
+                    }
+                    if (_damageOnlyMode) continue;
                 }
                 else
                 {
-                    // 拉近物品
-                    PullItem(item);
+                    if (_damageOnlyMode) continue;
+                    float distance = Vector2.Distance(item.transform.position, transform.position);
+                    if (_currentSuctionForce >= item.CurrentThreshold && distance <= intakeDistance)
+                    {
+                        InhaleItem(item);
+                    }
+                    else
+                    {
+                        PullItem(item);
+                    }
                 }
             }
         }
@@ -175,18 +211,20 @@ namespace DevouringBeast
         private void InhaleItem(InhaleableItem item)
         {
             _container.AddItem(item);
-            item.OnInhaled();
+            item.OnInhaled(transform); // 传入玩家位置作为口部
             onItemInhaled?.RaiseEvent();
         }
 
         private void PullItem(InhaleableItem item)
         {
-            Vector2 pullDir = ((Vector2)transform.position - (Vector2)item.transform.position).normalized;
-            float pullStrength = _currentSuctionForce / Mathf.Max(item.CurrentThreshold, 1f);
+            float thresholdRatio = _currentSuctionForce / Mathf.Max(1f, item.CurrentThreshold);
+            float massRatio = _currentSuctionForce / Mathf.Max(1f, item.Mass);
+            float pullStrength = minimumPullSpeed + (thresholdRatio + massRatio) * suctionMassSpeedFactor;
+            pullStrength = Mathf.Clamp(pullStrength, minimumPullSpeed, maximumPullSpeed);
             item.transform.position = Vector2.MoveTowards(
                 item.transform.position,
                 transform.position,
-                pullStrength * 3f * Time.deltaTime
+                pullStrength * Time.deltaTime
             );
         }
 

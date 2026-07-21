@@ -13,11 +13,17 @@ namespace DevouringBeast
         public enum Phase { Interlude, Spawning, Fighting }
 
         [Header("配置")]
-        [SerializeField] private WaveConfig config;
+        
+        [SerializeField] private EnemyPrefabCatalog prefabCatalog;
+
+[SerializeField] private WaveConfig config;
 
         [Header("生成")]
         [SerializeField] private EnemySpawner spawner;
         [SerializeField] private Transform[] spawnPoints;
+        [SerializeField, Min(16)] private int maxPooledEnemies = 160;
+        [SerializeField, Min(0.1f), Tooltip("极小敌人自动放大后的最小视觉宽高（取较大边）")]
+        private float minimumEnemyVisualSize = 1.25f;
 
         [Header("事件")]
         [SerializeField] private VoidEventChannel onWaveStart;
@@ -38,14 +44,25 @@ namespace DevouringBeast
         private List<GameObject[]> _tierPrefabs = new();
         private GameObject[] _elitePrefabs;
         private GameObject[] _bossPrefabs;
+        private readonly Dictionary<GameObject, Queue<EnemyPoolMember>> _enemyPools = new();
+        private readonly Dictionary<GameObject, Vector3> _enemySpawnScales = new();
+        private readonly HashSet<EnemyPoolMember> _activeEnemies = new();
+        private Transform _enemyPoolRoot;
+        private int _pooledEnemyCount;
 
-        private void Start()
+private void Start()
         {
+            GameObject poolRoot = new GameObject("EnemyPool");
+            poolRoot.transform.SetParent(transform, false);
+            _enemyPoolRoot = poolRoot.transform;
             LoadPrefabs();
-            _currentWave = 0;
-            _waveTimer = 3f; // 首波3秒后开始
+            SaveGameService.Initialize();
+            SaveSlotData activeSave = SaveGameService.GetActiveSlot();
+            _currentWave = activeSave != null ? Mathf.Max(0, activeSave.completedWave) : 0;
+            _waveTimer = 3f;
             _maxTimer = 3f;
             _currentPhase = Phase.Interlude;
+            AudioManager.Instance.PlayBgm(BgmTrack.Battle);
         }
 
         private void Update()
@@ -86,8 +103,11 @@ namespace DevouringBeast
 
         private void StartNextWave()
         {
-            _currentWave++;
-            _enemiesRemaining = 0;
+            int nextWave = _currentWave + 1;
+            EmpowerSurvivingEnemies(nextWave);
+            _currentWave = nextWave;
+            AudioManager.Instance.SetBattleWave(_currentWave);
+            _enemiesRemaining = CountLivingActiveEnemies();
             _allSpawned = false;
             _resetTriggered = false;
             _currentPhase = Phase.Spawning;
@@ -95,14 +115,13 @@ namespace DevouringBeast
             int tier = config.GetTier(_currentWave);
             int count = config.GetEnemyCount(_currentWave);
             float healthMul = config.GetHealthMultiplier(_currentWave);
-            float damageMul = config.GetDamageMultiplier(_currentWave);
             float speedMul = config.GetSpeedMultiplier(_currentWave);
 
             // 生成普通怪
             var tierPrefabs = GetTierPrefabs(tier);
             for (int i = 0; i < count; i++)
             {
-                SpawnEnemy(tierPrefabs, healthMul, damageMul, speedMul, EnemyType.Normal);
+                SpawnEnemy(tierPrefabs, healthMul, config.GetAttackDamage(_currentWave, EnemyType.Normal), speedMul, EnemyType.Normal);
             }
 
             // 每5波生成精英
@@ -113,7 +132,7 @@ namespace DevouringBeast
                 {
                     SpawnEnemy(_elitePrefabs,
                         healthMul * config.eliteHealthMul,
-                        damageMul * config.eliteDamageMul,
+                        config.GetAttackDamage(_currentWave, EnemyType.Elite),
                         speedMul * config.eliteSpeedMul,
                         EnemyType.Elite);
                 }
@@ -127,7 +146,7 @@ namespace DevouringBeast
                 {
                     SpawnEnemy(_bossPrefabs,
                         healthMul * config.bossHealthMul,
-                        damageMul * config.bossDamageMul,
+                        config.GetAttackDamage(_currentWave, EnemyType.Boss),
                         speedMul * config.bossSpeedMul,
                         EnemyType.Boss);
                 }
@@ -148,11 +167,13 @@ namespace DevouringBeast
             _waveTimer = 3f;
             _maxTimer = 3f;
             _resetTriggered = false;
-            onWaveCleared?.RaiseEvent();
+            
+            SaveGameService.SaveCompletedWave(_currentWave);
+onWaveCleared?.RaiseEvent();
             Debug.Log($"[WaveManager] Wave {_currentWave} cleared!");
         }
 
-        private void SpawnEnemy(GameObject[] prefabs, float healthMul, float damageMul, float speedMul, EnemyType type)
+        private void SpawnEnemy(GameObject[] prefabs, float healthMul, int attackDamage, float speedMul, EnemyType type)
         {
             if (prefabs == null || prefabs.Length == 0) return;
             if (spawnPoints == null || spawnPoints.Length == 0) return;
@@ -160,25 +181,39 @@ namespace DevouringBeast
             var prefab = prefabs[Random.Range(0, prefabs.Length)];
             var point = spawnPoints[Random.Range(0, spawnPoints.Length)];
 
-            var enemy = Instantiate(prefab, point.position, Quaternion.identity);
+            EnemyPoolMember poolMember = AcquireEnemy(prefab, point.position);
+            var enemy = poolMember.gameObject;
 
             // 确保 EnemyBase 存在
             var enemyBase = enemy.GetComponent<EnemyBase>();
             if (enemyBase == null)
                 enemyBase = enemy.AddComponent<EnemyBase>();
+            poolMember.Bind(prefab, ReleaseEnemy);
 
             // 创建临时 EnemyData
-            var data = ScriptableObject.CreateInstance<EnemyData>();
+            var data = enemyBase.GetOrCreateRuntimeData();
             data.enemyType = type;
             data.maxHealth = 100f * healthMul;
-            data.attackDamage = 10f * damageMul;
+            data.attackDamage = Mathf.Max(1, attackDamage);
             data.moveSpeed = 3f * speedMul;
             data.attackRange = 1.5f;
-            data.attackCooldown = 1.5f;
+            data.attackCooldown = 0.9f;
             data.detectRange = 10f;
-            data.tag = ItemTag.None;
-            data.killMass = 20f;
-            data.deadMass = 5f;
+
+            // 从预制体的 InhaleableItem 读取 Tag 和 Mass，不覆盖
+            var prefabItem = prefab.GetComponent<InhaleableItem>();
+            if (prefabItem != null)
+            {
+                data.tag = prefabItem.Tag;
+                data.killMass = prefabItem.Mass;
+                data.deadMass = prefabItem.Mass * 0.3f; // 阵亡质量约为存活时的30%
+            }
+            else
+            {
+                data.tag = ItemTag.Normal;
+                data.killMass = 20f;
+                data.deadMass = 5f;
+            }
             data.aliveInhaleThreshold = 50f;
             data.deadInhaleThreshold = 10f;
 
@@ -194,6 +229,137 @@ namespace DevouringBeast
             CreateHealthBar(enemy, enemyBase);
 
             _enemiesRemaining++;
+        }
+
+        private EnemyPoolMember AcquireEnemy(GameObject prefab, Vector3 position)
+        {
+            if (!_enemyPools.TryGetValue(prefab, out Queue<EnemyPoolMember> queue))
+            {
+                queue = new Queue<EnemyPoolMember>();
+                _enemyPools.Add(prefab, queue);
+            }
+
+            EnemyPoolMember member = null;
+            while (queue.Count > 0 && member == null)
+            {
+                member = queue.Dequeue();
+                _pooledEnemyCount = Mathf.Max(0, _pooledEnemyCount - 1);
+            }
+            if (member == null)
+            {
+                GameObject instance = Instantiate(prefab);
+                member = instance.GetComponent<EnemyPoolMember>();
+                if (member == null) member = instance.AddComponent<EnemyPoolMember>();
+            }
+
+            member.Bind(prefab, ReleaseEnemy);
+            member.SetSpawnScale(GetEnemySpawnScale(prefab));
+            member.MarkSpawned();
+            Transform parent = spawner != null ? spawner.EnemiesParent : transform;
+            member.transform.SetParent(parent, false);
+            member.transform.SetPositionAndRotation(position, Quaternion.identity);
+            member.gameObject.SetActive(true);
+            _activeEnemies.Add(member);
+            return member;
+        }
+
+        private void ReleaseEnemy(EnemyPoolMember member)
+        {
+            if (member == null) return;
+            EnemyBase enemy = member.Enemy;
+            if (enemy != null) enemy.OnDeath -= OnEnemyKilled;
+            _activeEnemies.Remove(member);
+            member.RestoreSpawnScale();
+            member.transform.SetParent(_enemyPoolRoot, false);
+            member.gameObject.SetActive(false);
+
+            if (_pooledEnemyCount >= maxPooledEnemies || member.SourcePrefab == null)
+            {
+                Destroy(member.gameObject);
+                return;
+            }
+            if (!_enemyPools.TryGetValue(member.SourcePrefab, out Queue<EnemyPoolMember> queue))
+            {
+                queue = new Queue<EnemyPoolMember>();
+                _enemyPools.Add(member.SourcePrefab, queue);
+            }
+            queue.Enqueue(member);
+            _pooledEnemyCount++;
+        }
+
+        private Vector3 GetEnemySpawnScale(GameObject prefab)
+        {
+            if (prefab == null) return Vector3.one;
+            if (_enemySpawnScales.TryGetValue(prefab, out Vector3 cachedScale))
+                return cachedScale;
+
+            Vector3 baseScale = prefab.transform.localScale;
+            Bounds visualBounds = default;
+            bool hasBounds = false;
+            SpriteRenderer[] renderers = prefab.GetComponentsInChildren<SpriteRenderer>(true);
+            foreach (SpriteRenderer renderer in renderers)
+            {
+                if (renderer == null || renderer.sprite == null) continue;
+                Bounds spriteBounds = renderer.sprite.bounds;
+                Vector3[] corners =
+                {
+                    new(spriteBounds.min.x, spriteBounds.min.y, 0f),
+                    new(spriteBounds.min.x, spriteBounds.max.y, 0f),
+                    new(spriteBounds.max.x, spriteBounds.min.y, 0f),
+                    new(spriteBounds.max.x, spriteBounds.max.y, 0f)
+                };
+                foreach (Vector3 corner in corners)
+                {
+                    Vector3 rootLocal = prefab.transform.InverseTransformPoint(renderer.transform.TransformPoint(corner));
+                    if (!hasBounds)
+                    {
+                        visualBounds = new Bounds(rootLocal, Vector3.zero);
+                        hasBounds = true;
+                    }
+                    else visualBounds.Encapsulate(rootLocal);
+                }
+            }
+
+            float visualSize = hasBounds
+                ? Mathf.Max(visualBounds.size.x * Mathf.Abs(baseScale.x), visualBounds.size.y * Mathf.Abs(baseScale.y))
+                : minimumEnemyVisualSize;
+            float multiplier = visualSize > 0.001f && visualSize < minimumEnemyVisualSize
+                ? minimumEnemyVisualSize / visualSize
+                : 1f;
+            Vector3 spawnScale = new(baseScale.x * multiplier, baseScale.y * multiplier, baseScale.z);
+            _enemySpawnScales[prefab] = spawnScale;
+            return spawnScale;
+        }
+
+        private void ReleaseAllActiveEnemies()
+        {
+            if (_activeEnemies.Count == 0) return;
+            List<EnemyPoolMember> snapshot = new List<EnemyPoolMember>(_activeEnemies);
+            for (int i = 0; i < snapshot.Count; i++)
+            {
+                EnemyPoolMember member = snapshot[i];
+                if (member == null) continue;
+                InhaleableItem item = member.GetComponent<InhaleableItem>();
+                if (item != null && item.IsStoredInMouth) continue;
+                member.Release();
+            }
+        }
+
+        private void EmpowerSurvivingEnemies(int nextWave)
+        {
+            foreach (EnemyPoolMember member in _activeEnemies)
+            {
+                if (member == null || member.IsReleased || member.Enemy == null || member.Enemy.IsDead) continue;
+                member.Enemy.EmpowerForNextWave(config, nextWave);
+            }
+        }
+
+        private int CountLivingActiveEnemies()
+        {
+            int count = 0;
+            foreach (EnemyPoolMember member in _activeEnemies)
+                if (member != null && !member.IsReleased && member.Enemy != null && !member.Enemy.IsDead) count++;
+            return count;
         }
 
         private void CreateHealthBar(GameObject enemy, EnemyBase enemyBase)
@@ -214,42 +380,26 @@ namespace DevouringBeast
             return _tierPrefabs[idx];
         }
 
-        private void LoadPrefabs()
+private void LoadPrefabs()
         {
-            // 按等级加载预制体 (tier 1: 1-10, tier 2: 11-20, ..., tier 7: 61-80)
+            if (prefabCatalog == null)
+                prefabCatalog = Resources.Load<EnemyPrefabCatalog>("System/EnemyPrefabCatalog");
+
+            _tierPrefabs.Clear();
+            if (prefabCatalog == null)
+            {
+                Debug.LogError("[WaveManager] EnemyPrefabCatalog is missing.");
+                for (int i = 0; i < 7; i++) _tierPrefabs.Add(System.Array.Empty<GameObject>());
+                _elitePrefabs = System.Array.Empty<GameObject>();
+                _bossPrefabs = System.Array.Empty<GameObject>();
+                return;
+            }
+
             for (int tier = 1; tier <= 7; tier++)
-            {
-                var list = new List<GameObject>();
-                int start = (tier - 1) * 10 + 1;
-                int end = tier * 10;
-                for (int i = start; i <= end; i++)
-                {
-                    var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
-                        "Assets/Art/Enemy/Prefabs/Character (" + i + ").prefab");
-                    if (prefab != null) list.Add(prefab);
-                }
-                _tierPrefabs.Add(list.ToArray());
-            }
+                _tierPrefabs.Add(prefabCatalog.GetTier(tier) ?? System.Array.Empty<GameObject>());
 
-            // 精英怪 (81-90)
-            var eliteList = new List<GameObject>();
-            for (int i = 81; i <= 90; i++)
-            {
-                var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
-                    "Assets/Art/Enemy/Prefabs/Character (" + i + ").prefab");
-                if (prefab != null) eliteList.Add(prefab);
-            }
-            _elitePrefabs = eliteList.ToArray();
-
-            // Boss (91-100)
-            var bossList = new List<GameObject>();
-            for (int i = 91; i <= 100; i++)
-            {
-                var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
-                    "Assets/Art/Enemy/Prefabs/Character (" + i + ").prefab");
-                if (prefab != null) bossList.Add(prefab);
-            }
-            _bossPrefabs = bossList.ToArray();
+            _elitePrefabs = prefabCatalog.elitePrefabs ?? System.Array.Empty<GameObject>();
+            _bossPrefabs = prefabCatalog.bossPrefabs ?? System.Array.Empty<GameObject>();
         }
 
         private void NotifyUI()
@@ -261,5 +411,7 @@ namespace DevouringBeast
         public int EnemiesRemaining => _enemiesRemaining;
         public float Timer => Mathf.Max(0, _waveTimer);
         public float MaxTimer => _maxTimer;
+        public int ActiveEnemyObjectCount => _activeEnemies.Count;
+        public int PooledEnemyObjectCount => _pooledEnemyCount;
     }
 }

@@ -9,7 +9,7 @@ namespace DevouringBeast
     public class PlayerHealth : MonoBehaviour
     {
         [Header("属性")]
-        [SerializeField] private int maxHealth = 100;
+        [SerializeField] private int maxHealth = 10;
         [SerializeField] private int currentHealth;
 
         [Header("无敌帧")]
@@ -22,6 +22,7 @@ namespace DevouringBeast
         private float _invincibleTimer;
         private bool _isInvincible;
         private SpriteRenderer _spriteRenderer;
+        private PlayerController _controller;
 
         public int CurrentHealth => currentHealth;
         public int MaxHealth => maxHealth;
@@ -31,6 +32,7 @@ namespace DevouringBeast
         {
             currentHealth = maxHealth;
             _spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+            _controller = GetComponent<PlayerController>();
         }
 
         private void Update()
@@ -54,19 +56,22 @@ namespace DevouringBeast
         /// <summary>
         /// 受到伤害
         /// </summary>
-        public void TakeDamage(int damage)
+public void TakeDamage(int damage)
         {
+            _controller?.NotifyPlayerActivity();
             if (_isInvincible || IsDead) return;
+
+            if (_controller != null && _controller.IsBeastForm)
+                damage = Mathf.Max(1, Mathf.CeilToInt(damage * (1f - _controller.BeastDamageReduction)));
 
             currentHealth = Mathf.Max(0, currentHealth - damage);
             OnHealthChanged?.Invoke(currentHealth, maxHealth);
 
             if (currentHealth <= 0)
-            {
                 Die();
-            }
             else
             {
+                AudioManager.Instance.PlaySfx(AudioCue.Hurt);
                 StartInvincibility();
             }
         }
@@ -89,7 +94,7 @@ namespace DevouringBeast
         private void Die()
         {
             OnPlayerDeath?.Invoke();
-            GameManager.Instance.GameOver();
+            GameManager.Instance.HandlePlayerDeath();
         }
     }
 }

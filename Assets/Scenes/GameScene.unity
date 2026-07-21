@@ -667,6 +667,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 596dfb11afca30a44a7939214ddb48b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  prefabCatalog: {fileID: 11400000, guid: 2dc1567aa89c1af459d6f4be09a933a8, type: 2}
   config: {fileID: 11400000, guid: 6cb649df8b8443f41b2ce8efc843bbb2, type: 2}
   spawner: {fileID: 0}
   spawnPoints:
@@ -686,6 +687,8 @@ MonoBehaviour:
   - {fileID: 672811243}
   - {fileID: 144563910}
   - {fileID: 1189597446}
+  maxPooledEnemies: 160
+  minimumEnemyVisualSize: 1.25
   onWaveStart: {fileID: 0}
   onWaveCleared: {fileID: 0}
 --- !u!1 &519420028
@@ -975,7 +978,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.8, g: 0.3, b: 0.8, a: 0.5}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1227,6 +1230,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxRadius: 120
   deadZone: 20
+  activationDragDistance: 12
 --- !u!1 &976663098
 GameObject:
   m_ObjectHideFlags: 0
@@ -1324,7 +1328,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -890, y: -290}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1130725958
@@ -1974,7 +1978,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.2, g: 0.6, b: 1, a: 0.5}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -2238,7 +2242,12 @@ MonoBehaviour:
   frameAnimator: {fileID: 1876638585}
   spriteRenderer: {fileID: 1876638584}
   hasInhaleWalkSkill: 0
+  runStepInterval: 0.45
+  walkStepInterval: 0.6
+  idleSoundDelay: 8
+  idleSoundRepeatInterval: 12
   inhaleWalkMultiplier: 0.5
+  beastRollingSpeedMultiplier: 1.4
 --- !u!50 &1772682454
 Rigidbody2D:
   serializedVersion: 4
@@ -2296,24 +2305,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7299096b4cded0243b2c30ef051e8edf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allSkills:
-  - {fileID: 11400000, guid: 93e19026a16f9f84081be74946222d32, type: 2}
-  - {fileID: 11400000, guid: 22f68e45836b9f248b1f5aff8c1ce781, type: 2}
-  - {fileID: 11400000, guid: 91b79f8df0ac0414f892753602ea6d02, type: 2}
-  - {fileID: 11400000, guid: 481aa8dfd27cec24f86d5d45de46a499, type: 2}
-  - {fileID: 11400000, guid: d02bcc13a8c77ff459cf86bf80f202bd, type: 2}
-  - {fileID: 11400000, guid: 13952daafdc6ed34295efb94154318fd, type: 2}
-  - {fileID: 11400000, guid: 31d29a41428f7b149a711f3ab30633cb, type: 2}
-  - {fileID: 11400000, guid: eeed9e6974c5e6a41bbd757ac7402950, type: 2}
-  - {fileID: 11400000, guid: 1f74ddd29237ca840a13c00614e16a9c, type: 2}
-  - {fileID: 11400000, guid: ec7afad77243e554db2329fe4bca6338, type: 2}
-  - {fileID: 11400000, guid: 1b910ce6f9e90844fac8116cca70f865, type: 2}
-  - {fileID: 11400000, guid: 5bf5ce7a60082074285ca5486bba2d6c, type: 2}
-  - {fileID: 11400000, guid: 7a7591bc3c5244b429f6ade718bf51a7, type: 2}
-  - {fileID: 11400000, guid: 2df2aee6392d6d343983541cd0c43a3b, type: 2}
-  - {fileID: 11400000, guid: a9b0a211c1f22cd4b854a0f9d0d2658b, type: 2}
-  - {fileID: 11400000, guid: 5f15d7cb466d7884f9a1599c3e71b414, type: 2}
+  catalog: {fileID: 11400000, guid: 6fa1f4894ec832c4ea560c0a3a658349, type: 2}
   onLevelUp: {fileID: 11400000, guid: c007379fdd363764e86fca5c0f90421e, type: 2}
+  witchSwallowsRequired: 3
 --- !u!114 &1772682457
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2326,8 +2320,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3400f85a4e74a834fbfd27cf96a6258c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  <RequiredMass>k__BackingField: 100
+  levelOneRequirement: 30
+  levelTwoRequirement: 50
+  levelThreeRequirement: 75
+  laterLevelGrowthMultiplier: 1.35
+  <RequiredMass>k__BackingField: 30
   <CurrentMass>k__BackingField: 0
+  <CurrentLevel>k__BackingField: 1
   <TagMasses>k__BackingField:
     _keys: 
     _values: []
@@ -2343,7 +2342,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f81a5cb51883f1240b9a1d238606f454, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
+  maxHealth: 10
   currentHealth: 0
   invincibleDuration: 1
   OnHealthChanged:
@@ -2370,8 +2369,9 @@ MonoBehaviour:
   bulgeSpeed: 5
   poisonColor: {r: 0, g: 1, b: 0, a: 1}
   fireColor: {r: 1, g: 0, b: 0, a: 1}
-  natureColor: {r: 0, g: 0, b: 1, a: 1}
-  psychicColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  evolutionColor: {r: 0.501961, g: 0, b: 1, a: 1}
+  superpowerColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  faithColor: {r: 0, g: 0, b: 1, a: 1}
 --- !u!114 &1772682460
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2389,9 +2389,11 @@ MonoBehaviour:
   maxFlyDistance: 20
   baseDamage: 25
   damagePerMass: 2
+  spawnForwardOffset: 0.75
   poolInitialSize: 12
   poolMaxSize: 64
   maxChargeTime: 1.5
+  bigMassThreshold: 30
   maxChargeBonus: 0.3
   onSpit: {fileID: 11400000, guid: 0dbbebf585fada84885122aba0d97fdb, type: 2}
 --- !u!114 &1772682461
@@ -2411,12 +2413,18 @@ MonoBehaviour:
   maxInhaleDuration: 3
   maxSuctionForce: 100
   suctionRampTime: 1.5
+  intakeDistance: 0.65
+  minimumPullSpeed: 1
+  maximumPullSpeed: 16
+  suctionMassSpeedFactor: 0.35
+  aliveEnemyMaxSpeedBoost: 1.25
   inhaleableLayer:
     serializedVersion: 2
     m_Bits: 64
   onInhaleStart: {fileID: 11400000, guid: 5570466aa6cf3d7479f467ff6dfbfb45, type: 2}
   onInhaleStop: {fileID: 11400000, guid: 9f42ae660e7d2524080965256428d7b8, type: 2}
   onItemInhaled: {fileID: 11400000, guid: 1b95308aabc3b7e4fab814c0a616addd, type: 2}
+  suctionDamageMultiplier: 0.5
 --- !u!1 &1787509704
 GameObject:
   m_ObjectHideFlags: 0
@@ -2482,7 +2490,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -1010, y: -390}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1818476887

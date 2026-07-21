@@ -20,8 +20,15 @@ MonoBehaviour:
   elitePer5Waves: 1
   bossPer10Waves: 1
   normalHealthScale: 1.05
-  normalDamageScale: 1.03
   normalSpeedScale: 1.01
+  baseAttackDamage: 1
+  damageIncreaseInterval: 10
+  eliteDamageBonus: 1
+  bossDamageBonus: 2
+  survivorAttackRangeScale: 1.01
+  survivorDetectRangeScale: 1.02
+  survivorAttackSpeedScale: 1.02
+  survivorInhaleResistanceScale: 1.03
   eliteHealthMul: 3
   eliteDamageMul: 2
   eliteSpeedMul: 1.2

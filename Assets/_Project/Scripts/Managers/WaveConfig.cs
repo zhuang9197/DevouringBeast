@@ -29,10 +29,21 @@ namespace DevouringBeast
         [Header("难度递增系数")]
         [Tooltip("普通怪每波血量递增 (1.05 = 每波+5%)")]
         public float normalHealthScale = 1.05f;
-        [Tooltip("普通怪每波攻击力递增")]
-        public float normalDamageScale = 1.03f;
         [Tooltip("普通怪每波移速递增")]
         public float normalSpeedScale = 1.01f;
+
+        [Header("伤害成长（整数点数）")]
+        [Min(1)] public int baseAttackDamage = 1;
+        [Tooltip("每经过多少波，基础伤害提高 1 点")]
+        [Min(1)] public int damageIncreaseInterval = 10;
+        [Min(0)] public int eliteDamageBonus = 1;
+        [Min(0)] public int bossDamageBonus = 2;
+
+        [Header("跨波存活敌人强化（生命值不变）")]
+        [Min(1f)] public float survivorAttackRangeScale = 1.01f;
+        [Min(1f)] public float survivorDetectRangeScale = 1.02f;
+        [Min(1f)] public float survivorAttackSpeedScale = 1.02f;
+        [Min(1f)] public float survivorInhaleResistanceScale = 1.03f;
 
         [Header("精英怪系数")]
         public float eliteHealthMul = 3f;
@@ -50,11 +61,12 @@ namespace DevouringBeast
 
         /// <summary>
         /// 根据波次计算怪物等级 (1~7)
+        /// wave 1~10 -> tier 1, 11~20 -> tier 2, ..., 61~70 -> tier 7, 71+ 封顶 7
         /// </summary>
         public int GetTier(int wave)
         {
-            int tier = Mathf.CeilToInt(wave / 10f) + 1;
-            return Mathf.Min(tier, maxTier);
+            int tier = Mathf.CeilToInt(wave / 10f);
+            return Mathf.Clamp(tier, 1, maxTier);
         }
 
         /// <summary>
@@ -82,9 +94,13 @@ namespace DevouringBeast
             return Mathf.Pow(normalHealthScale, wave - 1);
         }
 
-        public float GetDamageMultiplier(int wave)
+        public int GetAttackDamage(int wave, EnemyType type)
         {
-            return Mathf.Pow(normalDamageScale, wave - 1);
+            int damage = Mathf.Max(1, baseAttackDamage) +
+                Mathf.Max(0, wave - 1) / Mathf.Max(1, damageIncreaseInterval);
+            if (type == EnemyType.Elite) damage += Mathf.Max(0, eliteDamageBonus);
+            else if (type == EnemyType.Boss) damage += Mathf.Max(0, bossDamageBonus);
+            return damage;
         }
 
         public float GetSpeedMultiplier(int wave)

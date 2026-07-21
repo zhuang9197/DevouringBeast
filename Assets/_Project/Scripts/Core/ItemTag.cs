@@ -5,10 +5,11 @@ namespace DevouringBeast
     /// </summary>
     public enum ItemTag
     {
-        None,     // 无 — 升级时三选一（移速/吸力/弹速）
-        Poison,   // 毒 — 绿色
-        Fire,     // 火 — 红色
-        Nature,   // 自然 — 蓝色
-        Psychic   // 超能 — 黄色
+        Normal,     // 无 — 升级时三选一（移速/吸力/弹速）
+        Poison,   // 毒系 — 绿色
+        Fire,     // 火系 — 红色
+        Evolution,   // 自然系 — 紫色
+        Superpower,   // 超能系 — 黄色
+        Faith       //神话系 - 蓝色
     }
 }

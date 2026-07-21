@@ -36,12 +36,33 @@ namespace DevouringBeast
         [Tooltip("吸入时是否有「吸时行走」技能")]
         [SerializeField] private bool hasInhaleWalkSkill = false;
         [Tooltip("吸时行走时的移速倍率（相对基础移速）")]
-        [SerializeField] private float inhaleWalkMultiplier = 0.5f;
+        
+        [Header("音效节奏")]
+        [SerializeField, Min(0.05f)] private float runStepInterval = 0.28f;
+        [SerializeField, Min(0.05f)] private float walkStepInterval = 0.42f;
+        [SerializeField, Min(0f)] private float idleSoundDelay = 8f;
+        [SerializeField, Min(0.1f)] private float idleSoundRepeatInterval = 12f;
+
+[SerializeField] private float inhaleWalkMultiplier = 0.5f;
 
         // 缓存
         private Rigidbody2D _rb;
         private Vector2 _moveInput;
+        
+        private float _footstepTimer;
+        private float _idleTimer;
+
         private bool _isInhaling;
+        private float _skillMoveSpeedMultiplier = 1f;
+        private bool _witchEnabled;
+        private bool _beastForm;
+        private int _witchLevel;
+        private RogueSkillCatalog _rogueCatalog;
+        private bool _beastRolling;
+        private bool _beastHitThisFrame;
+        private float _beastHitSoundCooldown;
+        private Facing _lastBeastFacing = (Facing)(-1);
+        [SerializeField, Min(1f)] private float beastRollingSpeedMultiplier = 1.4f;
 
         // 状态
         public Facing CurrentFacing { get; private set; } = Facing.Front;
@@ -67,6 +88,22 @@ namespace DevouringBeast
         {
             get => hasInhaleWalkSkill;
             set => hasInhaleWalkSkill = value;
+        }
+        public float SkillMoveSpeedMultiplier { get => _skillMoveSpeedMultiplier; set => _skillMoveSpeedMultiplier = Mathf.Max(0f, value); }
+        public bool IsBeastForm => _beastForm;
+        public float BeastDamageReduction => !_beastForm ? 0f :
+            Mathf.Min(0.9f, 0.2f + Mathf.Max(0, _witchLevel - 1) * 0.05f);
+        public bool IsBeastRolling => _beastForm && _beastRolling;
+        public float BeastRollingSpeedMultiplier => beastRollingSpeedMultiplier;
+        public float RunStepInterval
+        {
+            get => runStepInterval;
+            set => runStepInterval = Mathf.Max(0.05f, value);
+        }
+        public float WalkStepInterval
+        {
+            get => walkStepInterval;
+            set => walkStepInterval = Mathf.Max(0.05f, value);
         }
         public Vector2 MoveDirection => _moveInput;
         public Vector2 FacingDirection
@@ -98,6 +135,7 @@ namespace DevouringBeast
 
         private void FixedUpdate()
         {
+            if (!GameManager.Instance.IsPlaying) return;
             if (_moveInput == Vector2.zero) return;
 
             float speed = CalculateMoveSpeed();
@@ -114,18 +152,70 @@ namespace DevouringBeast
 
         private float CalculateMoveSpeed()
         {
+            if (_beastForm)
+                return moveSpeed * _skillMoveSpeedMultiplier *
+                    (_moveInput.sqrMagnitude > 0.001f ? beastRollingSpeedMultiplier : 1f);
             if (_isInhaling)
             {
                 // 吸入时：无技能不能动，有技能可以慢移
                 if (!hasInhaleWalkSkill) return 0f;
-                return moveSpeed * inhaleWalkMultiplier;
+                return moveSpeed * inhaleWalkMultiplier * _skillMoveSpeedMultiplier;
             }
 
             // 有东西时减速
             if (CurrentState == PlayerState.IdleFull || CurrentState == PlayerState.FullWalk)
-                return moveSpeed * fullWalkSpeedMultiplier;
+                return moveSpeed * fullWalkSpeedMultiplier * _skillMoveSpeedMultiplier;
 
-            return moveSpeed;
+            return moveSpeed * _skillMoveSpeedMultiplier;
+        }
+
+        public void SetWitchFormEnabled(bool enabled, int level, RogueSkillCatalog catalog)
+        {
+            _witchEnabled = enabled;
+            _witchLevel = level;
+            _rogueCatalog = catalog;
+        }
+
+        public void EnterBeastForm(float duration = 8f)
+        {
+            if (!_witchEnabled || _beastForm) return;
+            StartCoroutine(BeastRoutine(duration));
+        }
+
+        private System.Collections.IEnumerator BeastRoutine(float duration)
+        {
+            _beastForm = true;
+            _beastRolling = false;
+            _beastHitThisFrame = false;
+            _beastHitSoundCooldown = 0f;
+            _lastBeastFacing = (Facing)(-1);
+            float end = Time.time + duration;
+            while (Time.time < end)
+            {
+                Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 0.8f);
+                _beastHitThisFrame = false;
+                foreach (Collider2D hit in hits)
+                {
+                    EnemyBase enemy = hit.GetComponentInParent<EnemyBase>();
+                    if (enemy != null && !enemy.IsDead)
+                    {
+                        enemy.TakeDamage(20f * (1f + _witchLevel * 0.1f) * Time.deltaTime);
+                        _beastHitThisFrame = true;
+                    }
+                }
+                if (_beastHitThisFrame && _beastHitSoundCooldown <= 0f)
+                {
+                    AudioManager.Instance.PlaySfx(AudioCue.BeastHit);
+                    _beastHitSoundCooldown = 0.25f;
+                }
+                _beastHitSoundCooldown -= Time.deltaTime;
+                yield return null;
+            }
+            AudioManager.Existing?.StopLoop(AudioCue.Roll);
+            _beastForm = false;
+            _beastRolling = false;
+            _lastBeastFacing = (Facing)(-1);
+            _lastAppliedState = (PlayerState)(-1);
         }
 
         // ============================================================
@@ -138,6 +228,8 @@ namespace DevouringBeast
         /// </summary>
         public void SetMoveInput(Vector2 input)
         {
+            if (input.sqrMagnitude > 0.001f)
+                NotifyPlayerActivity();
             _moveInput = input.normalized;
 
             if (!_isInhaling)
@@ -168,10 +260,66 @@ namespace DevouringBeast
         // 状态机
         // ============================================================
 
-        private void Update()
+private void Update()
         {
+            if (!GameManager.Instance.IsPlaying)
+            {
+                _footstepTimer = 0f;
+                _idleTimer = 0f;
+                return;
+            }
             UpdateState();
+            UpdateAudio();
         }
+
+private void UpdateAudio()
+        {
+            if (_isInhaling)
+            {
+                AudioManager.Existing?.StopSfx(AudioCue.Idle);
+                _footstepTimer = 0f;
+                _idleTimer = 0f;
+                return;
+            }
+
+            SwallowContainer container = GetComponent<SwallowContainer>();
+            bool hasItems = container != null && container.HasItems;
+            bool moving = _moveInput.sqrMagnitude > 0.001f;
+
+            if (moving)
+            {
+                AudioManager.Existing?.StopSfx(AudioCue.Idle);
+                _idleTimer = 0f;
+                _footstepTimer -= Time.deltaTime;
+                if (_footstepTimer <= 0f)
+                {
+                    AudioManager.Instance.PlaySfx(hasItems ? AudioCue.Walk : AudioCue.Run);
+                    _footstepTimer = hasItems ? walkStepInterval : runStepInterval;
+                }
+                return;
+            }
+
+            _footstepTimer = 0f;
+            if (hasItems)
+            {
+                _idleTimer = 0f;
+                return;
+            }
+
+            _idleTimer += Time.deltaTime;
+            if (_idleTimer >= idleSoundDelay)
+            {
+                AudioManager.Instance.PlaySfx(AudioCue.Idle);
+                _idleTimer = idleSoundDelay - idleSoundRepeatInterval;
+            }
+        }
+
+        public void NotifyPlayerActivity()
+        {
+            _idleTimer = 0f;
+            AudioManager.Existing?.StopSfx(AudioCue.Idle);
+        }
+
 
         private void UpdateState()
         {
@@ -215,6 +363,46 @@ namespace DevouringBeast
         private void ApplyAnimation(bool hasItems)
         {
             if (animData == null || frameAnimator == null) return;
+
+            if (_beastForm && _rogueCatalog != null)
+            {
+                Sprite[] frames = CurrentFacing switch
+                {
+                    Facing.Front => _rogueCatalog.beastFrontRoll,
+                    Facing.Back => _rogueCatalog.beastBackRoll,
+                    _ => _rogueCatalog.beastSideRoll
+                };
+                if (spriteRenderer != null) spriteRenderer.flipX = CurrentFacing == Facing.SideRight;
+                bool moving = _moveInput.sqrMagnitude > 0.001f;
+                if (!moving)
+                {
+                    Sprite idle = CurrentFacing switch
+                    {
+                        Facing.Front => _rogueCatalog.beastFront,
+                        Facing.Back => _rogueCatalog.beastBack,
+                        _ => _rogueCatalog.beastSide
+                    };
+                    frameAnimator.Stop(idle);
+                    _beastRolling = false;
+                    AudioManager.Existing?.StopLoop(AudioCue.Roll);
+                    _lastBeastFacing = CurrentFacing;
+                    return;
+                }
+
+                GetBeastAnimationRange(CurrentFacing, frames, out int introEnd, out int loopStart, out int loopEnd);
+                if (!_beastRolling)
+                {
+                    frameAnimator.PlayThenLoop(frames, 0, introEnd, loopStart, loopEnd);
+                    _beastRolling = true;
+                    AudioManager.Instance.PlayLoop(AudioCue.Roll);
+                }
+                else if (_lastBeastFacing != CurrentFacing)
+                {
+                    frameAnimator.Play(frames, loopStart, loopEnd, true);
+                }
+                _lastBeastFacing = CurrentFacing;
+                return;
+            }
 
             // 状态或朝向变化时才切换（避免每帧重复调用）
             if (CurrentState == _lastAppliedState && CurrentFacing == _lastAppliedFacing)
@@ -265,6 +453,22 @@ namespace DevouringBeast
                     }
                     break;
             }
+        }
+
+        private static void GetBeastAnimationRange(Facing facing, Sprite[] frames,
+            out int introEnd, out int loopStart, out int loopEnd)
+        {
+            int last = frames != null ? Mathf.Max(0, frames.Length - 1) : 0;
+            switch (facing)
+            {
+                case Facing.Back:
+                    introEnd = Mathf.Min(7, last); loopStart = Mathf.Min(8, last); break;
+                case Facing.Front:
+                    introEnd = Mathf.Min(6, last); loopStart = Mathf.Min(7, last); break;
+                default:
+                    introEnd = Mathf.Min(4, last); loopStart = Mathf.Min(5, last); break;
+            }
+            loopEnd = last;
         }
     }
 }

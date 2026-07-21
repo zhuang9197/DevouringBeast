@@ -14,9 +14,19 @@ namespace DevouringBeast
         //[SerializeField] private Text healthText;
 
         private PlayerHealth _playerHealth;
+        private Image _backgroundImage;
 
         private void Start()
         {
+            RogueSkillCatalog catalog = Resources.Load<RogueSkillCatalog>("Rogue/RogueSkillCatalog");
+            if (fillImage != null && catalog != null)
+            {
+                fillImage.sprite = catalog.healthFill;
+                fillImage.type = Image.Type.Filled;
+                fillImage.fillMethod = Image.FillMethod.Horizontal;
+                _backgroundImage = fillImage.transform.parent != null ? fillImage.transform.parent.GetComponent<Image>() : null;
+                if (_backgroundImage != null) { _backgroundImage.sprite=catalog.healthBar; _backgroundImage.type=Image.Type.Sliced; _backgroundImage.color=Color.white; }
+            }
             var player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)
             {
