@@ -10,6 +10,7 @@ namespace DevouringBeast
     /// </summary>
     public class WaveManager : MonoBehaviour
     {
+        public static WaveManager Instance { get; private set; }
         public enum Phase { Interlude, Spawning, Fighting }
 
         [Header("配置")]
@@ -49,6 +50,11 @@ namespace DevouringBeast
         private readonly HashSet<EnemyPoolMember> _activeEnemies = new();
         private Transform _enemyPoolRoot;
         private int _pooledEnemyCount;
+
+        private void Awake()
+        {
+            Instance = this;
+        }
 
 private void Start()
         {
@@ -412,6 +418,11 @@ private void LoadPrefabs()
         public float Timer => Mathf.Max(0, _waveTimer);
         public float MaxTimer => _maxTimer;
         public int ActiveEnemyObjectCount => _activeEnemies.Count;
+
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+        }
         public int PooledEnemyObjectCount => _pooledEnemyCount;
     }
 }

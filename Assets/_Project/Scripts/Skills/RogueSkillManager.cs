@@ -16,6 +16,7 @@ namespace DevouringBeast
         private PlayerController _controller;
         private PlayerSpit _spit;
         private PlayerInhale _inhale;
+        private PlayerBaseAttributes _baseAttributes;
         private RogueSelectionUI _selectionUI;
         private RogueSkillId? _faith;
         private bool _choiceOpen;
@@ -38,6 +39,7 @@ namespace DevouringBeast
             _controller = GetComponent<PlayerController>();
             _spit = GetComponent<PlayerSpit>();
             _inhale = GetComponent<PlayerInhale>();
+            _baseAttributes = GetComponent<PlayerBaseAttributes>();
         }
 
         private void Start()
@@ -156,6 +158,14 @@ namespace DevouringBeast
                 new Dictionary<RogueSkillId, int>(_levels), isSplitProjectile);
         }
 
+        public EnergyBallShotSnapshot CreateEnergyBallSnapshot(float baseDamage, float spatMass,
+            float extraDamageMultiplier, float fullDamageMultiplier, float speed, float maxDistance)
+        {
+            return new EnergyBallShotSnapshot(baseDamage, spatMass, extraDamageMultiplier,
+                fullDamageMultiplier, speed, maxDistance,
+                new Dictionary<RogueSkillId, int>(_levels));
+        }
+
         public List<RogueSkillDefinition> GetAvailableChoices(RogueSchool preferred, int count)
         {
             if (_faith == RogueSkillId.FaithAngel)
@@ -232,19 +242,26 @@ namespace DevouringBeast
         {
             if (_controller != null)
             {
-                _controller.SkillMoveSpeedMultiplier = 1f + GetLevel(RogueSkillId.NormalFast) * 0.01f;
+                _controller.SkillMoveSpeedMultiplier = 1f;
                 _controller.HasInhaleWalkSkill = Has(RogueSkillId.EvolutionWing);
                 _controller.SetWitchFormEnabled(Has(RogueSkillId.FaithWitch), GetLevel(RogueSkillId.FaithWitch), catalog);
             }
             OnWitchProgressChanged?.Invoke(WitchProgressNormalized, Has(RogueSkillId.FaithWitch));
             if (_inhale != null)
             {
-                _inhale.SkillSuctionMultiplier = (1f + GetLevel(RogueSkillId.NormalSuction) * 0.01f) *
-                    (Has(RogueSkillId.FaithDemon) ? 2f + 0.1f * GetLevel(RogueSkillId.FaithDemon) : 1f);
+                _inhale.SkillSuctionMultiplier = Has(RogueSkillId.FaithDemon)
+                    ? 2f + 0.1f * GetLevel(RogueSkillId.FaithDemon) : 1f;
                 _inhale.SkillDamageMultiplier = _inhale.SkillSuctionMultiplier;
                 _inhale.BonusInhaleDuration = Has(RogueSkillId.EvolutionBigMouth)
                     ? 3f + Mathf.Max(0, GetLevel(RogueSkillId.EvolutionBigMouth) - 1) * 2f : 0f;
                 _inhale.DamageOnlyMode = Has(RogueSkillId.FaithDemon);
+            }
+            if (_baseAttributes != null)
+            {
+                _baseAttributes.BonusMoveSpeed = GetLevel(RogueSkillId.NormalFast);
+                _baseAttributes.BonusSuction = GetLevel(RogueSkillId.NormalSuction);
+                _baseAttributes.BonusEnergyBallBaseDamage =
+                    GetLevel(RogueSkillId.NormalPower) + GetLevel(RogueSkillId.FaithAngel) * 10f;
             }
             if (_spit != null) _spit.RefreshSkillModifiers();
         }
@@ -293,7 +310,7 @@ namespace DevouringBeast
         {
             if (!_faith.HasValue || _container == null) return;
             if (_faith.Value != RogueSkillId.FaithAngel && _faith.Value != RogueSkillId.FaithDemon) return;
-            float progress = enemy != null && enemy.Data != null ? Mathf.Max(1f, enemy.Data.killMass) : 5f;
+            float progress = enemy != null ? enemy.MassValue : 5f;
             _container.AddProgress(progress);
         }
     }

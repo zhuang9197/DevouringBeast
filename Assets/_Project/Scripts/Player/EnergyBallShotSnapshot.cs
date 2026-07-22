@@ -9,8 +9,19 @@ namespace DevouringBeast
 
         public EnergyBallShotSnapshot(float damage, float speed, float maxDistance,
             IReadOnlyDictionary<RogueSkillId, int> levels, bool isSplitProjectile = false)
+            : this(damage, 0f, 0f, 1f, speed, maxDistance, levels, isSplitProjectile)
         {
-            Damage = Math.Max(0f, damage);
+        }
+
+        public EnergyBallShotSnapshot(float baseDamage, float spatMass, float extraDamageMultiplier,
+            float fullDamageMultiplier, float speed, float maxDistance,
+            IReadOnlyDictionary<RogueSkillId, int> levels, bool isSplitProjectile = false)
+        {
+            BaseDamage = Math.Max(0f, baseDamage);
+            SpatMass = Math.Max(0f, spatMass);
+            ExtraDamageMultiplier = Math.Max(0f, extraDamageMultiplier);
+            FullDamageMultiplier = Math.Max(0f, fullDamageMultiplier);
+            Damage = (BaseDamage + SpatMass) * (1f + ExtraDamageMultiplier) * FullDamageMultiplier;
             Speed = Math.Max(0f, speed);
             MaxDistance = Math.Max(0.01f, maxDistance);
             IsSplitProjectile = isSplitProjectile;
@@ -19,6 +30,10 @@ namespace DevouringBeast
         }
 
         public float Damage { get; }
+        public float BaseDamage { get; }
+        public float SpatMass { get; }
+        public float ExtraDamageMultiplier { get; }
+        public float FullDamageMultiplier { get; }
         public float Speed { get; }
         public float MaxDistance { get; }
         public bool IsSplitProjectile { get; }
@@ -65,7 +80,7 @@ namespace DevouringBeast
             if (piece > 0)
             {
                 PierceCount = 64;
-                PierceDamageLoss = Math.Max(0.1f, 0.2f - 0.05f * Math.Min(2, piece - 1));
+                PierceDamageLoss = 0.2f;
             }
 
             int split = GetLevel(RogueSkillId.SuperSplit);

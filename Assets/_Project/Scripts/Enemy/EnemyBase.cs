@@ -22,10 +22,6 @@ namespace DevouringBeast
         [SerializeField] protected float corpseDuration = 10f;
         [SerializeField] protected float corpseFlickerStart = 3f;
         [SerializeField] protected float flickerInterval = 0.15f;
-        [Header("掉落")]
-        [SerializeField, Range(0f, 1f)] private float bloodDropChance = 0.25f;
-        [SerializeField, Range(0f, 1f)] private float bigBloodChance = 0.08f;
-
         protected InhaleableItem _item;
         protected bool _isDead;
         protected float _currentHealth;
@@ -38,6 +34,7 @@ namespace DevouringBeast
         public float HealthPercent => _maxHealth > 0 ? _currentHealth / _maxHealth : 0f;
         public float CurrentHealth => _currentHealth;
         public float MaxHealth => _maxHealth;
+        public float MassValue => GetMassForType(data != null ? data.enemyType : EnemyType.Normal);
 
         public event Action<EnemyBase> OnDeath;
         public static event Action<EnemyBase> OnAnyEnemyDeath;
@@ -77,7 +74,7 @@ namespace DevouringBeast
             if (_item != null)
             {
                 _item.Tag = data.tag;
-                _item.Mass = data.killMass;
+                _item.Mass = MassValue;
                 _item.AliveInhaleThreshold = data.aliveInhaleThreshold;
                 _item.DeadInhaleThreshold = data.deadInhaleThreshold;
                 _item.IsAlive = true;
@@ -155,13 +152,11 @@ namespace DevouringBeast
             float resistance = Mathf.Max(1f, config.survivorInhaleResistanceScale);
             data.aliveInhaleThreshold *= resistance;
             data.deadInhaleThreshold *= resistance;
-            data.killMass *= resistance;
-            data.deadMass *= resistance;
             if (_item != null)
             {
                 _item.AliveInhaleThreshold = data.aliveInhaleThreshold;
                 _item.DeadInhaleThreshold = data.deadInhaleThreshold;
-                _item.Mass = data.killMass;
+                _item.Mass = MassValue;
             }
         }
 
@@ -177,7 +172,7 @@ _isDead = true;
             if (_item != null)
             {
                 _item.IsAlive = false;
-                _item.Mass = data != null ? data.deadMass : 5f;
+                _item.Mass = MassValue;
             }
 
             // 停止 AI 和动画
@@ -198,11 +193,10 @@ _isDead = true;
             OnDeath?.Invoke(this);
             OnAnyEnemyDeath?.Invoke(this);
 
-            float dropRoll = UnityEngine.Random.value;
-            if (dropRoll < bigBloodChance)
-                BloodDrop.Spawn(transform.position, true);
-            else if (dropRoll < bigBloodChance + bloodDropChance)
-                BloodDrop.Spawn(transform.position, false);
+            int wave = WaveManager.Instance != null ? WaveManager.Instance.CurrentWave : 1;
+            float dropChance = Mathf.Max(0.01f, 0.2f - Mathf.Floor(wave / 10f) * 0.05f);
+            if (UnityEngine.Random.value < dropChance)
+                BloodDrop.Spawn(transform.position, UnityEngine.Random.value < 0.2f);
 
             // 启动尸体消失协程
             StartCoroutine(CorpseDecayRoutine());
@@ -228,6 +222,16 @@ _isDead = true;
             EnemyPoolMember poolMember = GetComponent<EnemyPoolMember>();
             if (poolMember != null) poolMember.Release();
             else Destroy(gameObject);
+        }
+
+        public static float GetMassForType(EnemyType type)
+        {
+            return type switch
+            {
+                EnemyType.Elite => 20f,
+                EnemyType.Boss => 50f,
+                _ => 5f
+            };
         }
 
         private void OnDestroy()

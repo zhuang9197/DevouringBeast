@@ -9,10 +9,10 @@ namespace DevouringBeast
         [SerializeField, Min(1)] private int erosionMaxStacks = 3;
         [SerializeField] private float iconSwitchInterval = 0.65f;
         [SerializeField] private float iconBlinkSpeed = 7f;
-        [SerializeField, Min(0.1f)] private float statusIconScale = 0.95f;
+        [SerializeField, Min(0.1f)] private float statusIconScale = 1.5f;
         [SerializeField] private float erosionOrbitSpeed = 120f;
         [SerializeField, Min(0.2f)] private float erosionOrbitRadius = 1.05f;
-        [SerializeField, Min(0.1f)] private float erosionIconScale = 0.75f;
+        [SerializeField, Min(0.1f)] private float erosionIconScale = 1.2f;
 
         private EnemyBase _enemy;
         private EnemyAI _ai;

@@ -59,13 +59,14 @@ Build Settings 应确保启动顺序为 `LoadScene`、`MenuScene`、`GameScene`�
 
 ### 4.1 吸入力学
 
-- `PlayerInhale` 使用 `Physics2D.OverlapCircleAll` 和序列化的 `LayerMask` 进行第一层候选过滤；当前可吸入对象专用层为 `inhaleableLayer`（Layer 6，Mask 值 `64`）。
+- `PlayerInhale` 使用预分配缓冲区的 `Physics2D.OverlapCircleNonAlloc` 和序列化的 `LayerMask` 进行第一层候选过滤；当前可吸入对象专用层为 `inhaleableLayer`（Layer 6，Mask 值 `64`）。
 - LayerMask 作用于 Collider 所在的 GameObject。所有希望被吸力发现的掉落物、阵亡敌人或可吸入物体，其有效 Collider 必须位于 Layer 6，并能在同一对象或父级找到 `InhaleableItem`。
 - 层级只决定“是否进入吸力检测”，不会直接决定能否入口。通过层级过滤后，还要依次满足前方锥形角度、吸力/质量与吸入阈值、入口距离等规则。
 - 存活敌人不能直接吸入口中；吸力作用会伤害敌人，并给追逐移动一个轻微加速，而不是减速。
 - 阵亡敌人和可吸入物品不会因为每帧吸力而叠加永久速度。
 - 可吸入对象不会在任意距离瞬移入口中。
-- 目标先根据吸力与质量/所需吸力的比例被牵引；比例越大，靠近速度越快。
+- 阵亡怪物不比较吸力与质量，只要进入吸力范围即可被牵引和入口；普通非生物物品必须满足当前吸力严格大于质量才会移动或入口。
+- 非生物物品的牵引速度由“当前吸力 - 物品质量”的差值决定。
 - 只有进入配置的入口距离后才调用 `OnInhaled` 并加入 `SwallowContainer`。
 - 修改 Layer、Collider、`PlayerInhale.inhaleableLayer` 或 Physics 2D Layer Collision Matrix 时，必须同时回归掉落物、阵亡敌人与普通可吸入物。
 
@@ -77,7 +78,7 @@ Build Settings 应确保启动顺序为 `LoadScene`、`MenuScene`、`GameScene`�
 - 吸入尚未结束时，即使已有物品进入口中也不能吞噬；只有 `PlayerInhale.IsInhaling == false` 且口中有物品时 `CanConsume` 才成立。
 - 吸入/吐出主操作与吞噬操作使用按住状态互斥；一个操作尚未松开时，另一个操作请求必须被拒绝，防止同帧吞噬和吐出同一批物品。
 - 吞噬时累计 `CurrentMass` 与各 `ItemTag` 质量，达到 `RequiredMass` 后触发肉鸽选择。
-- 前三级升级需求分别为 `30`、`50`、`75`；之后按 `1.35` 倍向上取整递增，例如 `102`、`138`。
+- 初始升级需求为 `100`；每次升级后按当前需求的 `1.1` 倍向上取整，即 `100 -> 110 -> 121 -> 134...`。
 - 升级会扣除当前等级所需质量并保留溢出进度，再提高下一等级需求，保证每一级需求严格递增。
 - UI 显示当前等级和升级进度。
 - 吞噬按钮只有口中有东西时可用；不可用时应置灰。
@@ -86,6 +87,11 @@ Build Settings 应确保启动顺序为 `LoadScene`、`MenuScene`、`GameScene`�
 ## 5. 能量球系统
 
 能量球使用对象池，发射时必须为每一颗球重新写入玩家当前属性快照，禁止复用上一次发射的数据。
+
+- 玩家基础属性集中在 `PlayerBaseAttributes`：初始移动速度、初始吸力、初始能量球伤害，以及肉鸽技能提供的对应基础属性加值。
+- 能量球基础伤害 = 角色初始能量球伤害 + 明确提升基础伤害的技能值。
+- 发射快照记录基础伤害、吐出质量、额外伤害倍率、完整伤害倍率、速度、最大距离和已拥有技能。
+- 完整伤害 = `(基础伤害 + 吐出质量) * (1 + 额外伤害倍率) * 完整伤害倍率`。
 
 预制体主要结构：
 
@@ -114,6 +120,7 @@ EnergyBall
 - 当前 100 个敌人 Prefab 根缩放均为 `1`，但素材视觉宽度约为 `0.81–3.14`，小怪尺寸差异部分来自素材本身。`WaveManager.minimumEnemyVisualSize` 默认 `1.25`，只放大低于下限的素材，不缩小正常或大型敌人。
 - 新波次开始时，尚未消灭的存活敌人保留，不恢复生命值，并提升生命值以外的攻击、速度、探测、攻击范围、攻击频率和吸入抗性等属性。
 - 新波次只补充应生成的新敌人，不能让池中实例数量无控制增长。
+- 敌人质量固定：普通怪 `5`、精英怪 `20`、Boss `50`；跨波强化不改变质量。
 
 ### 6.1 敌人攻击判定
 
@@ -130,7 +137,7 @@ EnergyBall
 ### 6.2 血条和状态图标
 
 - 敌人头顶血条跟随移动并实时显示生命值。
-- 玩家和敌人血条统一使用 `health_bar` 与 `health_fill`。
+- 玩家血量使用 `Assets/Art/Sprites/UI/hp.png` 的 `full/half/empty`：每颗心分别表示 `2/1/0` 点生命，生命上限 `10` 时始终显示五颗心；敌人继续使用血条。
 - 通用进度条使用 `UI_Fixed/progress_bar` 与 `UI_Fixed/progress_fill`。
 - 中毒、灼烧、减速和眩晕图标在状态期间闪烁；多状态按固定顺序轮流显示。
 - 侵蚀图标围绕敌人旋转，每层一个；默认三层后再次命中引爆并清空，层数保持可配置。
@@ -191,15 +198,22 @@ EnergyBall
 
 ## 9. 掉落系统
 
-- 小血瓶：`Assets/Art/Sprites/Drop/blood.png`，吞噬恢复 1 点生命。
-- 大血瓶：`Assets/Art/Sprites/Drop/big_blood.png`，吞噬恢复 2 点生命。
-- 两者均为 `ItemTag.Normal`，质量分别为 1 和 2，因此同时增加对应升级进度。
+- 半心掉落使用 `Assets/Art/Sprites/Drop/hp.png/half`，吞噬恢复 1 点生命。
+- 整心掉落使用 `Assets/Art/Sprites/Drop/hp.png/full`，吞噬恢复 2 点生命。
+- 两者均为 `ItemTag.Normal`，质量均为 `1`。
 - 血瓶必须先通过吸力牵引并吸入口中，再点击吞噬才治疗；接触玩家不直接治疗。
 - 存在 20 秒，最后 5 秒闪烁，随后销毁。
-- 当前敌人默认掉落概率：小血瓶 25%，大血瓶 8%，可在敌人预制体 Inspector 调整。
+- 怪物初始掉落概率为 `20%`，每十波减少 `5%`，最低 `1%`；成功掉落后 `80%` 为半心、`20%` 为整心。
 - 运行时预制体：`Assets/Resources/Drops/Blood.prefab`、`Assets/Resources/Drops/BigBlood.prefab`。
 - 两个血瓶 Prefab 的根对象与 CircleCollider2D 均使用 `inhaleableLayer`；`BloodDrop.Awake` 也会在运行时校正 Layer，防止 Prefab 配置回退。
-- 当前直接实例化和销毁；若后续大量增加掉落物，应改为独立对象池。
+- 血量掉落当前仍按低概率直接实例化和销毁；大量环境物品使用独立对象池。
+
+### 9.1 可吸入环境物品
+
+- `EnvironmentItemSpawner` 挂在 `GameScene/MapBounds`，使用池化实例、无逐物品 `Update`，并用空间哈希限制分布密度。
+- 大石头 `big_stone` 质量 `50`，每 `30s` 补足到 `10` 个；石头 `stone` 质量 `10`，每 `20s` 补足到 `100` 个。
+- `mushroom` 与 `rice_ball` 质量均为 `1`，每 `8s` 分别补足到 `120` 个。
+- 四类物品共用 `inhaleableLayer`，吸入口中后在吞噬或吐出时回池。
 
 ## 10. UI 与输入
 
@@ -258,6 +272,7 @@ BGM：
 | 游戏状态 | `Assets/_Project/Scripts/Managers/GameManager.cs` |
 | 波次与敌人池 | `Assets/_Project/Scripts/Managers/WaveManager.cs` |
 | 玩家移动/野兽 | `Assets/_Project/Scripts/Player/PlayerController.cs` |
+| 玩家基础属性 | `Assets/_Project/Scripts/Player/PlayerBaseAttributes.cs` |
 | 吸入/吐出 | `Assets/_Project/Scripts/Player/PlayerInhale.cs`、`PlayerSpit.cs` |
 | 能量球与快照 | `Assets/_Project/Scripts/Player/EnergyBall.cs`、`EnergyBallShotSnapshot.cs` |
 | 吞噬进度 | `Assets/_Project/Scripts/Core/SwallowContainer.cs` |
@@ -265,6 +280,7 @@ BGM：
 | 肉鸽 UI | `Assets/_Project/Scripts/UI/RogueSelectionUI.cs` |
 | 敌人 | `Assets/_Project/Scripts/Enemy/EnemyBase.cs`、`EnemyAI.cs`、`EnemyStatusEffects.cs` |
 | 血瓶掉落 | `Assets/_Project/Scripts/Core/BloodDrop.cs` |
+| 环境物品池与生成 | `Assets/_Project/Scripts/Core/EnvironmentItemSpawner.cs` |
 | 音频 | `Assets/_Project/Scripts/Audio/AudioManager.cs` |
 | 动态 HUD | `Assets/_Project/Scripts/UI/GameplayHudController.cs` |
 | 编辑器构建工具 | `Assets/Editor/SceneFlowBuilder.cs`、`RogueSystemBuilder.cs` |
@@ -283,6 +299,8 @@ BGM：
 - 女巫通灵进度、野兽形态、滚动动画、减伤、加速、接触伤害和音效。
 - 阵亡状态、结算 UI、返回菜单和重新开始。
 - 大小血瓶掉落、吸入、吞噬治疗、Normal 进度和生命周期。
+- 心形生命 UI、固定怪物质量、质量驱动升级与能量球伤害。
+- 大石头、石头、蘑菇和饭团的池化补足生成系统。
 
 ## 15. 待办与建议验证
 
@@ -290,12 +308,12 @@ BGM：
 
 1. 针对不同敌人动画继续逐个目测校准攻击有效窗口；通用时序与连续重播逻辑已修复，但个别素材仍可能需要预制体级微调。
 2. 在不同分辨率实际长按肉鸽卡片，确认描述浮层层级、字号、换行和松手隐藏。
-3. 实际击杀敌人，验证血瓶概率、闪烁、消失、吸入、吞噬治疗和升级进度。
+3. 实际击杀敌人，按多个波次抽样验证动态掉落概率、80/20 类型占比、闪烁、吸入与治疗。
 4. 验证满血吞噬血瓶时生命不溢出，但升级进度仍增加。
 5. 长时间压力测试敌人池和能量球池，检查对象数量和事件订阅是否稳定。
 6. 分别用四种 Faith 存档验证候选池：只有天使锁死升级，其他 Faith 仍刷新非 Faith 技能。
 7. 验证滚动音效在暂停、肉鸽选择、阵亡、停止移动、变身结束和场景切换时正确停止。
-8. 掉落物数量增加后实现掉落对象池。
+8. 长时间测试约 350 个环境物品的稳定帧率、池数量、空间分布和补足逻辑。
 9. `docs/DESIGN.md` 存在编码乱码且部分规则过时；继续维护前应备份、统一 UTF-8 并按当前代码修订。
 
 ## 16. 最近验证状态
@@ -308,7 +326,6 @@ BGM：
 - 贴身攻击运行超过多个 `0.9s` 周期后，attack Animator 标准化进度重新回到约 `0.31`，确认非循环攻击动画会连续重播。
 - 独立播放 `idle` 后调用玩家活动中断，音源由播放中立即变为停止。
 - Play Mode 生成的小血瓶位于 Layer 6，并被吸力成功牵引、收入 `SwallowContainer`。
-- 升级需求验证为 `30 -> 50 -> 75 -> 102 -> 138`，升级后正确保留溢出进度。
 - MenuScene 模拟 PointerDown/Drag 后 Slider 值和 AudioManager 音量同步变化；选项打开时后方可交互控件为 `0`，关闭后恢复。
 - 分裂测试生成 2 颗子弹，最近生成点位于目标后边缘之外，并正确忽略原目标。
 - 吸入期间吞噬测试保持口中物品与进度不变；停止吸入后正常吞噬；主操作按住时吞噬请求被拦截。
@@ -318,6 +335,12 @@ BGM：
 - 未永久修改用户存档。
 
 以上证明基础编译、掉落实例化、按钮亮度、攻击动画重播和待机音效中断通过，不能替代第 15 节的完整交互测试。
+
+2026-07-21 本轮变更验证：
+
+- UnityMCP 已成功写入并回读 `PlayerBaseAttributes` 与 `EnvironmentItemSpawner` 的场景组件和四个 Sprite 引用，场景已保存。
+- 首次 UnityMCP 刷新后 Console 为 `0 Error`；最终代码另以 `dotnet build Assembly-CSharp.csproj` 验证为 `0 Error`。
+- 第二次 Unity 域重载后 MCP WebSocket 未恢复响应，因此本轮尚未完成 Play Mode 中的心形 UI、350 个环境物品和战斗公式实测；下次连接恢复后应优先执行这些回归。
 
 ## 17. 工作区注意事项
 

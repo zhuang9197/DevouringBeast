@@ -25,7 +25,7 @@ namespace DevouringBeast
             _renderer = GetComponent<SpriteRenderer>();
             _item = GetComponent<InhaleableItem>();
             _item.Tag = ItemTag.Normal;
-            _item.Mass = healAmount;
+            _item.Mass = 1f;
             _item.DeadInhaleThreshold = 1f;
             _item.IsAlive = false;
         }

@@ -15,6 +15,7 @@ namespace DevouringBeast
         [SerializeField] private Vector3 offset = new(0f, 0f, -10f);
 
         private Camera _cam;
+        private bool _hasInitializedPosition;
 
         private void Awake()
         {
@@ -45,11 +46,28 @@ namespace DevouringBeast
                 float halfH = _cam.orthographicSize;
                 float halfW = halfH * _cam.aspect;
 
-                desiredPos.x = Mathf.Clamp(desiredPos.x, min.x + halfW, max.x - halfW);
-                desiredPos.y = Mathf.Clamp(desiredPos.y, min.y + halfH, max.y - halfH);
+                desiredPos.x = ClampAxis(desiredPos.x, min.x, max.x, halfW);
+                desiredPos.y = ClampAxis(desiredPos.y, min.y, max.y, halfH);
             }
 
-            transform.position = desiredPos;
+            if (!_hasInitializedPosition || smoothSpeed <= 0f)
+            {
+                transform.position = desiredPos;
+                _hasInitializedPosition = true;
+                return;
+            }
+
+            float blend = 1f - Mathf.Exp(-smoothSpeed * Time.deltaTime);
+            transform.position = Vector3.Lerp(transform.position, desiredPos, blend);
+        }
+
+        private static float ClampAxis(float targetPosition, float min, float max, float halfViewportSize)
+        {
+            // 视口覆盖整个地图时不存在合法的跟随区间，固定在地图中心可避免 Clamp 上下限反转抖动。
+            if (max - min <= halfViewportSize * 2f)
+                return (min + max) * 0.5f;
+
+            return Mathf.Clamp(targetPosition, min + halfViewportSize, max - halfViewportSize);
         }
 
         public void SetTarget(Transform t)

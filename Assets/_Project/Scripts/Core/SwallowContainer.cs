@@ -13,11 +13,9 @@ namespace DevouringBeast
         private PlayerHealth _playerHealth;
         private PlayerInhale _playerInhale;
         [Header("升级进度")]
-        [SerializeField, Min(1f)] private float levelOneRequirement = 30f;
-        [SerializeField, Min(1f)] private float levelTwoRequirement = 50f;
-        [SerializeField, Min(1f)] private float levelThreeRequirement = 75f;
-        [SerializeField, Min(1.01f)] private float laterLevelGrowthMultiplier = 1.35f;
-        [field: SerializeField] public float RequiredMass { get; set; } = 30f;
+        [SerializeField, Min(1f)] private float initialLevelRequirement = 100f;
+        [SerializeField, Min(1.01f)] private float levelGrowthMultiplier = 1.1f;
+        [field: SerializeField] public float RequiredMass { get; set; } = 100f;
         [field: SerializeField] public float CurrentMass { get; set; } = 0f;
         [field: SerializeField] public int CurrentLevel { get; private set; } = 1;
 
@@ -68,13 +66,15 @@ namespace DevouringBeast
         /// 吞噬 — 将口中物品的质量和标签累积到 CurrentMass/TagMasses
         /// 触发升级检查和颜色变化
         /// </summary>
-        public void Consume()
+        public float Consume()
         {
-            if (!CanConsume) return;
+            if (!CanConsume) return 0f;
+            float consumedMass = 0f;
             foreach (var item in Items)
             {
                 if (item == null) continue;
                 CurrentMass += item.Mass;
+                consumedMass += item.Mass;
                 TagMasses.Add(item.Tag, item.Mass);
                 BloodDrop bloodDrop = item.GetComponent<BloodDrop>();
                 if (bloodDrop != null && _playerHealth != null)
@@ -85,6 +85,7 @@ namespace DevouringBeast
             MouthTagMasses.Clear();
             OnLevelUpCheck?.Invoke();
             NotifyProgress();
+            return consumedMass;
         }
 
         /// <summary>通知外部进行升级检查</summary>
@@ -119,14 +120,10 @@ namespace DevouringBeast
         public float GetRequiredMassForLevel(int level)
         {
             level = Mathf.Max(1, level);
-            if (level == 1) return Mathf.Max(1f, levelOneRequirement);
-            if (level == 2) return Mathf.Max(levelOneRequirement + 1f, levelTwoRequirement);
-            if (level == 3) return Mathf.Max(levelTwoRequirement + 1f, levelThreeRequirement);
-
-            float required = Mathf.Max(levelTwoRequirement + 1f, levelThreeRequirement);
-            float growth = Mathf.Max(1.01f, laterLevelGrowthMultiplier);
-            for (int currentLevel = 4; currentLevel <= level; currentLevel++)
-                required = Mathf.Ceil(required * growth);
+            float required = Mathf.Max(1f, initialLevelRequirement);
+            float growth = Mathf.Max(1.01f, levelGrowthMultiplier);
+            for (int currentLevel = 2; currentLevel <= level; currentLevel++)
+                required = (float)decimal.Ceiling((decimal)required * (decimal)growth);
             return required;
         }
 

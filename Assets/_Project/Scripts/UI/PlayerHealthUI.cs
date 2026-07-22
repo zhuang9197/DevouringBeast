@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 namespace DevouringBeast
 {
@@ -14,19 +15,14 @@ namespace DevouringBeast
         //[SerializeField] private Text healthText;
 
         private PlayerHealth _playerHealth;
-        private Image _backgroundImage;
+        private readonly List<Image> _hearts = new();
+        private RogueSkillCatalog _catalog;
 
         private void Start()
         {
-            RogueSkillCatalog catalog = Resources.Load<RogueSkillCatalog>("Rogue/RogueSkillCatalog");
-            if (fillImage != null && catalog != null)
-            {
-                fillImage.sprite = catalog.healthFill;
-                fillImage.type = Image.Type.Filled;
-                fillImage.fillMethod = Image.FillMethod.Horizontal;
-                _backgroundImage = fillImage.transform.parent != null ? fillImage.transform.parent.GetComponent<Image>() : null;
-                if (_backgroundImage != null) { _backgroundImage.sprite=catalog.healthBar; _backgroundImage.type=Image.Type.Sliced; _backgroundImage.color=Color.white; }
-            }
+            _catalog = Resources.Load<RogueSkillCatalog>("Rogue/RogueSkillCatalog");
+            if (fillImage != null && fillImage.transform.parent != null)
+                fillImage.transform.parent.gameObject.SetActive(false);
             var player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)
             {
@@ -41,19 +37,39 @@ namespace DevouringBeast
 
         private void UpdateHealth(int current, int max)
         {
-            if (fillImage != null)
+            if (_catalog == null) return;
+            int heartCount = Mathf.CeilToInt(Mathf.Max(0, max) / 2f);
+            EnsureHeartCount(heartCount);
+            for (int i = 0; i < _hearts.Count; i++)
             {
-                float pct = max > 0 ? (float)current / max : 0f;
-                fillImage.fillAmount = pct;
-
-                if (pct > 0.5f)
-                    fillImage.color = Color.Lerp(Color.yellow, Color.green, (pct - 0.5f) * 2f);
-                else
-                    fillImage.color = Color.Lerp(Color.red, Color.yellow, pct * 2f);
+                Image heart = _hearts[i];
+                bool visible = i < heartCount;
+                heart.gameObject.SetActive(visible);
+                if (!visible) continue;
+                int value = Mathf.Clamp(current - i * 2, 0, 2);
+                heart.sprite = value >= 2 ? _catalog.healthFull
+                    : value == 1 ? _catalog.healthHalf : _catalog.healthEmpty;
             }
+        }
 
-            // if (healthText != null)
-            //     healthText.text = current + " / " + max;
+        private void EnsureHeartCount(int count)
+        {
+            while (_hearts.Count < count)
+            {
+                int index = _hearts.Count;
+                GameObject go = new GameObject($"Heart_{index + 1}", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                RectTransform rect = go.GetComponent<RectTransform>();
+                rect.SetParent(transform, false);
+                rect.anchorMin = new Vector2(0f, 1f);
+                rect.anchorMax = new Vector2(0f, 1f);
+                rect.pivot = new Vector2(0f, 1f);
+                rect.sizeDelta = new Vector2(48f, 48f);
+                rect.anchoredPosition = new Vector2(index * 50f, 0f);
+                Image image = go.GetComponent<Image>();
+                image.preserveAspect = true;
+                image.raycastTarget = false;
+                _hearts.Add(image);
+            }
         }
 
         private void OnDestroy()

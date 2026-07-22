@@ -47,6 +47,7 @@ namespace DevouringBeast
 
         // 缓存
         private Rigidbody2D _rb;
+        private PlayerBaseAttributes _baseAttributes;
         private Vector2 _moveInput;
         
         private float _footstepTimer;
@@ -76,8 +77,12 @@ namespace DevouringBeast
         // 属性（兼容旧代码）
         public float MoveSpeed
         {
-            get => moveSpeed;
-            set => moveSpeed = value;
+            get => _baseAttributes != null ? _baseAttributes.InitialMoveSpeed : moveSpeed;
+            set
+            {
+                moveSpeed = value;
+                if (_baseAttributes != null) _baseAttributes.InitialMoveSpeed = value;
+            }
         }
         public bool IsInhaling
         {
@@ -122,6 +127,9 @@ namespace DevouringBeast
 
         private void Awake()
         {
+            _baseAttributes = GetComponent<PlayerBaseAttributes>();
+            if (_baseAttributes == null) _baseAttributes = gameObject.AddComponent<PlayerBaseAttributes>();
+            _baseAttributes.InitialMoveSpeed = moveSpeed;
             _rb = GetComponent<Rigidbody2D>();
             if (spriteRenderer == null)
                 spriteRenderer = GetComponentInChildren<SpriteRenderer>();
@@ -152,21 +160,22 @@ namespace DevouringBeast
 
         private float CalculateMoveSpeed()
         {
+            float currentMoveSpeed = _baseAttributes != null ? _baseAttributes.MoveSpeed : moveSpeed;
             if (_beastForm)
-                return moveSpeed * _skillMoveSpeedMultiplier *
+                return currentMoveSpeed * _skillMoveSpeedMultiplier *
                     (_moveInput.sqrMagnitude > 0.001f ? beastRollingSpeedMultiplier : 1f);
             if (_isInhaling)
             {
                 // 吸入时：无技能不能动，有技能可以慢移
                 if (!hasInhaleWalkSkill) return 0f;
-                return moveSpeed * inhaleWalkMultiplier * _skillMoveSpeedMultiplier;
+                return currentMoveSpeed * inhaleWalkMultiplier * _skillMoveSpeedMultiplier;
             }
 
             // 有东西时减速
             if (CurrentState == PlayerState.IdleFull || CurrentState == PlayerState.FullWalk)
-                return moveSpeed * fullWalkSpeedMultiplier * _skillMoveSpeedMultiplier;
+                return currentMoveSpeed * fullWalkSpeedMultiplier * _skillMoveSpeedMultiplier;
 
-            return moveSpeed * _skillMoveSpeedMultiplier;
+            return currentMoveSpeed * _skillMoveSpeedMultiplier;
         }
 
         public void SetWitchFormEnabled(bool enabled, int level, RogueSkillCatalog catalog)

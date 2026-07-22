@@ -100,7 +100,12 @@ namespace DevouringBeast
             IsStoredInMouth = false;
             EnemyPoolMember poolMember = GetComponent<EnemyPoolMember>();
             if (poolMember != null) poolMember.Release();
-            else Destroy(gameObject);
+            else
+            {
+                WorldItemPoolMember worldItem = GetComponent<WorldItemPoolMember>();
+                if (worldItem != null) worldItem.Release();
+                else Destroy(gameObject);
+            }
         }
 
         public void ResetForReuse()

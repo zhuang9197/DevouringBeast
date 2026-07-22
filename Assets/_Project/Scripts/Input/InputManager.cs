@@ -178,8 +178,8 @@ public void HandleInhaleSpitPress()
             {
                 if (swallowContainer != null && swallowContainer.HasItems)
                 {
-                    swallowContainer.Consume();
-                    playerSpit.Spit();
+                    float taughtMass = swallowContainer.Consume();
+                    playerSpit.Spit(taughtMass);
                     AudioManager.Instance.PlaySfx(AudioCue.Swallow);
                 }
                 return;
@@ -231,9 +231,9 @@ public void HandleSwallowPress()
 
             if (swallowContainer != null && swallowContainer.CanConsume)
             {
-                swallowContainer.Consume();
+                float taughtMass = swallowContainer.Consume();
                 AudioManager.Instance.PlaySfx(AudioCue.Swallow);
-                if (_rogueSkills != null && _rogueSkills.Has(RogueSkillId.FaithPope)) playerSpit.Spit();
+                if (_rogueSkills != null && _rogueSkills.Has(RogueSkillId.FaithPope)) playerSpit.Spit(taughtMass);
                 _rogueSkills?.NotifySwallow();
             }
         }

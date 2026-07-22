@@ -14,7 +14,6 @@ namespace DevouringBeast
         [SerializeField] private float spitSpeed = 15f;
         [SerializeField] private float maxFlyDistance = 20f;
         [SerializeField] private float baseDamage = 25f;
-        [SerializeField] private float damagePerMass = 2f;
         [SerializeField, Min(0f), Tooltip("能量球从玩家朝向前方生成的距离")]
         private float spawnForwardOffset = 0.75f;
 
@@ -33,13 +32,14 @@ namespace DevouringBeast
         private PlayerController _playerController;
         private SwallowContainer _container;
         private RogueSkillManager _skillManager;
+        private PlayerBaseAttributes _baseAttributes;
         private ObjectPool<EnergyBall> _energyBallPool;
         private Transform _poolRoot;
 
         private float _chargeTimer;
         private bool _isCharging;
         private float _nextAngelShotTime;
-        private float _skillDamageMultiplier = 1f;
+        private float _extraDamageMultiplier;
         private bool _angelFireHeld;
 
         public float SpitSpeed
@@ -54,8 +54,12 @@ namespace DevouringBeast
             (_skillManager.Has(RogueSkillId.FaithAngel) || _skillManager.Has(RogueSkillId.FaithPope));
 public float BaseDamage
         {
-            get => baseDamage;
-            set => baseDamage = value;
+            get => _baseAttributes != null ? _baseAttributes.InitialEnergyBallDamage : baseDamage;
+            set
+            {
+                baseDamage = value;
+                if (_baseAttributes != null) _baseAttributes.InitialEnergyBallDamage = value;
+            }
         }
 
         private void Awake()
@@ -63,12 +67,15 @@ public float BaseDamage
             _playerController = GetComponent<PlayerController>();
             _container = GetComponent<SwallowContainer>();
             _skillManager = GetComponent<RogueSkillManager>();
+            _baseAttributes = GetComponent<PlayerBaseAttributes>();
+            if (_baseAttributes == null) _baseAttributes = gameObject.AddComponent<PlayerBaseAttributes>();
+            _baseAttributes.InitialEnergyBallDamage = baseDamage;
         }
 
         /// <summary>
         /// 吐出能量球
         /// </summary>
-public void Spit()
+public void Spit(float suppliedMass = -1f)
         {
             if (_playerController != null && _playerController.IsInhaling) return;
             if (!_container.HasItems && !CanSpitWithoutItems) return;
@@ -87,17 +94,19 @@ public void Spit()
                     item.ReleaseFromMouth();
                 }
             }
+            if (suppliedMass >= 0f) totalMass = suppliedMass;
 
-            float damage = (baseDamage + totalMass * damagePerMass) * _skillDamageMultiplier;
-            if (_skillManager != null && _skillManager.Has(RogueSkillId.FaithPope) && totalMass <= 0f)
-                damage = baseDamage * _skillDamageMultiplier;
-            damage *= 1f + GetChargeBonus();
+            float currentBaseDamage = _baseAttributes != null
+                ? _baseAttributes.EnergyBallBaseDamage : baseDamage;
+            float extraDamageMultiplier = _extraDamageMultiplier + GetChargeBonus();
 
             int ballCount = GetBallCount();
-            float perBallDamage = damage * GetPerBallDamageMultiplier(ballCount);
+            float fullDamageMultiplier = GetPerBallDamageMultiplier(ballCount);
             EnergyBallShotSnapshot snapshot = _skillManager != null
-                ? _skillManager.CreateEnergyBallSnapshot(perBallDamage, spitSpeed, maxFlyDistance)
-                : new EnergyBallShotSnapshot(perBallDamage, spitSpeed, maxFlyDistance, null);
+                ? _skillManager.CreateEnergyBallSnapshot(currentBaseDamage, totalMass,
+                    extraDamageMultiplier, fullDamageMultiplier, spitSpeed, maxFlyDistance)
+                : new EnergyBallShotSnapshot(currentBaseDamage, totalMass,
+                    extraDamageMultiplier, fullDamageMultiplier, spitSpeed, maxFlyDistance, null);
 
             AudioManager.Instance.PlaySfx(
                 chargedShot || totalMass >= bigMassThreshold ? AudioCue.BigSplit : AudioCue.Split);
@@ -131,11 +140,7 @@ public void Spit()
         public void RefreshSkillModifiers()
         {
             if (_skillManager == null) return;
-            _skillDamageMultiplier = 1f + _skillManager.GetLevel(RogueSkillId.NormalPower) * 0.01f;
-            if (_skillManager.Has(RogueSkillId.FaithAngel))
-                _skillDamageMultiplier *= 1f + _skillManager.GetLevel(RogueSkillId.FaithAngel) * 0.1f;
-            if (_skillManager.Has(RogueSkillId.FaithPope))
-                _skillDamageMultiplier *= 1.5f + _skillManager.GetLevel(RogueSkillId.FaithPope) * 0.1f;
+            _extraDamageMultiplier = _skillManager.Has(RogueSkillId.FaithPope) ? 0.5f : 0f;
             int chargedLevel = _skillManager.GetLevel(RogueSkillId.EvolutionCharged);
             maxChargeBonus = chargedLevel * 0.1f;
         }

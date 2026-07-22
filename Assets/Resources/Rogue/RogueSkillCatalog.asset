@@ -16,8 +16,7 @@ MonoBehaviour:
   - id: 0
     school: 0
     displayName: "\u8DD1\u5FEB\u5FEB"
-    description: "\u63D0\u5347 1% \u79FB\u52A8\u901F\u5EA6\uFF1B\u6BCF\u7EA7\u989D\u5916\u63D0\u5347
-      1%\u3002"
+    description: "提升 1 点基础移动速度；每级提升 1 点基础移动速度。"
     iconName: normal_fast
     maxLevel: 0
     prerequisites: 
@@ -26,8 +25,7 @@ MonoBehaviour:
   - id: 1
     school: 0
     displayName: "\u5927\u5587\u53ED"
-    description: "\u63D0\u5347 1% \u5438\u529B\u548C 1% \u5438\u529B\u4F24\u5BB3\uFF1B\u6BCF\u7EA7\u989D\u5916\u63D0\u5347
-      1%\u3002"
+    description: "提升 1 点基础吸力；每级提升 1 点基础吸力。"
     iconName: normal_suction
     maxLevel: 0
     prerequisites: 
@@ -36,8 +34,7 @@ MonoBehaviour:
   - id: 2
     school: 0
     displayName: "\u5410\u5410\u5410"
-    description: "\u63D0\u5347 1% \u5410\u51FA\u7684\u80FD\u91CF\u7403\u4F24\u5BB3\uFF1B\u6BCF\u7EA7\u989D\u5916\u63D0\u5347
-      1%\u3002"
+    description: "提升 1 点能量球基础伤害；每级提升 1 点能量球基础伤害。"
     iconName: normal_power
     maxLevel: 0
     prerequisites: 
@@ -161,8 +158,7 @@ MonoBehaviour:
   - id: 15
     school: 3
     displayName: "\u5C16\u5634"
-    description: "\u5410\u51FA\u53EF\u4EE5\u84C4\u529B\uFF0C\u9996\u7EA7\u989D\u5916
-      10% \u4F24\u5BB3\uFF0C\u6BCF\u7EA7\u518D\u63D0\u5347 10%\u3002"
+    description: "蓄力吐出时提升 10% 能量球额外伤害；每级提升 10%。"
     iconName: evo_charged
     maxLevel: 3
     prerequisites: 
@@ -171,8 +167,7 @@ MonoBehaviour:
   - id: 16
     school: 3
     displayName: "\u591A\u5634"
-    description: "\u4E00\u6B21\u5410\u51FA\u4E24\u9897\u80FD\u91CF\u7403\uFF0C\u6BCF\u9897\u9020\u6210
-      60% \u4F24\u5BB3\u5E76\u9644\u5E26\u8089\u9E3D\u6548\u679C\u3002"
+    description: "一次吐出两颗能量球，每颗造成原本 60% 的完整伤害（基础 + 额外），并附带肉鸽效果。"
     iconName: evo_moremouth
     maxLevel: 1
     prerequisites: 
@@ -217,8 +212,7 @@ MonoBehaviour:
   - id: 21
     school: 4
     displayName: "\u7A7F\u900F"
-    description: "\u53EF\u7A7F\u900F\u654C\u4EBA\uFF1B\u6BCF\u6B21\u7A7F\u900F\u4F24\u5BB3\u964D\u4F4E
-      20%\uFF0C\u6700\u591A\u964D\u4F4E 60%\u3002\u5347\u7EA7\u964D\u4F4E\u8870\u51CF\u3002"
+    description: "每穿透一个敌人，伤害减少 20% 能量球完整伤害，最多减少 60%。"
     iconName: super_piece
     maxLevel: 4
     prerequisites: 
@@ -227,7 +221,7 @@ MonoBehaviour:
   - id: 22
     school: 5
     displayName: "\u5929\u4F7F"
-    description: "\u5931\u53BB\u5176\u4ED6\u6280\u80FD\u5E76\u6539\u4E3A\u65E0\u6D88\u8017\u8FDE\u7EED\u5410\u51FA\uFF1B\u5347\u7EA7\u8FDB\u5EA6\u6539\u4E3A\u51FB\u6740\u83B7\u5F97\u3002"
+    description: "失去其他肉鸽技能；吸气和吞噬替换为无消耗吐出，间隔 0.5 秒；击杀按怪物质量获得升级进度；升级只出现天使，每级提升 10 点能量球基础伤害。"
     iconName: faith_angel
     maxLevel: 0
     prerequisites: 
@@ -236,7 +230,7 @@ MonoBehaviour:
   - id: 23
     school: 5
     displayName: "\u6076\u9B54"
-    description: "\u5438\u529B\u4F24\u5BB3\u5927\u5E45\u63D0\u9AD8\u4F46\u4E0D\u80FD\u5438\u5165\u7269\u4F53\uFF1B\u5347\u7EA7\u8FDB\u5EA6\u6539\u4E3A\u51FB\u6740\u83B7\u5F97\u3002"
+    description: "吸力伤害大幅提高但不能吸入物体；击杀按怪物质量获得升级进度。"
     iconName: faith_demon
     maxLevel: 0
     prerequisites: 
@@ -245,7 +239,7 @@ MonoBehaviour:
   - id: 24
     school: 5
     displayName: "\u6559\u7687"
-    description: "\u541E\u566C\u53D8\u4E3A\u6559\u5316\uFF0C\u540C\u65F6\u5410\u51FA\u9644\u5E26\u8089\u9E3D\u6548\u679C\u4E14\u5F3A\u5316\u7684\u80FD\u91CF\u7403\u3002"
+    description: "教化获得升级进度时，同时吐出一颗具有肉鸽效果的能量球，并提升 50% 能量球额外伤害。"
     iconName: faith_pope
     maxLevel: 0
     prerequisites: 
@@ -351,3 +345,6 @@ MonoBehaviour:
   swallowButton: {fileID: -340074489, guid: 80347a96a3162e8488b88dbbbea46db7, type: 3}
   healthBar: {fileID: 21300000, guid: 5f3edb759e72ba040b206398e5968e22, type: 3}
   healthFill: {fileID: 21300000, guid: 9dca94a4f8be648448b069b174c43245, type: 3}
+  healthFull: {fileID: 1734036671, guid: 03155263b89756443a1aa3f11f130a3f, type: 3}
+  healthHalf: {fileID: -1653616377, guid: 03155263b89756443a1aa3f11f130a3f, type: 3}
+  healthEmpty: {fileID: -283549259, guid: 03155263b89756443a1aa3f11f130a3f, type: 3}

@@ -47,6 +47,7 @@ namespace DevouringBeast
         [Header("Gameplay UI")]
         public Sprite progressBar, progressFill, joystick, suckButton, spitButton, swallowButton;
         public Sprite healthBar, healthFill;
+        public Sprite healthFull, healthHalf, healthEmpty;
 
         private Dictionary<RogueSkillId, RogueSkillDefinition> _byId;
         private Dictionary<string, Sprite> _iconsByName;
