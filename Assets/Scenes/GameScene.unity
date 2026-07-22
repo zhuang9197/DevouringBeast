@@ -2900,10 +2900,10 @@ MonoBehaviour:
   stoneSprite: {fileID: 21300000, guid: 5a3fc9aa563239f449be139c1d3e7cbf, type: 3}
   mushroomSprite: {fileID: 177690367, guid: a2f32baff5f6641479756850101fef5b, type: 3}
   riceBallSprite: {fileID: 1126726709, guid: a2f32baff5f6641479756850101fef5b, type: 3}
-  bigStoneTarget: 1
-  stoneTarget: 7
-  mushroomTarget: 8
-  riceBallTarget: 8
+  bigStoneTarget: 2
+  stoneTarget: 10
+  mushroomTarget: 100
+  riceBallTarget: 100
   bigStoneRefreshSeconds: 30
   stoneRefreshSeconds: 20
   foodRefreshSeconds: 8
