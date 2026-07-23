@@ -66,6 +66,18 @@ namespace DevouringBeast
         public bool HasExplosion => ExplosionRadius > 0f && (!IsSplitProjectile || SplitCarriesFire);
         public bool HasBurn => BurnDamagePerSecond > 0f && (!IsSplitProjectile || SplitCarriesFire);
         public bool HasSplit => !IsSplitProjectile && SplitProjectileCount > 0;
+        public bool HasDeadlyPoison => PoisonEffectsAllowed && GetLevel(RogueSkillId.PoisonDeadly) > 0;
+        public bool HasAnyPoisonSkill => PoisonEffectsAllowed &&
+            (GetLevel(RogueSkillId.PoisonDeadly) > 0 ||
+             GetLevel(RogueSkillId.PoisonNumb) > 0 ||
+             GetLevel(RogueSkillId.PoisonErode) > 0 ||
+             GetLevel(RogueSkillId.PoisonWarp) > 0 ||
+             GetLevel(RogueSkillId.PoisonLegacy) > 0);
+        public bool HasNonExplosionFire => FireEffectsAllowed && !HasExplosion &&
+            (GetLevel(RogueSkillId.FireBottle) > 0 || GetLevel(RogueSkillId.FireLegacy) > 0);
+
+        private bool PoisonEffectsAllowed => !IsSplitProjectile || SplitCarriesPoison;
+        private bool FireEffectsAllowed => !IsSplitProjectile || SplitCarriesFire;
 
         public int GetLevel(RogueSkillId id) => _levels.TryGetValue(id, out int level) ? level : 0;
 

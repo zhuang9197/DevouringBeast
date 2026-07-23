@@ -1,6 +1,6 @@
 # DevouringBeast 项目会话上下文
 
-> 最后更新：2026-07-21  
+> 最后更新：2026-07-23
 > Unity：2022.3.62f3c1  
 > 项目目录：`D:\WorkSpace\Unity\DevouringBeast`
 
@@ -109,8 +109,12 @@ EnergyBall
 - 分裂弹在命中目标沿母弹飞行方向的碰撞体后方生成，并把该目标写入子弹忽略集合，不能再次被同一怪物立即挡住。
 - 分裂弹是否继承毒/火效果由对应“原子危机”技能决定。
 - 达到最大飞行距离后必须回池/消失。
+- 每次命中（包括穿透过程中的每个目标）由 `EnergyBallHitVfxService` 播放池化特效，禁止重新引入逐次 `Instantiate/Destroy`。
+- 命中特效优先级：火爆炸 + 任意毒系使用毒爆帧动画；纯火爆炸使用火爆帧动画；致命毒素且无爆炸使用毒雾；其余按普通、火、毒或火毒双粒子呈现。
+- 火爆与毒爆分别使用 `bomb`、`poison_bomb` 的 8 帧 Sprite；毒雾使用 3–5 个 `poison_cloud` 粒子、Size/Color over Lifetime，以及动态噪声溶解和 Camera Opaque Texture 背景折射。
+- 命中特效资源引用集中在 `Resources/System/EnergyBallHitVfxCatalog.asset`；需要重建时执行 `Tools/DevouringBeast/Rebuild Energy Ball Hit VFX`。
 
-主要脚本：`EnergyBall.cs`、`EnergyBallShotSnapshot.cs`、`PlayerSpit.cs`。
+主要脚本：`EnergyBall.cs`、`EnergyBallShotSnapshot.cs`、`EnergyBallHitVfxService.cs`、`EnergyBallHitVfxInstance.cs`、`PlayerSpit.cs`。
 
 ## 6. 敌人、波次和对象池
 
@@ -275,6 +279,7 @@ BGM：
 | 玩家基础属性 | `Assets/_Project/Scripts/Player/PlayerBaseAttributes.cs` |
 | 吸入/吐出 | `Assets/_Project/Scripts/Player/PlayerInhale.cs`、`PlayerSpit.cs` |
 | 能量球与快照 | `Assets/_Project/Scripts/Player/EnergyBall.cs`、`EnergyBallShotSnapshot.cs` |
+| 能量球命中特效 | `Assets/_Project/Scripts/Player/EnergyBallHitVfxService.cs`、`EnergyBallHitVfxInstance.cs`、`EnergyBallHitVfxCatalog.cs` |
 | 吞噬进度 | `Assets/_Project/Scripts/Core/SwallowContainer.cs` |
 | 肉鸽系统 | `Assets/_Project/Scripts/Skills/RogueSkillManager.cs`、`Core/RogueSkillCatalog.cs` |
 | 肉鸽 UI | `Assets/_Project/Scripts/UI/RogueSelectionUI.cs` |
@@ -291,6 +296,7 @@ BGM：
 - 主页菜单、存档列表、删除确认和进入游戏流程。
 - 跨场景音乐系统及主要玩家、敌人、环境和 UI 音效。
 - 能量球预制体、飞行、属性快照、对象池和主要肉鸽命中结算。
+- 能量球普通/火/毒/火毒粒子、火爆/毒爆帧动画与致命毒雾命中特效。
 - 敌人对象池和跨波存活敌人强化。
 - 玩家/敌人血条、升级进度、倒计时和动态操作按钮。
 - 动态虚拟摇杆及鼠标支持。
@@ -313,7 +319,7 @@ BGM：
 5. 长时间压力测试敌人池和能量球池，检查对象数量和事件订阅是否稳定。
 6. 分别用四种 Faith 存档验证候选池：只有天使锁死升级，其他 Faith 仍刷新非 Faith 技能。
 7. 验证滚动音效在暂停、肉鸽选择、阵亡、停止移动、变身结束和场景切换时正确停止。
-8. 长时间测试约 350 个环境物品的稳定帧率、池数量、空间分布和补足逻辑。
+8. 长时间测试缩小地图后约 24 个环境物品的稳定帧率、池数量、空间分布和补足逻辑。
 9. `docs/DESIGN.md` 存在编码乱码且部分规则过时；继续维护前应备份、统一 UTF-8 并按当前代码修订。
 
 ## 16. 最近验证状态
@@ -333,6 +339,14 @@ BGM：
 - 对象池缩放从测试值 `0.1` 恢复到标准值 `1.5`；Character (49) 自动放大约 `1.54` 倍，Character (90) 保持 `1.0`。
 - 已退出 Play Mode。
 - 未永久修改用户存档。
+
+2026-07-23 能量球命中特效验证：
+
+- UnityMCP 脚本刷新与编译通过，新建脚本均为 `0 Error`。
+- 资源构建器成功识别普通/火/毒 3 张粒子 Sprite，以及火爆、毒爆各 8 帧动画。
+- Play Mode 路由实测依次得到 `NormalParticles`、`FireParticles`、`PoisonParticles`、`FirePoisonParticles`、`FireExplosion`、`PoisonCloud`、`PoisonExplosion`。
+- VFX 服务只创建一个实例并预热 12 个池对象；七种效果并发播放时 Console 为 `0 Error`。
+- Game View 已目测确认火爆与毒爆帧动画；毒雾的增长、渐隐、噪声边缘和背景折射仍建议在 Android 真机上复核强度与性能。
 
 以上证明基础编译、掉落实例化、按钮亮度、攻击动画重播和待机音效中断通过，不能替代第 15 节的完整交互测试。
 

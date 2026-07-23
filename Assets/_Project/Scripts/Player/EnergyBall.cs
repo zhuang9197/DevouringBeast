@@ -12,7 +12,6 @@ namespace DevouringBeast
     {
         [Header("视觉效果")]
         [SerializeField] private ParticleSystem trailParticles;
-        [SerializeField] private GameObject hitVfxPrefab;
         [SerializeField, Min(0.05f)] private float splitSpawnPadding = 0.35f;
 
         private readonly HashSet<int> _hitEnemies = new HashSet<int>();
@@ -122,7 +121,7 @@ namespace DevouringBeast
 
             float maxDistanceSquared = _snapshot.MaxDistance * _snapshot.MaxDistance;
             if ((_rigidbody.position - _spawnPosition).sqrMagnitude >= maxDistanceSquared)
-                Release(false);
+                Release();
         }
 
         private void OnTriggerEnter2D(Collider2D other)
@@ -193,6 +192,7 @@ if (!_hitEnemies.Add(enemyId))
             ApplyStatusEffects(enemy);
             ApplyExplosion(enemy);
             SpawnSplitProjectiles(enemy);
+            EnergyBallHitVfxService.Play(enemy.transform.position, _snapshot);
 
             if (_remainingPierces > 0)
             {
@@ -201,7 +201,7 @@ if (!_hitEnemies.Add(enemyId))
                 return;
             }
 
-            Release(true);
+            Release();
         }
 
         private void ApplyExplosion(EnemyBase primaryTarget)
@@ -285,16 +285,13 @@ if (!_hitEnemies.Add(enemyId))
             }
         }
 
-        private void Release(bool spawnHitVfx)
+        private void Release()
         {
             if (_released)
                 return;
 
             _released = true;
             _initialized = false;
-
-            if (spawnHitVfx && hitVfxPrefab != null)
-                Instantiate(hitVfxPrefab, transform.position, Quaternion.identity);
 
             if (trailParticles != null)
                 trailParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);

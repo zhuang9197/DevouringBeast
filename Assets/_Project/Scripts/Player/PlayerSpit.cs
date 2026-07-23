@@ -70,6 +70,7 @@ public float BaseDamage
             _baseAttributes = GetComponent<PlayerBaseAttributes>();
             if (_baseAttributes == null) _baseAttributes = gameObject.AddComponent<PlayerBaseAttributes>();
             _baseAttributes.InitialEnergyBallDamage = baseDamage;
+            EnergyBallHitVfxService.WarmUp();
         }
 
         /// <summary>

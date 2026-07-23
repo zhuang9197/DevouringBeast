@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3a56038ec5f3a146b320586c69fb607, type: 3}
+  m_Name: EnergyBallHitVfxCatalog
+  m_EditorClassIdentifier: 
+  normalParticle: {fileID: 1330384172, guid: 97aaef9f391a6bf42b6c55d5acf96a38, type: 3}
+  fireParticle: {fileID: -1741947956, guid: 97aaef9f391a6bf42b6c55d5acf96a38, type: 3}
+  poisonParticle: {fileID: -919176945, guid: 97aaef9f391a6bf42b6c55d5acf96a38, type: 3}
+  particleMaterial: {fileID: 2100000, guid: 7fdad2b719cd508459977acab82cbb61, type: 2}
+  fireExplosionFrames:
+  - {fileID: -1470267757, guid: c95eb023ae25c424b9e7d85591c1a3b1, type: 3}
+  - {fileID: -682621251, guid: c95eb023ae25c424b9e7d85591c1a3b1, type: 3}
+  - {fileID: 67082490, guid: c95eb023ae25c424b9e7d85591c1a3b1, type: 3}
+  - {fileID: -625470478, guid: c95eb023ae25c424b9e7d85591c1a3b1, type: 3}
+  - {fileID: -167542332, guid: c95eb023ae25c424b9e7d85591c1a3b1, type: 3}
+  - {fileID: 491534762, guid: c95eb023ae25c424b9e7d85591c1a3b1, type: 3}
+  - {fileID: 919056396, guid: c95eb023ae25c424b9e7d85591c1a3b1, type: 3}
+  - {fileID: -49423929, guid: c95eb023ae25c424b9e7d85591c1a3b1, type: 3}
+  poisonExplosionFrames:
+  - {fileID: -2062390652, guid: a3ffab49ccd68e3489299138a7e2cae7, type: 3}
+  - {fileID: -533781100, guid: a3ffab49ccd68e3489299138a7e2cae7, type: 3}
+  - {fileID: -1945731856, guid: a3ffab49ccd68e3489299138a7e2cae7, type: 3}
+  - {fileID: 1619857434, guid: a3ffab49ccd68e3489299138a7e2cae7, type: 3}
+  - {fileID: 2106294368, guid: a3ffab49ccd68e3489299138a7e2cae7, type: 3}
+  - {fileID: 451287534, guid: a3ffab49ccd68e3489299138a7e2cae7, type: 3}
+  - {fileID: -552337966, guid: a3ffab49ccd68e3489299138a7e2cae7, type: 3}
+  - {fileID: 1675300054, guid: a3ffab49ccd68e3489299138a7e2cae7, type: 3}
+  explosionFramesPerSecond: 18
+  fireExplosionScale: 3.2
+  poisonExplosionScale: 3.4
+  poisonCloud: {fileID: 21300000, guid: d5d3c67563f4b0c4889c8999a1335765, type: 3}
+  poisonCloudMaterial: {fileID: 2100000, guid: 3ce7078ea27d5384fb77a306cf62e3be, type: 2}
+  poisonCloudLifetime: 1.8
+  poisonCloudStartSize: 1.2
+  poisonCloudEndSize: 3.4
