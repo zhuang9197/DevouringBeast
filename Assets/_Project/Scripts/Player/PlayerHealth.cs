@@ -23,6 +23,7 @@ namespace DevouringBeast
         private bool _isInvincible;
         private SpriteRenderer _spriteRenderer;
         private PlayerController _controller;
+        private Quaternion _initialSpriteRotation;
 
         public int CurrentHealth => currentHealth;
         public int MaxHealth => maxHealth;
@@ -33,6 +34,7 @@ namespace DevouringBeast
             currentHealth = maxHealth;
             _spriteRenderer = GetComponentInChildren<SpriteRenderer>();
             _controller = GetComponent<PlayerController>();
+            if (_spriteRenderer != null) _initialSpriteRotation = _spriteRenderer.transform.localRotation;
         }
 
         private void Update()
@@ -93,6 +95,8 @@ public void TakeDamage(int damage)
 
         private void Die()
         {
+            if (_spriteRenderer != null)
+                _spriteRenderer.transform.localRotation = _initialSpriteRotation * Quaternion.Euler(0f, 0f, 90f);
             OnPlayerDeath?.Invoke();
             GameManager.Instance.HandlePlayerDeath();
         }

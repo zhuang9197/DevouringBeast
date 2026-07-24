@@ -671,7 +671,7 @@ MonoBehaviour:
   data: {fileID: 0}
   spriteRenderer: {fileID: 0}
   animator: {fileID: 0}
-  corpseDuration: 10
+  corpseDuration: 20
   corpseFlickerStart: 3
   flickerInterval: 0.15
 --- !u!114 &-2938487545850046087

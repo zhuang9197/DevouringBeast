@@ -48,7 +48,9 @@ namespace DevouringBeast
         // 缓存
         private Rigidbody2D _rb;
         private PlayerBaseAttributes _baseAttributes;
+        private SwallowContainer _swallowContainer;
         private Vector2 _moveInput;
+        private readonly Collider2D[] _beastOverlapBuffer = new Collider2D[64];
         
         private float _footstepTimer;
         private float _idleTimer;
@@ -131,6 +133,8 @@ namespace DevouringBeast
             if (_baseAttributes == null) _baseAttributes = gameObject.AddComponent<PlayerBaseAttributes>();
             _baseAttributes.InitialMoveSpeed = moveSpeed;
             _rb = GetComponent<Rigidbody2D>();
+            _rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+            _swallowContainer = GetComponent<SwallowContainer>();
             if (spriteRenderer == null)
                 spriteRenderer = GetComponentInChildren<SpriteRenderer>();
             if (frameAnimator == null)
@@ -201,10 +205,11 @@ namespace DevouringBeast
             float end = Time.time + duration;
             while (Time.time < end)
             {
-                Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 0.8f);
+                int hitCount = Physics2D.OverlapCircleNonAlloc(transform.position, 0.8f, _beastOverlapBuffer);
                 _beastHitThisFrame = false;
-                foreach (Collider2D hit in hits)
+                for (int i = 0; i < hitCount; i++)
                 {
+                    Collider2D hit = _beastOverlapBuffer[i];
                     EnemyBase enemy = hit.GetComponentInParent<EnemyBase>();
                     if (enemy != null && !enemy.IsDead)
                     {
@@ -291,8 +296,7 @@ private void UpdateAudio()
                 return;
             }
 
-            SwallowContainer container = GetComponent<SwallowContainer>();
-            bool hasItems = container != null && container.HasItems;
+            bool hasItems = _swallowContainer != null && _swallowContainer.HasItems;
             bool moving = _moveInput.sqrMagnitude > 0.001f;
 
             if (moving)
@@ -332,8 +336,7 @@ private void UpdateAudio()
 
         private void UpdateState()
         {
-            SwallowContainer container = GetComponent<SwallowContainer>();
-            bool hasItems = container != null && container.HasItems;
+            bool hasItems = _swallowContainer != null && _swallowContainer.HasItems;
 
             PlayerState newState;
 

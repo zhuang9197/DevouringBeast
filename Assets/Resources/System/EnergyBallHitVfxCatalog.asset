@@ -35,8 +35,8 @@ MonoBehaviour:
   - {fileID: -552337966, guid: a3ffab49ccd68e3489299138a7e2cae7, type: 3}
   - {fileID: 1675300054, guid: a3ffab49ccd68e3489299138a7e2cae7, type: 3}
   explosionFramesPerSecond: 18
-  fireExplosionScale: 3.2
-  poisonExplosionScale: 3.4
+  fireExplosionScale: 1.25
+  poisonExplosionScale: 1.35
   poisonCloud: {fileID: 21300000, guid: d5d3c67563f4b0c4889c8999a1335765, type: 3}
   poisonCloudMaterial: {fileID: 2100000, guid: 3ce7078ea27d5384fb77a306cf62e3be, type: 2}
   poisonCloudLifetime: 1.8

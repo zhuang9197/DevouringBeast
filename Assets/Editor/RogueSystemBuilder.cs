@@ -90,8 +90,8 @@ namespace DevouringBeast.Editor
             D(RogueSkillId.SuperSplit,RogueSchool.Superpower,"分裂","命中分裂为两个造成 30% 伤害的小能量球，默认不附带肉鸽效果。","super_split",1),
             D(RogueSkillId.SuperSplitMore,RogueSchool.Superpower,"分裂-裂变","每级额外增加 1 颗分裂小能量球。","super_split_more",3,false,false,RogueSkillId.SuperSplit),
             D(RogueSkillId.SuperPiece,RogueSchool.Superpower,"穿透","可穿透敌人；每次穿透伤害降低 20%，最多降低 60%。升级降低衰减。","super_piece",4),
-            D(RogueSkillId.FaithAngel,RogueSchool.Faith,"天使","失去其他技能并改为无消耗连续吐出；升级进度改为击杀获得。","faith_angel",0,false,true),
-            D(RogueSkillId.FaithDemon,RogueSchool.Faith,"恶魔","吸力伤害大幅提高但不能吸入物体；升级进度改为击杀获得。","faith_demon",0,false,true),
+            D(RogueSkillId.FaithAngel,RogueSchool.Faith,"天使","无消耗连续吐出；击杀升级不受种类池限制；排除吸入类技能。","faith_angel",0,false,true),
+            D(RogueSkillId.FaithDemon,RogueSchool.Faith,"恶魔","吸力伤害大幅提高但不能吸入物体；击杀升级不受种类池限制；排除吐出类技能。","faith_demon",0,false,true),
             D(RogueSkillId.FaithPope,RogueSchool.Faith,"教皇","吞噬变为教化，同时吐出附带肉鸽效果且强化的能量球。","faith_pope",0,false,true),
             D(RogueSkillId.FaithWitch,RogueSchool.Faith,"女巫","吞噬累积通灵进度，叠满后变身野兽吞吞滚动攻击；变身减伤 20%，升级提升减伤与滚动伤害。","faith_witch",0,false,true)
         };

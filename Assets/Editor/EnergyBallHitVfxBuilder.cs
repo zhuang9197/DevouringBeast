@@ -65,6 +65,8 @@ public static class EnergyBallHitVfxBuilder
         catalog.particleMaterial = particleMaterial;
         catalog.fireExplosionFrames = bombFrames;
         catalog.poisonExplosionFrames = poisonBombFrames;
+        catalog.fireExplosionScale = 1.25f;
+        catalog.poisonExplosionScale = 1.35f;
         catalog.poisonCloud = poisonCloud;
         catalog.poisonCloudMaterial = poisonCloudMaterial;
 

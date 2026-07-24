@@ -42,6 +42,10 @@ private void Awake()
 
             _instance = this;
             DontDestroyOnLoad(gameObject);
+            Application.targetFrameRate = 60;
+#if UNITY_ANDROID
+            QualitySettings.vSyncCount = 0;
+#endif
             SceneManager.sceneLoaded += OnSceneLoaded;
             ApplySceneState(SceneManager.GetActiveScene());
         }

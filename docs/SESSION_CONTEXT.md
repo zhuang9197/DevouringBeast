@@ -356,6 +356,16 @@ BGM：
 - 首次 UnityMCP 刷新后 Console 为 `0 Error`；最终代码另以 `dotnet build Assembly-CSharp.csproj` 验证为 `0 Error`。
 - 第二次 Unity 域重载后 MCP WebSocket 未恢复响应，因此本轮尚未完成 Play Mode 中的心形 UI、350 个环境物品和战斗公式实测；下次连接恢复后应优先执行这些回归。
 
+### 16.1 竞技场瓦片地图（2026-07-23）
+
+- `GameScene` 已新增根对象 `ArenaGrid`，位置为 `(25, 32, 0)`，包含一张 `30 x 16` 的 `Terrain` Tilemap。
+- 地图使用 `Assets/Art/Tilesets/bg.png` 的 36 个切片；导入规范为 `128 PPU`、中心 Pivot、无 Mipmap，使每格严格对应 `1 x 1` 世界单位。
+- 视觉布局为低干扰草地与横穿中心的浅色弧形泥路，覆盖相机完整视口，并在下层使用同图集 Sprite 遮盖透明圆角接缝。
+- TilemapRenderer 使用 `Chunk` 模式、Sorting Order `-20`；没有 TilemapCollider，地图只负责视觉，空气墙仍由 `MapBounds` 管理。
+- 36 个可复用 Tile 资源位于 `Assets/_Project/Tiles/Arena`。
+- 可通过 `Tools/DevouringBeast/Rebuild Arena Tilemap` 重新生成 Tile 资源并确定性重绘场景；实现入口为 `Assets/Editor/ArenaTilemapBuilder.cs`。
+- UnityMCP Play Mode 截图已确认视口无露底，玩家、敌人、环境石块和食物均显示在地图上方；场景保存成功且 Console 为 `0 Error`。
+
 ## 17. 工作区注意事项
 
 - Git 工作区包含大量既有修改和未跟踪资源，许多属于此前功能开发或用户导入。

@@ -12,6 +12,7 @@ namespace DevouringBeast
     public sealed class EnvironmentItemSpawner : MonoBehaviour
     {
         private enum ItemKind { BigStone, Stone, Mushroom, RiceBall }
+        private static readonly ItemKind[] AllKinds = (ItemKind[])Enum.GetValues(typeof(ItemKind));
 
         [Header("Sprites")]
         [SerializeField] private Sprite bigStoneSprite;
@@ -41,17 +42,74 @@ namespace DevouringBeast
         private float _nextBigStoneRefresh;
         private float _nextStoneRefresh;
         private float _nextFoodRefresh;
+        private bool _initialized;
 
         private void Awake()
         {
-            foreach (ItemKind kind in Enum.GetValues(typeof(ItemKind)))
+            EnsureInitialized();
+        }
+
+        private void EnsureInitialized()
+        {
+            if (_initialized && _pools.Count == AllKinds.Length && _active.Count == AllKinds.Length)
+                return;
+
+            foreach (ItemKind kind in AllKinds)
             {
-                _pools[kind] = new Stack<WorldItemPoolMember>();
-                _active[kind] = new HashSet<WorldItemPoolMember>();
+                if (!_pools.ContainsKey(kind))
+                    _pools[kind] = new Stack<WorldItemPoolMember>();
+                if (!_active.ContainsKey(kind))
+                    _active[kind] = new HashSet<WorldItemPoolMember>();
             }
-            GameObject root = new("EnvironmentItemPool");
-            root.transform.SetParent(transform, false);
-            _poolRoot = root.transform;
+
+            if (_poolRoot == null)
+            {
+                Transform existingRoot = transform.Find("EnvironmentItemPool");
+                if (existingRoot != null)
+                {
+                    _poolRoot = existingRoot;
+                }
+                else
+                {
+                    GameObject root = new("EnvironmentItemPool");
+                    root.transform.SetParent(transform, false);
+                    _poolRoot = root.transform;
+                }
+            }
+
+            // Script recompilation during Play Mode clears these non-serialized collections.
+            // Rebuild them from the pooled children instead of throwing every Update frame.
+            _occupiedCells.Clear();
+            _memberCells.Clear();
+            foreach (ItemKind kind in AllKinds)
+            {
+                _pools[kind].Clear();
+                _active[kind].Clear();
+            }
+
+            WorldItemPoolMember[] members = _poolRoot.GetComponentsInChildren<WorldItemPoolMember>(true);
+            for (int i = 0; i < members.Length; i++)
+            {
+                WorldItemPoolMember member = members[i];
+                if (!Enum.TryParse(member.gameObject.name, out ItemKind kind))
+                    kind = (ItemKind)Mathf.Clamp(member.Kind, 0, AllKinds.Length - 1);
+
+                InhaleableItem item = member.GetComponent<InhaleableItem>();
+                member.Configure((int)kind, item, HandleRelease);
+                if (member.gameObject.activeSelf)
+                {
+                    _active[kind].Add(member);
+                    Vector2Int cell = ToCell(member.transform.position);
+                    _occupiedCells[cell] = member;
+                    _memberCells[member] = cell;
+                }
+                else
+                {
+                    _pools[kind].Push(member);
+                }
+            }
+
+            _initialized = true;
         }
 
         private void Start()
@@ -93,6 +151,7 @@ namespace DevouringBeast
 
         private void Refill(ItemKind kind, int target)
         {
+            EnsureInitialized();
             int missing = Mathf.Max(0, target - _active[kind].Count);
             for (int i = 0; i < missing; i++)
             {
@@ -144,6 +203,7 @@ namespace DevouringBeast
 
         private void HandleRelease(WorldItemPoolMember member)
         {
+            EnsureInitialized();
             ItemKind kind = (ItemKind)member.Kind;
             if (!_active[kind].Remove(member)) return;
             if (_memberCells.TryGetValue(member, out Vector2Int cell))

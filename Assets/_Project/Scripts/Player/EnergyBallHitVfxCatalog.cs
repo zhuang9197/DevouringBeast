@@ -17,8 +17,8 @@ namespace DevouringBeast
         public Sprite[] fireExplosionFrames = Array.Empty<Sprite>();
         public Sprite[] poisonExplosionFrames = Array.Empty<Sprite>();
         [Min(1f)] public float explosionFramesPerSecond = 18f;
-        [Min(0.1f)] public float fireExplosionScale = 3.2f;
-        [Min(0.1f)] public float poisonExplosionScale = 3.4f;
+        [Min(0.1f)] public float fireExplosionScale = 1.25f;
+        [Min(0.1f)] public float poisonExplosionScale = 1.35f;
 
         [Header("Deadly poison cloud")]
         public Sprite poisonCloud;

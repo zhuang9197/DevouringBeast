@@ -7,6 +7,8 @@ namespace DevouringBeast
     [DisallowMultipleComponent]
     public sealed class RogueSkillManager : MonoBehaviour
     {
+        public static RogueSkillManager Active { get; private set; }
+
         [SerializeField] private RogueSkillCatalog catalog;
         [SerializeField] private VoidEventChannel onLevelUp;
 
@@ -34,6 +36,7 @@ namespace DevouringBeast
 
         private void Awake()
         {
+            Active = this;
             if (catalog == null) catalog = Resources.Load<RogueSkillCatalog>("Rogue/RogueSkillCatalog");
             _container = GetComponent<SwallowContainer>();
             _controller = GetComponent<PlayerController>();
@@ -51,6 +54,7 @@ namespace DevouringBeast
 
         private void OnDestroy()
         {
+            if (Active == this) Active = null;
             if (_container != null) _container.OnLevelUpCheck -= CheckLevelUp;
             EnemyBase.OnAnyEnemyDeath -= HandleEnemyDeath;
             if (_choiceOpen && GameManager.Instance.CurrentState == GameState.RogueChoosing)
@@ -60,8 +64,11 @@ namespace DevouringBeast
         private void CheckLevelUp()
         {
             if (!GameManager.Instance.IsPlaying || _choiceOpen || _container == null || !_container.CanLevelUp || catalog == null) return;
+            bool unrestrictedKillProgress = _faith == RogueSkillId.FaithAngel || _faith == RogueSkillId.FaithDemon;
             RogueSchool preferred = MapSchool(_container.GetDominantTag());
-            List<RogueSkillDefinition> choices = GetAvailableChoices(preferred, 3);
+            List<RogueSkillDefinition> choices = unrestrictedKillProgress
+                ? GetUnrestrictedChoices(3)
+                : GetAvailableChoices(preferred, 3);
             if (choices.Count == 0) choices = GetAvailableChoices(RogueSchool.Normal, 3);
             if (choices.Count == 0) return;
 
@@ -168,20 +175,16 @@ namespace DevouringBeast
 
         public List<RogueSkillDefinition> GetAvailableChoices(RogueSchool preferred, int count)
         {
-            if (_faith == RogueSkillId.FaithAngel)
-            {
-                RogueSkillDefinition angel = catalog.Get(RogueSkillId.FaithAngel);
-                return angel != null && CanOffer(angel)
-                    ? new List<RogueSkillDefinition> { angel }
-                    : new List<RogueSkillDefinition>();
-            }
             List<RogueSkillDefinition> preferredPool = new();
             List<RogueSkillDefinition> normalPool = new();
             foreach (RogueSkillDefinition skill in catalog.skills)
             {
                 if (!CanOffer(skill)) continue;
                 if (skill.school == preferred) preferredPool.Add(skill);
-                if (skill.school == RogueSchool.Normal) normalPool.Add(skill);
+                if (skill.school == RogueSchool.Normal ||
+                    (_faith == RogueSkillId.FaithAngel &&
+                     (skill.school != RogueSchool.Faith || skill.id == RogueSkillId.FaithAngel)))
+                    normalPool.Add(skill);
             }
 
             Shuffle(preferredPool);
@@ -195,10 +198,11 @@ namespace DevouringBeast
         private bool CanOffer(RogueSkillDefinition skill)
         {
             if (skill == null || skill.IsMaxLevel(GetLevel(skill.id))) return false;
+            if (!IsUsefulForActiveFaith(skill.id)) return false;
             if (_faith.HasValue)
             {
                 if (_faith.Value == RogueSkillId.FaithAngel)
-                    return skill.id == RogueSkillId.FaithAngel;
+                    return skill.id == RogueSkillId.FaithAngel || skill.school != RogueSchool.Faith;
                 if (skill.school == RogueSchool.Faith)
                     return skill.id == _faith.Value;
             }
@@ -212,6 +216,51 @@ namespace DevouringBeast
                     if (prerequisiteData != null && !prerequisiteData.IsMaxLevel(level)) return false;
                 }
             }
+            return true;
+        }
+
+        private List<RogueSkillDefinition> GetUnrestrictedChoices(int count)
+        {
+            List<RogueSkillDefinition> result = AllAvailable();
+            if (result.Count > count) result.RemoveRange(count, result.Count - count);
+            return result;
+        }
+
+        private bool IsUsefulForActiveFaith(RogueSkillId id)
+        {
+            if (_faith == RogueSkillId.FaithAngel)
+            {
+                return id != RogueSkillId.NormalSuction &&
+                    id != RogueSkillId.EvolutionWing &&
+                    id != RogueSkillId.EvolutionBigMouth;
+            }
+
+            if (_faith == RogueSkillId.FaithDemon)
+            {
+                switch (id)
+                {
+                    case RogueSkillId.NormalPower:
+                    case RogueSkillId.PoisonDeadly:
+                    case RogueSkillId.PoisonNumb:
+                    case RogueSkillId.PoisonErode:
+                    case RogueSkillId.PoisonWarp:
+                    case RogueSkillId.PoisonLegacy:
+                    case RogueSkillId.FirePyroblast:
+                    case RogueSkillId.FirePyroblastFlame:
+                    case RogueSkillId.FirePyroblastScope:
+                    case RogueSkillId.FireBottle:
+                    case RogueSkillId.FireLegacy:
+                    case RogueSkillId.EvolutionCharged:
+                    case RogueSkillId.EvolutionMoreMouth:
+                    case RogueSkillId.EvolutionMoreMouthMore:
+                    case RogueSkillId.EvolutionMoreMouthPower:
+                    case RogueSkillId.SuperSplit:
+                    case RogueSkillId.SuperSplitMore:
+                    case RogueSkillId.SuperPiece:
+                        return false;
+                }
+            }
+
             return true;
         }
 
@@ -254,7 +303,7 @@ namespace DevouringBeast
                 _inhale.SkillDamageMultiplier = _inhale.SkillSuctionMultiplier;
                 _inhale.BonusInhaleDuration = Has(RogueSkillId.EvolutionBigMouth)
                     ? 3f + Mathf.Max(0, GetLevel(RogueSkillId.EvolutionBigMouth) - 1) * 2f : 0f;
-                _inhale.DamageOnlyMode = Has(RogueSkillId.FaithDemon);
+                _inhale.DamageOnlyMode = Has(RogueSkillId.FaithDemon) || Has(RogueSkillId.FaithAngel);
             }
             if (_baseAttributes != null)
             {

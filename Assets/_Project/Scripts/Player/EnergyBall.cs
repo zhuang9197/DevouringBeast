@@ -170,12 +170,11 @@ namespace DevouringBeast
                 return;
 
             int enemyId = enemy.GetInstanceID();
-            
+            if (!_hitEnemies.Add(enemyId))
+                return;
+
             AudioManager.Instance.PlaySfx(
                 _snapshot.HasExplosion ? AudioCue.Bomb : AudioCue.Hit);
-
-if (!_hitEnemies.Add(enemyId))
-                return;
 
             float pierceMultiplier = Mathf.Max(0.4f, 1f - _snapshot.PierceDamageLoss * _piercedEnemies);
             float hitDamage = _snapshot.Damage * _snapshot.PrimaryHitMultiplier * pierceMultiplier;

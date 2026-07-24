@@ -22,7 +22,7 @@ namespace DevouringBeast
         public int tier = 1; // 等级 1~7
 
         [Header("战斗属性")]
-        public float maxHealth = 100f;
+        public float maxHealth = 50f;
         public float attackDamage = 1f;
         public float moveSpeed = 3f;
         public float attackRange = 1.5f;

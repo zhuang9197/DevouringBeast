@@ -23,6 +23,7 @@ namespace DevouringBeast
         [SerializeField] private Color superpowerColor = Color.yellow;
         [SerializeField] private Color faithColor = Color.blue;
         private static readonly Color DefaultColor = Color.white;
+        private static readonly ItemTag[] ItemTags = (ItemTag[])System.Enum.GetValues(typeof(ItemTag));
 
         private SwallowContainer _container;
         private Vector3 _baseScale;
@@ -62,7 +63,7 @@ namespace DevouringBeast
 
             Color blended = DefaultColor;
 
-            foreach (ItemTag tag in System.Enum.GetValues(typeof(ItemTag)))
+            foreach (ItemTag tag in ItemTags)
             {
                 float ratio = _container.TagMasses.GetRatio(tag);
                 if (ratio > 0f)

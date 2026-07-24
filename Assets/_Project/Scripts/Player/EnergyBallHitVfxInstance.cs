@@ -6,6 +6,13 @@ namespace DevouringBeast
     [DisallowMultipleComponent]
     public sealed class EnergyBallHitVfxInstance : MonoBehaviour
     {
+        private static readonly Gradient NormalImpactGradient = CreateImpactGradient(Color.white);
+        private static readonly Gradient FireImpactGradient =
+            CreateImpactGradient(new Color(1f, 0.45f, 0.08f, 1f));
+        private static readonly Gradient PoisonImpactGradient =
+            CreateImpactGradient(new Color(0.3f, 0.95f, 0.22f, 1f));
+        private static readonly Gradient CachedPoisonCloudGradient = CreatePoisonCloudGradient(0);
+
         private ParticleSystem _primaryParticles;
         private ParticleSystem _secondaryParticles;
         private ParticleSystem _poisonCloudParticles;
@@ -58,24 +65,24 @@ namespace DevouringBeast
                     break;
                 case EnergyBallHitVfxKind.FirePoisonParticles:
                     PlayImpactParticles(_primaryParticles, catalog.fireParticle, catalog.particleMaterial,
-                        new Color(1f, 0.45f, 0.08f, 1f), 13);
+                        new Color(1f, 0.45f, 0.08f, 1f), 13, FireImpactGradient);
                     PlayImpactParticles(_secondaryParticles, catalog.poisonParticle, catalog.particleMaterial,
-                        new Color(0.3f, 0.95f, 0.22f, 1f), 11);
+                        new Color(0.3f, 0.95f, 0.22f, 1f), 11, PoisonImpactGradient);
                     _duration = 0.8f;
                     break;
                 case EnergyBallHitVfxKind.FireParticles:
                     PlayImpactParticles(_primaryParticles, catalog.fireParticle, catalog.particleMaterial,
-                        new Color(1f, 0.42f, 0.06f, 1f), 18);
+                        new Color(1f, 0.42f, 0.06f, 1f), 18, FireImpactGradient);
                     _duration = 0.8f;
                     break;
                 case EnergyBallHitVfxKind.PoisonParticles:
                     PlayImpactParticles(_primaryParticles, catalog.poisonParticle, catalog.particleMaterial,
-                        new Color(0.28f, 0.95f, 0.2f, 1f), 18);
+                        new Color(0.28f, 0.95f, 0.2f, 1f), 18, PoisonImpactGradient);
                     _duration = 0.8f;
                     break;
                 default:
                     PlayImpactParticles(_primaryParticles, catalog.normalParticle, catalog.particleMaterial,
-                        Color.white, 18);
+                        Color.white, 18, NormalImpactGradient);
                     _duration = 0.8f;
                     break;
             }
@@ -130,7 +137,7 @@ namespace DevouringBeast
         }
 
         private void PlayImpactParticles(ParticleSystem particles, Sprite sprite, Material material,
-            Color tint, int count)
+            Color tint, int count, Gradient lifetimeGradient)
         {
             ParticleSystem.MainModule main = particles.main;
             main.loop = false;
@@ -149,11 +156,7 @@ namespace DevouringBeast
 
             ParticleSystem.ColorOverLifetimeModule color = particles.colorOverLifetime;
             color.enabled = true;
-            Gradient gradient = new();
-            gradient.SetKeys(
-                new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(tint, 1f) },
-                new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) });
-            color.color = gradient;
+            color.color = lifetimeGradient;
 
             ConfigureParticleSprite(particles, sprite, material);
             particles.Emit(count);
@@ -170,7 +173,9 @@ namespace DevouringBeast
             main.startSize = new ParticleSystem.MinMaxCurve(
                 catalog.poisonCloudStartSize * 0.8f, catalog.poisonCloudStartSize * 1.2f);
             main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
-            main.startColor = new Color(0.08f, 0.28f, 0.08f, 0.82f);
+            // Keep the start color neutral. The lifetime gradient owns the poison hue;
+            // multiplying two dark greens made the cloud read as grey in-game.
+            main.startColor = new Color(1f, 1f, 1f, 0.88f);
             main.maxParticles = 8;
 
             ParticleSystem.ShapeModule shape = particles.shape;
@@ -187,28 +192,12 @@ namespace DevouringBeast
 
             ParticleSystem.ColorOverLifetimeModule color = particles.colorOverLifetime;
             color.enabled = true;
-            Gradient gradient = new();
-            gradient.SetKeys(
-                new[]
-                {
-                    new GradientColorKey(new Color(0.04f, 0.22f, 0.05f), 0f),
-                    new GradientColorKey(new Color(0.2f, 0.48f, 0.12f), 0.65f),
-                    new GradientColorKey(new Color(0.08f, 0.18f, 0.06f), 1f)
-                },
-                new[]
-                {
-                    new GradientAlphaKey(0.78f, 0f),
-                    new GradientAlphaKey(0.5f, 0.55f),
-                    new GradientAlphaKey(0f, 1f)
-                });
-            color.color = gradient;
+            color.color = CachedPoisonCloudGradient;
 
             ParticleSystemRenderer renderer = particles.GetComponent<ParticleSystemRenderer>();
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
             renderer.sortingOrder = 29;
             renderer.sharedMaterial = catalog.poisonCloudMaterial;
-            if (catalog.poisonCloudMaterial != null && catalog.poisonCloud != null)
-                catalog.poisonCloudMaterial.SetTexture("_BaseMap", catalog.poisonCloud.texture);
 
             particles.Emit(UnityEngine.Random.Range(3, 6));
             _duration = catalog.poisonCloudLifetime * 1.2f;
@@ -248,6 +237,34 @@ namespace DevouringBeast
         {
             particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             particles.Clear(true);
+        }
+
+        private static Gradient CreateImpactGradient(Color tint)
+        {
+            Gradient gradient = new();
+            gradient.SetKeys(
+                new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(tint, 1f) },
+                new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) });
+            return gradient;
+        }
+
+        private static Gradient CreatePoisonCloudGradient(int _)
+        {
+            Gradient gradient = new();
+            gradient.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(new Color(0.04f, 0.22f, 0.05f), 0f),
+                    new GradientColorKey(new Color(0.2f, 0.48f, 0.12f), 0.65f),
+                    new GradientColorKey(new Color(0.08f, 0.18f, 0.06f), 1f)
+                },
+                new[]
+                {
+                    new GradientAlphaKey(0.78f, 0f),
+                    new GradientAlphaKey(0.5f, 0.55f),
+                    new GradientAlphaKey(0f, 1f)
+                });
+            return gradient;
         }
     }
 }

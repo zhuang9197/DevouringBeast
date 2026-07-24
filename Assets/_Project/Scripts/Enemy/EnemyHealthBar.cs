@@ -1,18 +1,21 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace DevouringBeast
 {
-    /// <summary>跟随敌人头部、实时反映当前生命值的世界空间血条。</summary>
+    /// <summary>使用共享 SpriteRenderer 的敌人世界空间血条，避免每个敌人创建独立 Canvas。</summary>
     [DisallowMultipleComponent]
     public sealed class EnemyHealthBar : MonoBehaviour
     {
-        [SerializeField] private Image fillImage;
-        [SerializeField] private RectTransform fillRect;
+        [SerializeField] private SpriteRenderer fillRenderer;
         [SerializeField] private GameObject container;
-        [SerializeField] private Vector3 offset = new Vector3(0f, 1.2f, 0f);
+        [SerializeField] private Vector3 offset = new(0f, 1.2f, 0f);
+        [SerializeField] private float fullWidth = 1.5f;
+        [SerializeField] private float fillHeight = 0.11f;
+        [SerializeField] private float horizontalInset = 0.025f;
 
         private EnemyBase _enemy;
+        private float _lastHealthPercent = -1f;
+        private float _lastCounterScaleX;
 
         public static EnemyHealthBar EnsureFor(EnemyBase enemy)
         {
@@ -23,88 +26,70 @@ namespace DevouringBeast
             if (existing != null)
                 return existing;
 
-            Bounds visualBounds = new Bounds(enemy.transform.position, Vector3.zero);
+            Bounds visualBounds = new(enemy.transform.position, Vector3.zero);
             bool hasBounds = false;
             SpriteRenderer[] spriteRenderers = enemy.GetComponentsInChildren<SpriteRenderer>(true);
             for (int i = 0; i < spriteRenderers.Length; i++)
             {
-                if (spriteRenderers[i].sprite == null)
+                SpriteRenderer renderer = spriteRenderers[i];
+                if (renderer.sprite == null)
                     continue;
 
                 if (!hasBounds)
                 {
-                    visualBounds = spriteRenderers[i].bounds;
+                    visualBounds = renderer.bounds;
                     hasBounds = true;
                 }
                 else
                 {
-                    visualBounds.Encapsulate(spriteRenderers[i].bounds);
+                    visualBounds.Encapsulate(renderer.bounds);
                 }
             }
 
-            float top = hasBounds
-                ? visualBounds.max.y - enemy.transform.position.y
-                : 1f;
-            float width = hasBounds
-                ? Mathf.Clamp(visualBounds.size.x * 0.9f, 1.2f, 2.5f)
-                : 1.5f;
-            Vector3 barOffset = new Vector3(0f, top + 0.25f, 0f);
-
-            GameObject barObject = new GameObject("EnemyHealthBar", typeof(RectTransform));
-            barObject.transform.SetParent(enemy.transform, false);
-            RectTransform barRect = barObject.GetComponent<RectTransform>();
-            barRect.localPosition = barOffset;
-            barRect.localRotation = Quaternion.identity;
-            barRect.localScale = Vector3.one;
-            barRect.sizeDelta = new Vector2(width, 0.16f);
-
-            Canvas canvas = barObject.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.WorldSpace;
-            canvas.overrideSorting = true;
-            canvas.sortingOrder = 100;
-
-            GameObject backgroundObject = new GameObject("Background", typeof(RectTransform), typeof(Image));
-            backgroundObject.transform.SetParent(barObject.transform, false);
-            RectTransform backgroundRect = backgroundObject.GetComponent<RectTransform>();
-            Stretch(backgroundRect);
-            Image background = backgroundObject.GetComponent<Image>();
+            float top = hasBounds ? visualBounds.max.y - enemy.transform.position.y : 1f;
+            float width = hasBounds ? Mathf.Clamp(visualBounds.size.x * 0.9f, 1.2f, 2.5f) : 1.5f;
+            Vector3 barOffset = new(0f, top + 0.25f, 0f);
             RogueSkillCatalog catalog = Resources.Load<RogueSkillCatalog>("Rogue/RogueSkillCatalog");
-            background.sprite = catalog != null ? catalog.healthBar : null;
-            background.type = background.sprite != null ? Image.Type.Sliced : Image.Type.Simple;
-            background.color = Color.white;
-            background.raycastTarget = false;
 
-            GameObject fillObject = new GameObject("Fill", typeof(RectTransform), typeof(Image));
-            fillObject.transform.SetParent(backgroundObject.transform, false);
-            RectTransform healthFillRect = fillObject.GetComponent<RectTransform>();
-            healthFillRect.anchorMin = Vector2.zero;
-            healthFillRect.anchorMax = Vector2.one;
-            healthFillRect.pivot = new Vector2(0f, 0.5f);
-            healthFillRect.offsetMin = new Vector2(0.025f, 0.025f);
-            healthFillRect.offsetMax = new Vector2(-0.025f, -0.025f);
-            Image healthFill = fillObject.GetComponent<Image>();
-            healthFill.sprite = catalog != null ? catalog.healthFill : null;
-            healthFill.type = Image.Type.Filled;
-            healthFill.fillMethod = Image.FillMethod.Horizontal;
-            healthFill.color = Color.white;
-            healthFill.raycastTarget = false;
+            GameObject barObject = new("EnemyHealthBar");
+            barObject.transform.SetParent(enemy.transform, false);
+            barObject.transform.localPosition = barOffset;
+
+            GameObject backgroundObject = new("Background", typeof(SpriteRenderer));
+            backgroundObject.transform.SetParent(barObject.transform, false);
+            SpriteRenderer background = backgroundObject.GetComponent<SpriteRenderer>();
+            background.sprite = catalog != null ? catalog.healthBar : null;
+            background.drawMode = SpriteDrawMode.Simple;
+            SetSimpleSize(background, new Vector2(width, 0.16f));
+            background.sortingOrder = 100;
+
+            GameObject fillObject = new("Fill", typeof(SpriteRenderer));
+            fillObject.transform.SetParent(barObject.transform, false);
+            SpriteRenderer fill = fillObject.GetComponent<SpriteRenderer>();
+            fill.sprite = catalog != null ? catalog.healthFill : null;
+            fill.drawMode = SpriteDrawMode.Simple;
+            fill.sortingOrder = 101;
 
             EnemyHealthBar healthBar = barObject.AddComponent<EnemyHealthBar>();
             healthBar._enemy = enemy;
             healthBar.offset = barOffset;
-            healthBar.fillImage = healthFill;
-            healthBar.fillRect = healthFillRect;
+            healthBar.fullWidth = width;
+            healthBar.fillRenderer = fill;
             healthBar.container = barObject;
-            healthBar.Refresh();
+            healthBar.Refresh(true);
             return healthBar;
         }
 
-        private static void Stretch(RectTransform rect)
+        private static void SetSimpleSize(SpriteRenderer renderer, Vector2 targetSize)
         {
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
+            if (renderer == null || renderer.sprite == null)
+                return;
+
+            Vector2 spriteSize = renderer.sprite.bounds.size;
+            renderer.transform.localScale = new Vector3(
+                spriteSize.x > 0f ? targetSize.x / spriteSize.x : 1f,
+                spriteSize.y > 0f ? targetSize.y / spriteSize.y : 1f,
+                1f);
         }
 
         private void Awake()
@@ -118,34 +103,51 @@ namespace DevouringBeast
             if (_enemy == null)
                 return;
 
-            transform.position = _enemy.transform.position + offset;
-            transform.rotation = Quaternion.identity;
-            Refresh();
+            // EnemyAI 通过负 X 缩放转向；反向缩放血条，避免血量方向随朝向翻转。
+            float counterScaleX = _enemy.transform.lossyScale.x < 0f ? -1f : 1f;
+            if (!Mathf.Approximately(counterScaleX, _lastCounterScaleX))
+            {
+                transform.localScale = new Vector3(counterScaleX, 1f, 1f);
+                _lastCounterScaleX = counterScaleX;
+            }
+
+            Refresh(false);
         }
 
-        private void Refresh()
+        private void Refresh(bool force)
         {
             if (_enemy == null)
                 return;
 
-            float healthPercent = Mathf.Clamp01(_enemy.HealthPercent);
-            if (fillImage != null) fillImage.fillAmount = healthPercent;
-            if (fillRect != null && (fillImage == null || fillImage.type != Image.Type.Filled))
+            if (_enemy.IsDead)
             {
-                fillRect.anchorMax = new Vector2(healthPercent, 1f);
-                fillRect.offsetMax = new Vector2(-0.025f, -0.025f);
+                if (container != null)
+                    container.SetActive(false);
+                return;
             }
 
-            if (fillImage != null) fillImage.color = Color.white;
+            float healthPercent = Mathf.Clamp01(_enemy.HealthPercent);
+            if (!force && Mathf.Approximately(healthPercent, _lastHealthPercent))
+                return;
 
-            if (container != null && _enemy.IsDead)
-                container.SetActive(false);
+            _lastHealthPercent = healthPercent;
+            if (fillRenderer == null)
+                return;
+
+            float innerWidth = Mathf.Max(0f, fullWidth - horizontalInset * 2f);
+            float fillWidth = innerWidth * healthPercent;
+            SetSimpleSize(fillRenderer, new Vector2(fillWidth, fillHeight));
+            fillRenderer.transform.localPosition = new Vector3(
+                -fullWidth * 0.5f + horizontalInset + fillWidth * 0.5f, 0f, -0.01f);
+            fillRenderer.enabled = fillWidth > 0.001f;
         }
 
         public void ResetForReuse()
         {
-            if (container != null) container.SetActive(true);
-            if (fillImage != null) fillImage.fillAmount = 1f;
+            if (container != null)
+                container.SetActive(true);
+            _lastHealthPercent = -1f;
+            Refresh(true);
         }
     }
 }

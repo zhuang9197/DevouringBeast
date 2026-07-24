@@ -19,7 +19,7 @@ namespace DevouringBeast
         [SerializeField] protected Animator animator;
 
         [Header("死亡行为")]
-        [SerializeField] protected float corpseDuration = 10f;
+        [SerializeField] protected float corpseDuration = 20f;
         [SerializeField] protected float corpseFlickerStart = 3f;
         [SerializeField] protected float flickerInterval = 0.15f;
         protected InhaleableItem _item;
@@ -195,11 +195,38 @@ _isDead = true;
 
             int wave = WaveManager.Instance != null ? WaveManager.Instance.CurrentWave : 1;
             float dropChance = Mathf.Max(0.01f, 0.2f - Mathf.Floor(wave / 10f) * 0.05f);
-            if (UnityEngine.Random.value < dropChance)
+            bool directHeal = IsFaithNoInhaleActive();
+            if (directHeal)
+            {
+                PlayerHealth playerHealth = FindPlayerHealth();
+                if (playerHealth != null && UnityEngine.Random.value < dropChance)
+                    playerHealth.Heal(UnityEngine.Random.value < 0.2f ? 3 : 1);
+            }
+            else if (UnityEngine.Random.value < dropChance)
                 BloodDrop.Spawn(transform.position, UnityEngine.Random.value < 0.2f);
 
             // 启动尸体消失协程
+            if (directHeal)
+            {
+                EnemyPoolMember immediatePool = GetComponent<EnemyPoolMember>();
+                if (immediatePool != null) immediatePool.Release();
+                else Destroy(gameObject);
+                return;
+            }
             StartCoroutine(CorpseDecayRoutine());
+        }
+
+        private static bool IsFaithNoInhaleActive()
+        {
+            RogueSkillManager manager = RogueSkillManager.Active;
+            return manager != null && (manager.Has(RogueSkillId.FaithAngel) || manager.Has(RogueSkillId.FaithDemon));
+        }
+
+        private static PlayerHealth FindPlayerHealth()
+        {
+            return RogueSkillManager.Active != null
+                ? RogueSkillManager.Active.GetComponent<PlayerHealth>()
+                : null;
         }
 
         private IEnumerator CorpseDecayRoutine()

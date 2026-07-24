@@ -26,6 +26,12 @@ namespace DevouringBeast
 
         private WaveManager _waveManager;
         private Image _timerBackground;
+        private int _lastWave = int.MinValue;
+        private int _lastEnemies = int.MinValue;
+        private int _lastTimerSeconds = int.MinValue;
+        private float _lastTimerPercent = -1f;
+        private bool _lastWarning;
+        private bool _hasWarningState;
 
         private void Start()
         {
@@ -52,25 +58,37 @@ namespace DevouringBeast
 
         private void UpdateUI(int wave, int enemies, float timer, float maxTimer)
         {
-            if (waveText != null)
+            if (waveText != null && wave != _lastWave)
                 waveText.text = "Wave " + wave;
 
-            if (enemiesText != null)
+            if (enemiesText != null && enemies != _lastEnemies)
                 enemiesText.text = "Enemies: " + enemies;
+            _lastWave = wave;
+            _lastEnemies = enemies;
 
             // 用 sizeDelta 控制进度条宽度（从右向左缩短）
             float pct = maxTimer > 0 ? Mathf.Clamp01(timer / maxTimer) : 0f;
-            if (timerBarImage != null) timerBarImage.fillAmount = pct;
+            if (timerBarImage != null && !Mathf.Approximately(pct, _lastTimerPercent))
+                timerBarImage.fillAmount = pct;
+            _lastTimerPercent = pct;
 
             // 颜色
             bool warning = timer <= warningThreshold;
-            if (timerBarImage != null)
-                timerBarImage.color = warning ? warningColor : normalColor;
-
-            if (timerText != null)
+            if (!_hasWarningState || warning != _lastWarning)
             {
-                timerText.text = Mathf.CeilToInt(timer) + "s";
-                timerText.color = warning ? warningColor : Color.white;
+                if (timerBarImage != null)
+                    timerBarImage.color = warning ? warningColor : normalColor;
+                if (timerText != null)
+                    timerText.color = warning ? warningColor : Color.white;
+                _lastWarning = warning;
+                _hasWarningState = true;
+            }
+
+            int timerSeconds = Mathf.CeilToInt(timer);
+            if (timerText != null && timerSeconds != _lastTimerSeconds)
+            {
+                timerText.text = timerSeconds + "s";
+                _lastTimerSeconds = timerSeconds;
             }
         }
     }

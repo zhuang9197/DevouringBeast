@@ -19,6 +19,8 @@ namespace DevouringBeast
         [SerializeField, Min(0.05f)] private float intakeDistance = 0.65f;
         [SerializeField, Min(0.1f)] private float minimumPullSpeed = 1f;
         [SerializeField, Min(0.1f)] private float maximumPullSpeed = 16f;
+        [SerializeField, Min(1f)] private float corpsePullSpeedMultiplier = 2f;
+        [SerializeField, Min(0.1f)] private float corpseMaximumPullSpeed = 28f;
         [SerializeField, Min(0f)] private float suctionMassSpeedFactor = 0.35f;
         [SerializeField, Range(1f, 1.5f)] private float aliveEnemyMaxSpeedBoost = 1.25f;
 
@@ -233,7 +235,9 @@ namespace DevouringBeast
                 ? Mathf.Max(1f, _currentSuctionForce)
                 : Mathf.Max(0f, _currentSuctionForce - item.Mass);
             float pullStrength = minimumPullSpeed + forceAdvantage * suctionMassSpeedFactor;
-            pullStrength = Mathf.Clamp(pullStrength, minimumPullSpeed, maximumPullSpeed);
+            pullStrength = isCorpse
+                ? Mathf.Clamp(pullStrength * corpsePullSpeedMultiplier, minimumPullSpeed, corpseMaximumPullSpeed)
+                : Mathf.Clamp(pullStrength, minimumPullSpeed, maximumPullSpeed);
             item.transform.position = Vector2.MoveTowards(
                 item.transform.position,
                 transform.position,

@@ -18,6 +18,7 @@ namespace DevouringBeast
         private EnemyAI _ai;
         private SpriteRenderer _statusRenderer;
         private readonly List<SpriteRenderer> _erosionRenderers = new();
+        private readonly Sprite[] _activeStatusSprites = new Sprite[4];
         private RogueSkillCatalog _catalog;
         private float _poisonDps, _poisonEnd, _poisonTick;
         private int _poisonStacks;
@@ -144,19 +145,18 @@ namespace DevouringBeast
         private void UpdateStatusIcon()
         {
             if (_catalog == null || _statusRenderer == null) return;
-            Sprite[] active = new Sprite[4];
             int count = 0;
-            if (IsPoisoned) active[count++] = _catalog.poisoningIcon;
-            if (IsBurning) active[count++] = _catalog.burnIcon;
-            if (IsSlowed) active[count++] = _catalog.slowdownIcon;
-            if (IsStunned) active[count++] = _catalog.dizzinessIcon;
+            if (IsPoisoned) _activeStatusSprites[count++] = _catalog.poisoningIcon;
+            if (IsBurning) _activeStatusSprites[count++] = _catalog.burnIcon;
+            if (IsSlowed) _activeStatusSprites[count++] = _catalog.slowdownIcon;
+            if (IsStunned) _activeStatusSprites[count++] = _catalog.dizzinessIcon;
             if (count == 0) { _statusRenderer.enabled = false; return; }
             if (Time.unscaledTime >= _nextIconSwitch)
             {
                 _iconIndex = (_iconIndex + 1) % count;
                 _nextIconSwitch = Time.unscaledTime + iconSwitchInterval;
             }
-            _statusRenderer.sprite = active[_iconIndex % count];
+            _statusRenderer.sprite = _activeStatusSprites[_iconIndex % count];
             _statusRenderer.enabled = Mathf.Sin(Time.unscaledTime * iconBlinkSpeed) > -0.35f;
             _statusRenderer.transform.rotation = Quaternion.identity;
         }

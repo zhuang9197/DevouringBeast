@@ -14,6 +14,9 @@ namespace DevouringBeast
         private Button _primaryButton, _swallowButton;
         private Text _levelText, _progressText;
         private bool _lastHasItems, _lastAngel, _lastPope;
+        private bool _lastSwallowInteractable, _lastPrimaryInteractable, _lastWitchActive;
+        private int _lastLevel = int.MinValue, _lastMass = int.MinValue, _lastRequiredMass = int.MinValue;
+        private float _lastProgress = -1f, _lastWitchProgress = -1f;
         private GameObject _witchPanel;
         private Image _witchFill;
         private Text _witchText;
@@ -143,14 +146,40 @@ namespace DevouringBeast
             }
             bool playing=GameManager.Instance.IsPlaying;
             bool inhaling=_inhale != null && _inhale.IsInhaling;
-            if (_swallowButton != null) _swallowButton.interactable = playing && !inhaling && (angel || hasItems);
-            if (_primaryButton != null) _primaryButton.interactable = playing;
+            bool swallowInteractable=playing && !inhaling && (angel || hasItems);
+            if (_swallowButton != null && (force || swallowInteractable!=_lastSwallowInteractable))
+                _swallowButton.interactable=swallowInteractable;
+            if (_primaryButton != null && (force || playing!=_lastPrimaryInteractable))
+                _primaryButton.interactable=playing;
+            _lastSwallowInteractable=swallowInteractable;
+            _lastPrimaryInteractable=playing;
+
             float pct=_container.RequiredMass>0f ? Mathf.Clamp01(_container.CurrentMass/_container.RequiredMass) : 0f;
-            if (_progressFill != null) _progressFill.fillAmount=pct;
-            if (_levelText != null) _levelText.text="等级 " + _container.CurrentLevel;
-            if (_progressText != null) _progressText.text=Mathf.FloorToInt(_container.CurrentMass)+" / "+Mathf.CeilToInt(_container.RequiredMass);
-            if (_witchPanel != null) _witchPanel.SetActive(witch);
-            if (_witchFill != null && _skills != null) _witchFill.fillAmount=_skills.WitchProgressNormalized;
+            if (_progressFill != null && (force || !Mathf.Approximately(pct,_lastProgress)))
+                _progressFill.fillAmount=pct;
+            _lastProgress=pct;
+
+            int level=_container.CurrentLevel;
+            int mass=Mathf.FloorToInt(_container.CurrentMass);
+            int requiredMass=Mathf.CeilToInt(_container.RequiredMass);
+            if (_levelText != null && (force || level!=_lastLevel))
+                _levelText.text="等级 " + level;
+            if (_progressText != null && (force || mass!=_lastMass || requiredMass!=_lastRequiredMass))
+                _progressText.text=mass+" / "+requiredMass;
+            _lastLevel=level;
+            _lastMass=mass;
+            _lastRequiredMass=requiredMass;
+
+            if (_witchPanel != null && (force || witch!=_lastWitchActive))
+                _witchPanel.SetActive(witch);
+            _lastWitchActive=witch;
+            if (_witchFill != null && _skills != null)
+            {
+                float witchProgress=_skills.WitchProgressNormalized;
+                if (force || !Mathf.Approximately(witchProgress,_lastWitchProgress))
+                    _witchFill.fillAmount=witchProgress;
+                _lastWitchProgress=witchProgress;
+            }
         }
 
         private static GameObject CreateImage(string name,Transform parent,Sprite sprite)

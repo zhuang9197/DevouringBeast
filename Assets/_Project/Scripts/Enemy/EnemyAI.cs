@@ -26,6 +26,7 @@ namespace DevouringBeast
         private Collider2D _collider;
         private Transform _player;
         private Collider2D _playerCollider;
+        private PlayerHealth _playerHealth;
 
         private AIState _currentState = AIState.Chase;
         private float _attackTimer;
@@ -99,7 +100,11 @@ namespace DevouringBeast
         private void Start()
         {
             _player = GameObject.FindGameObjectWithTag("Player")?.transform;
-            if (_player != null) _playerCollider = _player.GetComponentInChildren<Collider2D>();
+            if (_player != null)
+            {
+                _playerCollider = _player.GetComponentInChildren<Collider2D>();
+                _playerHealth = _player.GetComponent<PlayerHealth>();
+            }
         }
 
         private void Update()
@@ -136,7 +141,7 @@ namespace DevouringBeast
 
                 case AIState.Attack:
                     _moveDirection = Vector2.zero;
-                    TryAttack();
+                    TryAttack(canContactPlayer);
                     break;
             }
 
@@ -190,19 +195,17 @@ namespace DevouringBeast
             animator.SetBool(ParamIsAttacking, isAttacking);
         }
 
-        private void TryAttack()
+        private void TryAttack(bool touchingPlayer)
         {
             _attackTimer += Time.deltaTime;
 
             // 伤害窗口按真实攻击动画长度计算，而不是按攻击间隔计算。
             float normalizedTime = _attackTimer / Mathf.Max(0.01f, _attackAnimationDuration);
-            bool touchingPlayer = IsPlayerInAttackContact();
             if (!_hasDealtDamage && normalizedTime >= attackWindowStart && normalizedTime <= attackWindowEnd && touchingPlayer)
             {
                 _hasDealtDamage = true;
-                var playerHealth = _player.GetComponent<PlayerHealth>();
-                if (playerHealth != null)
-                    playerHealth.TakeDamage(Mathf.RoundToInt(AttackDamage));
+                if (_playerHealth != null)
+                    _playerHealth.TakeDamage(Mathf.RoundToInt(AttackDamage));
             }
 
             // 每个攻击周期都显式重播非循环 attack 动画，保证连续贴身时不会只攻击一次。
@@ -228,9 +231,20 @@ namespace DevouringBeast
         {
             if (_player == null) return false;
             if (_collider != null && _collider.enabled && _playerCollider != null && _playerCollider.enabled)
+            {
+                Bounds enemyBounds = _collider.bounds;
+                Bounds playerBounds = _playerCollider.bounds;
+                float dx = Mathf.Max(0f, Mathf.Abs(enemyBounds.center.x - playerBounds.center.x) -
+                    enemyBounds.extents.x - playerBounds.extents.x - attackContactTolerance);
+                float dy = Mathf.Max(0f, Mathf.Abs(enemyBounds.center.y - playerBounds.center.y) -
+                    enemyBounds.extents.y - playerBounds.extents.y - attackContactTolerance);
+                if (dx * dx + dy * dy > attackContactTolerance * attackContactTolerance)
+                    return false;
                 return _collider.Distance(_playerCollider).distance <= attackContactTolerance;
+            }
 
-            return Vector2.Distance(transform.position, _player.position) <= Mathf.Min(AttackRange, attackContactRadius);
+            float radius = Mathf.Min(AttackRange, attackContactRadius);
+            return ((Vector2)transform.position - (Vector2)_player.position).sqrMagnitude <= radius * radius;
         }
 
         private void RestartAttackAnimation()

@@ -112,9 +112,10 @@ Shader "DevouringBeast/VFX/PoisonCloudDissolveDistortion"
                     _DistortionStrength * dissolveMask;
                 half3 refractedBackground = SampleSceneColor(screenUv + distortion);
 
-                half3 poisonColor = cloud.rgb * _BaseColor.rgb * input.color.rgb;
+                half3 poisonTint = lerp(_BaseColor.rgb, input.color.rgb, 0.72h);
+                half3 poisonColor = cloud.rgb * poisonTint;
                 half opacity = saturate(dissolveMask * lifetime * _BaseColor.a);
-                half3 finalColor = lerp(refractedBackground, poisonColor, saturate(opacity * 0.72));
+                half3 finalColor = lerp(refractedBackground, poisonColor, 0.78h);
                 return half4(finalColor, opacity);
             }
             ENDHLSL

@@ -120,9 +120,14 @@ namespace DevouringBeast
         public float GetRequiredMassForLevel(int level)
         {
             level = Mathf.Max(1, level);
+            if (level == 1) return 35f;
+            if (level == 2) return 50f;
+            if (level == 3) return 65f;
+            if (level == 4) return 80f;
+            if (level == 5) return 100f;
             float required = Mathf.Max(1f, initialLevelRequirement);
             float growth = Mathf.Max(1.01f, levelGrowthMultiplier);
-            for (int currentLevel = 2; currentLevel <= level; currentLevel++)
+            for (int currentLevel = 6; currentLevel <= level; currentLevel++)
                 required = (float)decimal.Ceiling((decimal)required * (decimal)growth);
             return required;
         }
