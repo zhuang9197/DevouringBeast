@@ -54,6 +54,7 @@ namespace DevouringBeast
         public void ApplyPoison(float dps, float duration)
         {
             if (!CanApply(dps, duration)) return;
+            enabled = true;
             _poisonStacks++;
             _poisonDps += dps;
             _poisonEnd = Time.time + duration;
@@ -63,6 +64,7 @@ namespace DevouringBeast
         public void ApplyBurn(float baseDps, float duration, float growthPerHit)
         {
             if (!CanApply(baseDps, duration)) return;
+            enabled = true;
             if (IsBurning) _burnDps *= 1f + Mathf.Max(0f, growthPerHit);
             else
             {
@@ -75,6 +77,7 @@ namespace DevouringBeast
         public void ApplySlow(float percent, float duration)
         {
             if (!CanApply(percent, duration)) return;
+            enabled = true;
             _slowPercent = Mathf.Max(_slowPercent, Mathf.Clamp(percent, 0f, 0.9f));
             _slowEnd = Mathf.Max(_slowEnd, Time.time + duration);
             RefreshMovementModifier();
@@ -83,6 +86,7 @@ namespace DevouringBeast
         public void ApplyStun(float duration)
         {
             if (_enemy == null || _enemy.IsDead || duration <= 0f) return;
+            enabled = true;
             _stunEnd = Mathf.Max(_stunEnd, Time.time + duration);
             RefreshMovementModifier();
         }
@@ -91,6 +95,7 @@ namespace DevouringBeast
             float detonationMultiplier, float missingHealthPercent)
         {
             erosionMaxStacks = Mathf.Max(1, requestedMaxStacks);
+            enabled = true;
             if (_erosionStacks >= erosionMaxStacks)
             {
                 float missingHealth = Mathf.Max(0f, _enemy.MaxHealth - _enemy.CurrentHealth);
@@ -108,7 +113,12 @@ namespace DevouringBeast
 
         private void Update()
         {
-            if (_enemy == null || _enemy.IsDead) { HideVisuals(); return; }
+            if (_enemy == null || _enemy.IsDead)
+            {
+                HideVisuals();
+                enabled = false;
+                return;
+            }
             TickDamage(ref _poisonTick, _poisonEnd, _poisonDps);
             TickDamage(ref _burnTick, _burnEnd, _burnDps);
             if (!IsSlowed && _slowPercent > 0f) { _slowPercent = 0f; RefreshMovementModifier(); }
@@ -117,6 +127,8 @@ namespace DevouringBeast
             UpdateErosionOrbit();
             if (!IsPoisoned && _poisonStacks > 0) { _poisonStacks = 0; _poisonDps = 0f; }
             if (!IsBurning && _burnDps > 0f) _burnDps = 0f;
+            if (!IsPoisoned && !IsBurning && !IsSlowed && !IsStunned && _erosionStacks == 0)
+                enabled = false;
         }
 
         private void TickDamage(ref float nextTick, float endTime, float dps)
@@ -210,6 +222,7 @@ namespace DevouringBeast
             ClearErosion();
             if (_statusRenderer != null) _statusRenderer.enabled = false;
             RefreshMovementModifier();
+            enabled = false;
         }
     }
 }

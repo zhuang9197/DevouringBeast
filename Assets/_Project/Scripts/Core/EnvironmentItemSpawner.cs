@@ -43,6 +43,7 @@ namespace DevouringBeast
         private float _nextStoneRefresh;
         private float _nextFoodRefresh;
         private bool _initialized;
+        private bool _refillEnabled = true;
 
         private void Awake()
         {
@@ -123,7 +124,7 @@ namespace DevouringBeast
 
         private void Update()
         {
-            if (!GameManager.Instance.IsPlaying) return;
+            if (!GameManager.Instance.IsPlaying || !_refillEnabled) return;
             if (Time.time >= _nextBigStoneRefresh)
             {
                 Refill(ItemKind.BigStone, bigStoneTarget);
@@ -167,6 +168,7 @@ namespace DevouringBeast
             member.transform.position = position;
             member.gameObject.SetActive(true);
             member.Item.ResetForReuse();
+            GroundShadow.Ensure(member.gameObject).BeginLanding(0.25f);
             _active[kind].Add(member);
             Vector2Int cell = ToCell(position);
             _occupiedCells[cell] = member;
@@ -189,7 +191,6 @@ namespace DevouringBeast
             collider.radius = kind == ItemKind.BigStone ? 0.55f : 0.35f;
 
             InhaleableItem item = go.GetComponent<InhaleableItem>();
-            item.Tag = ItemTag.Normal;
             item.Mass = GetMass(kind);
             item.DeadInhaleThreshold = item.Mass;
             item.IsAlive = false;
@@ -198,7 +199,36 @@ namespace DevouringBeast
 
             WorldItemPoolMember member = go.GetComponent<WorldItemPoolMember>();
             member.Configure((int)kind, item, HandleRelease);
+            GroundShadow.Ensure(go);
             return member;
+        }
+
+        public void ResetForFloor()
+        {
+            EnsureInitialized();
+            _refillEnabled = true;
+            foreach (ItemKind kind in AllKinds)
+            {
+                List<WorldItemPoolMember> snapshot = new(_active[kind]);
+                foreach (WorldItemPoolMember member in snapshot) HandleRelease(member);
+            }
+            Refill(ItemKind.BigStone, Mathf.Min(bigStoneTarget, 3));
+            Refill(ItemKind.Stone, Mathf.Min(stoneTarget, 18));
+            Refill(ItemKind.Mushroom, Mathf.Min(mushroomTarget, 18));
+            Refill(ItemKind.RiceBall, Mathf.Min(riceBallTarget, 18));
+            ScheduleNextRefreshes();
+        }
+
+        /// <summary>
+        /// Stops replenishing the current room after it is cleared. Existing items remain
+        /// active so the player can return and collect them before leaving the floor.
+        /// </summary>
+        public void SetCurrentRoomCleared(bool cleared)
+        {
+            bool shouldRefill = !cleared;
+            if (_refillEnabled == shouldRefill) return;
+            _refillEnabled = shouldRefill;
+            if (_refillEnabled) ScheduleNextRefreshes();
         }
 
         private void HandleRelease(WorldItemPoolMember member)

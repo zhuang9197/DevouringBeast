@@ -221,7 +221,7 @@ MonoBehaviour:
   - id: 22
     school: 5
     displayName: "\u5929\u4F7F"
-    description: "吸气和吞噬替换为无消耗吐出，间隔 0.5 秒；击杀升级不受种类池限制；排除吸入类技能。"
+    description: "吸气和吞噬替换为无消耗吐出，间隔 0.5 秒；击杀获取的质量固定翻倍，不随重复升级叠加；排除吸入类技能。"
     iconName: faith_angel
     maxLevel: 0
     prerequisites: 
@@ -230,7 +230,7 @@ MonoBehaviour:
   - id: 23
     school: 5
     displayName: "\u6076\u9B54"
-    description: "吸力伤害大幅提高但不能吸入物体；击杀升级不受种类池限制；排除吐出和能量球类技能。"
+    description: "吸力伤害大幅提高但不能吸入物体；击杀获取的质量固定翻倍，不随重复升级叠加；排除吐出和能量球类技能。"
     iconName: faith_demon
     maxLevel: 0
     prerequisites: 
@@ -239,7 +239,7 @@ MonoBehaviour:
   - id: 24
     school: 5
     displayName: "\u6559\u7687"
-    description: "教化获得升级进度时，同时吐出一颗具有肉鸽效果的能量球，并提升 50% 能量球额外伤害。"
+    description: "吸入和吐出保持正常；吞噬时额外吐出一颗具有肉鸽效果的教化能量球，并提升 50% 能量球额外伤害；拥有蓄力技能时可长按教化按钮，使教化能量球获得蓄力增幅。"
     iconName: faith_pope
     maxLevel: 0
     prerequisites: 

@@ -20,6 +20,17 @@ namespace DevouringBeast
         public Vector2 Min => center - size * 0.5f;
         public Vector2 Max => center + size * 0.5f;
 
+        public void ConfigureRoom(Vector2 roomCenter, Vector2 roomSize, bool rebuildWalls, float inset = 0f)
+        {
+            center = roomCenter;
+            float safeInset = Mathf.Max(0f, inset);
+            size = new Vector2(
+                Mathf.Max(1f, roomSize.x - safeInset * 2f),
+                Mathf.Max(1f, roomSize.y - safeInset * 2f));
+            RemoveWalls();
+            if (rebuildWalls) CreateWalls();
+        }
+
         private void Awake()
         {
             Instance = this;
@@ -80,6 +91,15 @@ namespace DevouringBeast
             var col = go.AddComponent<BoxCollider2D>();
             col.size = size;
             go.tag = "Wall";
+        }
+
+        private void RemoveWalls()
+        {
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                Transform child = transform.GetChild(i);
+                if (child.name.StartsWith("Wall_")) Destroy(child.gameObject);
+            }
         }
 
 #if UNITY_EDITOR

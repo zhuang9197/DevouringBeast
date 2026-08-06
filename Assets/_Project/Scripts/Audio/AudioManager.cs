@@ -173,7 +173,7 @@ namespace DevouringBeast
 
         public void PlaySfx(AudioCue cue, float volumeScale = 1f)
         {
-            if (_sfxSuppressed) return;
+            if (_sfxSuppressed && cue != AudioCue.RogueSelect) return;
             AudioClip clip = GetSfxClip(cue);
             if (clip == null) return;
 
@@ -205,6 +205,20 @@ namespace DevouringBeast
             if (_loopCue == cue && _loopSource.isPlaying) return;
             _loopCue = cue;
             _loopSource.clip = clip;
+            _loopSource.loop = true;
+            _loopSource.Play();
+        }
+
+        /// <summary>Plays on the controllable loop source once, so release can stop it without repetition.</summary>
+        public void PlayOnceUntilStopped(AudioCue cue)
+        {
+            if (_sfxSuppressed) return;
+            AudioClip clip = GetSfxClip(cue);
+            if (clip == null) return;
+            if (_loopCue == cue && _loopSource.isPlaying) return;
+            _loopCue = cue;
+            _loopSource.clip = clip;
+            _loopSource.loop = false;
             _loopSource.Play();
         }
 
@@ -212,7 +226,8 @@ namespace DevouringBeast
         {
             _sfxSuppressed = suppressed;
             if (!suppressed) return;
-            _sfxSource.Stop();
+            // Do not cut action one-shots already in progress (swallow, teaching shot, level-up).
+            // New gameplay sounds remain blocked by PlaySfx while the selection is open.
             StopSfx(AudioCue.Idle);
             _loopSource.Stop();
             _loopSource.clip = null;
@@ -222,6 +237,7 @@ namespace DevouringBeast
         public void EnterGameOverAudio()
         {
             SetSfxSuppressed(true);
+            _sfxSource.Stop();
             AudioClip clip = GetSfxClip(AudioCue.Die);
             if (clip != null)
             {

@@ -51,6 +51,7 @@ namespace DevouringBeast
 
         // 属性
         public bool IsInhaling => _isInhaling;
+        public bool IsSuctionMaxed => _isInhaling && _suctionMaxed;
         public float Progress => _isInhaling ? _inhaleTimer / (maxInhaleDuration + _bonusInhaleDuration) : 0f;
         public float CurrentSuctionForce => _currentSuctionForce;
         public float MaxSuctionForce

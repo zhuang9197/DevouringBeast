@@ -7,13 +7,18 @@ namespace DevouringBeast
     public sealed class GameplayHudController : MonoBehaviour
     {
         private SwallowContainer _container;
+        private InputManager _input;
         private PlayerInhale _inhale;
+        private PlayerSpit _spit;
         private RogueSkillManager _skills;
         private RogueSkillCatalog _catalog;
         private Image _primaryImage, _swallowImage, _progressFill;
         private Button _primaryButton, _swallowButton;
         private Text _levelText, _progressText;
-        private bool _lastHasItems, _lastAngel, _lastPope;
+        private bool _lastHasItems, _lastAngel;
+        private bool _displayHasItems;
+        private bool _primaryHoldVisualActive;
+        private bool _swallowHoldVisualActive;
         private bool _lastSwallowInteractable, _lastPrimaryInteractable, _lastWitchActive;
         private int _lastLevel = int.MinValue, _lastMass = int.MinValue, _lastRequiredMass = int.MinValue;
         private float _lastProgress = -1f, _lastWitchProgress = -1f;
@@ -30,7 +35,9 @@ namespace DevouringBeast
         private void Awake()
         {
             _container = GetComponent<SwallowContainer>();
+            _input = GetComponent<InputManager>();
             _inhale = GetComponent<PlayerInhale>();
+            _spit = GetComponent<PlayerSpit>();
             _skills = GetComponent<RogueSkillManager>();
             _catalog = Resources.Load<RogueSkillCatalog>("Rogue/RogueSkillCatalog");
         }
@@ -51,13 +58,13 @@ namespace DevouringBeast
             _witchPanel.transform.SetParent(canvas.transform,false);
             RectTransform panelRect=_witchPanel.GetComponent<RectTransform>();
             panelRect.anchorMin=panelRect.anchorMax=new Vector2(0.5f,0f); panelRect.pivot=new Vector2(0.5f,0f);
-            panelRect.anchoredPosition=new Vector2(0f,55f); panelRect.sizeDelta=new Vector2(480f,82f);
+            panelRect.anchoredPosition=new Vector2(0f,24f); panelRect.sizeDelta=new Vector2(260f,42f);
             GameObject bg=CreateImage("ProgressBar",_witchPanel.transform,_catalog?.progressBar); Stretch(bg.GetComponent<RectTransform>());
             GameObject fill=CreateImage("ProgressFill",bg.transform,_catalog?.progressFill);
             SetRect(fill.GetComponent<RectTransform>(),new Vector2(0.035f,0.25f),new Vector2(0.965f,0.75f));
             _witchFill=fill.GetComponent<Image>(); _witchFill.type=Image.Type.Filled;
             _witchFill.fillMethod=Image.FillMethod.Horizontal; _witchFill.fillOrigin=0;
-            _witchText=CreateText("Label",_witchPanel.transform,24,TextAnchor.MiddleCenter);
+            _witchText=CreateText("Label",_witchPanel.transform,16,TextAnchor.MiddleCenter);
             Stretch(_witchText.rectTransform); _witchText.text="野兽吞吞";
             _witchPanel.SetActive(false);
         }
@@ -113,7 +120,7 @@ namespace DevouringBeast
             GameObject panel = new("LevelProgressPanel", typeof(RectTransform)); panel.transform.SetParent(canvas.transform,false);
             RectTransform panelRect=panel.GetComponent<RectTransform>();
             panelRect.anchorMin=panelRect.anchorMax=new Vector2(0f,1f); panelRect.pivot=new Vector2(0f,1f);
-            panelRect.anchoredPosition=new Vector2(55f,-185f); panelRect.sizeDelta=new Vector2(520f,96f);
+            panelRect.anchoredPosition=new Vector2(18f,-72f); panelRect.sizeDelta=new Vector2(220f,42f);
 
             GameObject bg=CreateImage("ProgressBar",panel.transform,_catalog?.progressBar);
             RectTransform bgRect=bg.GetComponent<RectTransform>(); Stretch(bgRect);
@@ -124,9 +131,9 @@ namespace DevouringBeast
             _progressFill=fill.GetComponent<Image>(); _progressFill.type=Image.Type.Filled;
             _progressFill.fillMethod=Image.FillMethod.Horizontal; _progressFill.fillOrigin=0;
 
-            _levelText=CreateText("Level",panel.transform,30,TextAnchor.MiddleLeft);
+            _levelText=CreateText("Level",panel.transform,14,TextAnchor.MiddleLeft);
             SetRect(_levelText.rectTransform,new Vector2(0.04f,0.52f),new Vector2(0.42f,0.98f));
-            _progressText=CreateText("Progress",panel.transform,22,TextAnchor.MiddleRight);
+            _progressText=CreateText("Progress",panel.transform,11,TextAnchor.MiddleRight);
             SetRect(_progressText.rectTransform,new Vector2(0.45f,0.52f),new Vector2(0.95f,0.98f));
         }
 
@@ -134,18 +141,19 @@ namespace DevouringBeast
         {
             if (_container == null || _catalog == null) return;
             bool hasItems=_container.HasItems;
+            bool inhaling=_inhale != null && _inhale.IsInhaling;
+            bool primaryHeld = _input != null && _input.IsPrimaryActionHeld;
+            if (force || !primaryHeld) _displayHasItems=hasItems;
             bool angel=_skills != null && _skills.Has(RogueSkillId.FaithAngel);
-            bool pope=_skills != null && _skills.Has(RogueSkillId.FaithPope);
             bool witch=_skills != null && _skills.Has(RogueSkillId.FaithWitch);
-            if (force || hasItems!=_lastHasItems || angel!=_lastAngel || pope!=_lastPope)
+            if (force || _displayHasItems!=_lastHasItems || angel!=_lastAngel)
             {
                 if (_primaryImage != null)
-                    _primaryImage.sprite = angel ? _catalog.spitButton : pope && hasItems ? _catalog.swallowButton : hasItems ? _catalog.spitButton : _catalog.suckButton;
+                    _primaryImage.sprite = angel ? _catalog.spitButton : _displayHasItems ? _catalog.spitButton : _catalog.suckButton;
                 if (_swallowImage != null) _swallowImage.sprite = angel ? _catalog.spitButton : _catalog.swallowButton;
-                _lastHasItems=hasItems; _lastAngel=angel; _lastPope=pope;
+                _lastHasItems=_displayHasItems; _lastAngel=angel;
             }
             bool playing=GameManager.Instance.IsPlaying;
-            bool inhaling=_inhale != null && _inhale.IsInhaling;
             bool swallowInteractable=playing && !inhaling && (angel || hasItems);
             if (_swallowButton != null && (force || swallowInteractable!=_lastSwallowInteractable))
                 _swallowButton.interactable=swallowInteractable;
@@ -180,6 +188,39 @@ namespace DevouringBeast
                     _witchFill.fillAmount=witchProgress;
                 _lastWitchProgress=witchProgress;
             }
+            RefreshHoldVisuals(inhaling);
+        }
+
+        private void RefreshHoldVisuals(bool inhaling)
+        {
+            bool charging = _spit != null && _spit.IsCharging;
+            bool swallowCharge = charging && _input != null && _input.IsSwallowActionHeld;
+            bool maxed = (inhaling && _inhale.IsSuctionMaxed) || (charging && _spit.IsChargeMaxed);
+            RefreshHoldImage(_primaryImage, inhaling || (charging && !swallowCharge), maxed,
+                ref _primaryHoldVisualActive);
+            RefreshHoldImage(_swallowImage, swallowCharge, maxed, ref _swallowHoldVisualActive);
+        }
+
+        private static void RefreshHoldImage(Image image, bool active, bool maxed, ref bool wasActive)
+        {
+            if (image == null) return;
+            if (!active)
+            {
+                if (wasActive) image.color = Color.white;
+                wasActive = false;
+                return;
+            }
+
+            wasActive = true;
+            if (maxed)
+            {
+                image.color = new Color(1f, 0.16f, 0.16f, 1f);
+                return;
+            }
+
+            float pulse = (Mathf.Sin(Time.unscaledTime * Mathf.PI * 6f) + 1f) * 0.5f;
+            float redStrength = Mathf.Lerp(0.25f, 0.82f, pulse);
+            image.color = Color.Lerp(Color.white, new Color(1f, 0.08f, 0.08f, 1f), redStrength);
         }
 
         private static GameObject CreateImage(string name,Transform parent,Sprite sprite)

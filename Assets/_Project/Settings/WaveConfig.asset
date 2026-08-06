@@ -14,7 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   normalWaveTimer: 60
   bossWaveTimer: 120
-  clearResetTimer: 3
+  crisisEmpowerInterval: 5
+  crisisTimeScaleStart: 1.15
+  crisisTimeScaleStep: 0.05
+  crisisTimeScaleMax: 1.75
+  crisisTimeScaleIncreaseInterval: 10
+  crisisOverlayMinAlpha: 0.08
+  crisisOverlayMaxAlpha: 0.26
+  crisisOverlayPulseFrequency: 1.25
+  crisisOverlayPulseFloor: 0.05
+  crisisOverlayPulseSharpness: 3
   baseEnemyCount: 5
   enemiesPerWaveIncrement: 2
   elitePer5Waves: 1

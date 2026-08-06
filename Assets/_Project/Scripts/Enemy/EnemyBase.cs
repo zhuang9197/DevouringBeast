@@ -34,7 +34,8 @@ namespace DevouringBeast
         public float HealthPercent => _maxHealth > 0 ? _currentHealth / _maxHealth : 0f;
         public float CurrentHealth => _currentHealth;
         public float MaxHealth => _maxHealth;
-        public float MassValue => GetMassForType(data != null ? data.enemyType : EnemyType.Normal);
+        public bool IsVisible => spriteRenderer != null && spriteRenderer.isVisible;
+        public float MassValue => data != null ? Mathf.Max(0f, data.massValue) : 5f;
 
         public event Action<EnemyBase> OnDeath;
         public static event Action<EnemyBase> OnAnyEnemyDeath;
@@ -73,7 +74,6 @@ namespace DevouringBeast
             // 配置 InhaleableItem
             if (_item != null)
             {
-                _item.Tag = data.tag;
                 _item.Mass = MassValue;
                 _item.AliveInhaleThreshold = data.aliveInhaleThreshold;
                 _item.DeadInhaleThreshold = data.deadInhaleThreshold;
@@ -140,10 +140,10 @@ namespace DevouringBeast
             _currentHealth = Mathf.Min(_maxHealth, _currentHealth + amount);
         }
 
-        public void EmpowerForNextWave(WaveConfig config, int nextWave)
+        public void EmpowerForCrisis(WaveConfig config, int floor)
         {
             if (_isDead || data == null || config == null) return;
-            data.attackDamage = Mathf.Max(data.attackDamage, config.GetAttackDamage(nextWave, data.enemyType));
+            data.attackDamage = Mathf.Max(data.attackDamage + 1f, config.GetAttackDamage(floor));
             data.moveSpeed *= Mathf.Max(1f, config.normalSpeedScale);
             data.attackRange *= Mathf.Max(1f, config.survivorAttackRangeScale);
             data.detectRange *= Mathf.Max(1f, config.survivorDetectRangeScale);
@@ -163,8 +163,8 @@ namespace DevouringBeast
         protected virtual void Die()
         {
             
-            AudioManager.Instance.PlaySfx(
-                data != null && data.enemyType == EnemyType.Boss ? AudioCue.BossDie : AudioCue.EnemyDie);
+            bool bossRoom = WaveManager.Instance != null && WaveManager.Instance.CurrentRoomKind == RoomKind.Boss;
+            AudioManager.Instance.PlaySfx(bossRoom ? AudioCue.BossDie : AudioCue.EnemyDie);
 
 _isDead = true;
 
@@ -200,7 +200,7 @@ _isDead = true;
             {
                 PlayerHealth playerHealth = FindPlayerHealth();
                 if (playerHealth != null && UnityEngine.Random.value < dropChance)
-                    playerHealth.Heal(UnityEngine.Random.value < 0.2f ? 3 : 1);
+                    playerHealth.Heal(UnityEngine.Random.value < 0.2f ? 2 : 1);
             }
             else if (UnityEngine.Random.value < dropChance)
                 BloodDrop.Spawn(transform.position, UnityEngine.Random.value < 0.2f);
@@ -249,16 +249,6 @@ _isDead = true;
             EnemyPoolMember poolMember = GetComponent<EnemyPoolMember>();
             if (poolMember != null) poolMember.Release();
             else Destroy(gameObject);
-        }
-
-        public static float GetMassForType(EnemyType type)
-        {
-            return type switch
-            {
-                EnemyType.Elite => 20f,
-                EnemyType.Boss => 50f,
-                _ => 5f
-            };
         }
 
         private void OnDestroy()

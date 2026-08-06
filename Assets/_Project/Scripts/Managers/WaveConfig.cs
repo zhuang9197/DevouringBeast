@@ -13,8 +13,22 @@ namespace DevouringBeast
         public float normalWaveTimer = 60f;
         [Tooltip("Boss波次倒计时（秒）")]
         public float bossWaveTimer = 120f;
-        [Tooltip("清敌后重置倒计时（秒）")]
-        public float clearResetTimer = 3f;
+        [Tooltip("危急状态中强化存活敌人的间隔（秒）")]
+        [Min(1f)] public float crisisEmpowerInterval = 5f;
+        [Tooltip("进入危急状态时的初始游戏速度倍率")]
+        [Min(1f)] public float crisisTimeScaleStart = 1.15f;
+        [Tooltip("每次提高的游戏速度倍率")]
+        [Min(0f)] public float crisisTimeScaleStep = 0.05f;
+        [Tooltip("危急状态的游戏速度倍率上限")]
+        [Min(1f)] public float crisisTimeScaleMax = 1.75f;
+        [Tooltip("按现实时间计算的危急状态加速间隔（秒）")]
+        [Min(0.1f)] public float crisisTimeScaleIncreaseInterval = 10f;
+        [Header("危急状态红光")]
+        [Range(0f, 0.5f)] public float crisisOverlayMinAlpha = 0.08f;
+        [Range(0f, 0.5f)] public float crisisOverlayMaxAlpha = 0.26f;
+        [Min(0.1f)] public float crisisOverlayPulseFrequency = 1.25f;
+        [Range(0f, 1f)] public float crisisOverlayPulseFloor = 0.05f;
+        [Min(1f)] public float crisisOverlayPulseSharpness = 3f;
 
         [Header("生成数量")]
         [Tooltip("第1波基础敌人数量")]
@@ -39,7 +53,7 @@ namespace DevouringBeast
         [Min(0)] public int eliteDamageBonus = 1;
         [Min(0)] public int bossDamageBonus = 2;
 
-        [Header("跨波存活敌人强化（生命值不变）")]
+        [Header("危急状态强化（生命值不变）")]
         [Min(1f)] public float survivorAttackRangeScale = 1.01f;
         [Min(1f)] public float survivorDetectRangeScale = 1.02f;
         [Min(1f)] public float survivorAttackSpeedScale = 1.02f;
@@ -80,10 +94,9 @@ namespace DevouringBeast
         /// <summary>
         /// 获取波次倒计时
         /// </summary>
-        public float GetWaveTimer(int wave)
+        public float GetRoomTimer(RoomKind roomKind)
         {
-            if (wave % 10 == 0) return bossWaveTimer;
-            return normalWaveTimer;
+            return roomKind == RoomKind.Boss ? bossWaveTimer : normalWaveTimer;
         }
 
         /// <summary>
@@ -94,13 +107,11 @@ namespace DevouringBeast
             return Mathf.Pow(normalHealthScale, wave - 1);
         }
 
-        public int GetAttackDamage(int wave, EnemyType type)
+        public int GetAttackDamage(int floor, int roomBonus = 0)
         {
             int damage = Mathf.Max(1, baseAttackDamage) +
-                Mathf.Max(0, wave - 1) / Mathf.Max(1, damageIncreaseInterval);
-            if (type == EnemyType.Elite) damage += Mathf.Max(0, eliteDamageBonus);
-            else if (type == EnemyType.Boss) damage += Mathf.Max(0, bossDamageBonus);
-            return damage;
+                Mathf.Max(0, floor - 1) / Mathf.Max(1, damageIncreaseInterval);
+            return damage + Mathf.Max(0, roomBonus);
         }
 
         public float GetSpeedMultiplier(int wave)

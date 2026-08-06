@@ -43,6 +43,13 @@ private void Awake()
             _instance = this;
             DontDestroyOnLoad(gameObject);
             Application.targetFrameRate = 60;
+            int inhaleableLayer = LayerMask.NameToLayer("inhaleableLayer");
+            if (inhaleableLayer >= 0)
+                Physics2D.IgnoreLayerCollision(inhaleableLayer, inhaleableLayer, true);
+#if UNITY_EDITOR
+            // Keep editor play mode responsive while profiling or using another window.
+            Application.runInBackground = true;
+#endif
 #if UNITY_ANDROID
             QualitySettings.vSyncCount = 0;
 #endif
@@ -62,6 +69,7 @@ private void OnDestroy()
             Time.timeScale = 1f;
             AudioManager.Instance.SetSfxSuppressed(false);
             ApplySceneState(scene);
+            FloorMapManager.EnsureForScene(scene);
         }
 
         private void ApplySceneState(Scene scene)
@@ -116,8 +124,19 @@ private void OnDestroy()
         #region 便捷方法
 
         public void StartGame() => ChangeState(GameState.Playing);
-        public void PauseGame() => ChangeState(GameState.Paused);
-        public void ResumeGame() => ChangeState(GameState.Playing);
+        public void PauseGame()
+        {
+            if (!IsPlaying) return;
+            ChangeState(GameState.Paused);
+            Time.timeScale = 0f;
+        }
+
+        public void ResumeGame()
+        {
+            if (!IsPaused) return;
+            Time.timeScale = WaveManager.Instance != null ? WaveManager.Instance.GameplayTimeScale : 1f;
+            ChangeState(GameState.Playing);
+        }
         public void GameOver() => ChangeState(GameState.GameOver);
         public void ReturnToMenu() => ChangeState(GameState.Menu);
 
@@ -136,7 +155,7 @@ private void OnDestroy()
         public void ExitRogueSelection()
         {
             if (CurrentState != GameState.RogueChoosing) return;
-            Time.timeScale = 1f;
+            Time.timeScale = WaveManager.Instance != null ? WaveManager.Instance.GameplayTimeScale : 1f;
             AudioManager.Instance.SetSfxSuppressed(false);
             ChangeState(GameState.Playing);
         }

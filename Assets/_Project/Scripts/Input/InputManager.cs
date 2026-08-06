@@ -32,6 +32,8 @@ namespace DevouringBeast
         private Vector2 _keyboardMove;
         private bool _primaryActionHeld;
         private bool _swallowActionHeld;
+        public bool IsPrimaryActionHeld => _primaryActionHeld;
+        public bool IsSwallowActionHeld => _swallowActionHeld;
 
         private void Awake()
         {
@@ -174,17 +176,6 @@ public void HandleInhaleSpitPress()
                 return;
             }
 
-            if (_rogueSkills != null && _rogueSkills.Has(RogueSkillId.FaithPope))
-            {
-                if (swallowContainer != null && swallowContainer.HasItems)
-                {
-                    float taughtMass = swallowContainer.Consume();
-                    playerSpit.Spit(taughtMass);
-                    AudioManager.Instance.PlaySfx(AudioCue.Swallow);
-                }
-                return;
-            }
-
             if (swallowContainer != null && swallowContainer.HasItems)
             {
                 if (playerSpit.CanCharge) playerSpit.StartCharge();
@@ -231,16 +222,39 @@ public void HandleSwallowPress()
 
             if (swallowContainer != null && swallowContainer.CanConsume)
             {
-                float taughtMass = swallowContainer.Consume();
-                AudioManager.Instance.PlaySfx(AudioCue.Swallow);
-                if (_rogueSkills != null && _rogueSkills.Has(RogueSkillId.FaithPope)) playerSpit.Spit(taughtMass);
-                _rogueSkills?.NotifySwallow();
+                bool pope = _rogueSkills != null && _rogueSkills.Has(RogueSkillId.FaithPope);
+                if (pope && playerSpit != null && playerSpit.CanCharge)
+                {
+                    playerSpit.StartCharge();
+                    return;
+                }
+                PerformSwallow();
             }
         }
 
         public void HandleSwallowRelease()
         {
+            if (!_swallowActionHeld) return;
+            bool popeCharge = _rogueSkills != null && _rogueSkills.Has(RogueSkillId.FaithPope) &&
+                playerSpit != null && playerSpit.IsCharging;
+            if (popeCharge)
+            {
+                PerformSwallow();
+                if (playerSpit.IsCharging) playerSpit.StopCharge();
+            }
             _swallowActionHeld = false;
+        }
+
+        private void PerformSwallow()
+        {
+            if (swallowContainer == null || !swallowContainer.CanConsume) return;
+            float taughtMass = swallowContainer.Consume(true);
+            AudioManager.Instance.PlaySfx(AudioCue.Swallow);
+            if (_rogueSkills != null && _rogueSkills.Has(RogueSkillId.FaithPope))
+                playerSpit?.SpitTeachingBall(taughtMass);
+            _rogueSkills?.NotifySwallow();
+            if (playerSpit != null && playerSpit.IsCharging) playerSpit.StopCharge();
+            swallowContainer.CheckAndNotify();
         }
 
         #endregion

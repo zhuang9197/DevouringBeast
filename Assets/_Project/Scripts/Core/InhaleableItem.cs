@@ -9,7 +9,6 @@ namespace DevouringBeast
     /// </summary>
     public class InhaleableItem : MonoBehaviour
     {
-        [field: SerializeField] public ItemTag Tag { get; set; } = ItemTag.Normal;
         [field: SerializeField] public float Mass { get; set; } = 10f;
 
         [Tooltip("阵亡后的吸入阈值（很小）")]
@@ -104,7 +103,12 @@ namespace DevouringBeast
             {
                 WorldItemPoolMember worldItem = GetComponent<WorldItemPoolMember>();
                 if (worldItem != null) worldItem.Release();
-                else Destroy(gameObject);
+                else
+                {
+                    BloodDrop bloodDrop = GetComponent<BloodDrop>();
+                    if (bloodDrop != null) bloodDrop.Release();
+                    else Destroy(gameObject);
+                }
             }
         }
 

@@ -20,6 +20,7 @@ namespace DevouringBeast
         [SerializeField, Range(0f, 1f)] private float attackWindowEnd = 0.65f;
         [SerializeField, Min(0.1f)] private float attackContactRadius = 1.15f;
         [SerializeField, Min(0f)] private float attackContactTolerance = 0.08f;
+        [SerializeField, Min(0.02f)] private float aiTickInterval = 0.05f;
 
         private EnemyBase _enemy;
         private Rigidbody2D _rb;
@@ -32,12 +33,15 @@ namespace DevouringBeast
         private float _attackTimer;
         private Vector2 _moveDirection;
         private bool _wasMoving;
+        private bool _wasAttacking;
         private bool _hasDealtDamage; // 当前攻击周期是否已造成伤害
         private float _attackAnimationDuration = 0.5f;
         private float _statusSpeedMultiplier = 1f;
         private bool _statusStunned;
         private float _suctionSpeedMultiplier = 1f;
         private float _suctionBoostUntil;
+        private float _nextAiTickTime;
+        private float _lastAiTickTime;
 
         // Animator 参数 ID
         private static readonly int ParamIsMoving = Animator.StringToHash("IsMoving");
@@ -68,11 +72,14 @@ namespace DevouringBeast
             _attackTimer = 0f;
             _moveDirection = Vector2.zero;
             _wasMoving = false;
+            _wasAttacking = false;
             _hasDealtDamage = false;
             _statusSpeedMultiplier = 1f;
             _statusStunned = false;
             _suctionSpeedMultiplier = 1f;
             _suctionBoostUntil = 0f;
+            _lastAiTickTime = Time.time;
+            _nextAiTickTime = Time.time + Random.Range(0f, aiTickInterval);
             if (_rb != null) _rb.velocity = Vector2.zero;
             if (animator != null)
             {
@@ -92,6 +99,8 @@ namespace DevouringBeast
             _collider = GetComponent<Collider2D>();
             if (animator == null)
                 animator = GetComponentInChildren<Animator>();
+            if (animator != null)
+                animator.cullingMode = AnimatorCullingMode.CullCompletely;
             if (spriteRenderer == null)
                 spriteRenderer = GetComponentInChildren<SpriteRenderer>();
             CacheAttackAnimationDuration();
@@ -111,6 +120,11 @@ namespace DevouringBeast
         {
             if (!GameManager.Instance.IsPlaying) { _moveDirection = Vector2.zero; return; }
             if (_enemy.IsDead || _player == null) return;
+            float now = Time.time;
+            if (now < _nextAiTickTime) return;
+            float tickDelta = Mathf.Min(0.2f, Mathf.Max(0f, now - _lastAiTickTime));
+            _lastAiTickTime = now;
+            _nextAiTickTime = now + aiTickInterval;
             if (_statusStunned)
             {
                 _moveDirection = Vector2.zero;
@@ -141,7 +155,7 @@ namespace DevouringBeast
 
                 case AIState.Attack:
                     _moveDirection = Vector2.zero;
-                    TryAttack(canContactPlayer);
+                    TryAttack(canContactPlayer, tickDelta);
                     break;
             }
 
@@ -172,11 +186,16 @@ namespace DevouringBeast
 
             // 翻转整个 root 的 localScale.x，确保所有子物体（Mount/Body/Wings）一起翻转
             Vector3 scale = transform.localScale;
+            float targetX = scale.x;
             if (dirX > 0.1f)
-                scale.x = -Mathf.Abs(scale.x);  // 朝右
+                targetX = -Mathf.Abs(scale.x);  // 朝右
             else if (dirX < -0.1f)
-                scale.x = Mathf.Abs(scale.x);   // 朝左（默认）
-            transform.localScale = scale;
+                targetX = Mathf.Abs(scale.x);   // 朝左（默认）
+            if (!Mathf.Approximately(scale.x, targetX))
+            {
+                scale.x = targetX;
+                transform.localScale = scale;
+            }
         }
 
         private void UpdateAnimation()
@@ -192,12 +211,16 @@ namespace DevouringBeast
                 _wasMoving = isMoving;
             }
 
-            animator.SetBool(ParamIsAttacking, isAttacking);
+            if (isAttacking != _wasAttacking)
+            {
+                animator.SetBool(ParamIsAttacking, isAttacking);
+                _wasAttacking = isAttacking;
+            }
         }
 
-        private void TryAttack(bool touchingPlayer)
+        private void TryAttack(bool touchingPlayer, float deltaTime)
         {
-            _attackTimer += Time.deltaTime;
+            _attackTimer += deltaTime;
 
             // 伤害窗口按真实攻击动画长度计算，而不是按攻击间隔计算。
             float normalizedTime = _attackTimer / Mathf.Max(0.01f, _attackAnimationDuration);

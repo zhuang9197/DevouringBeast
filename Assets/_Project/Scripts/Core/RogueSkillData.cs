@@ -7,7 +7,6 @@ namespace DevouringBeast
     public sealed class RogueSkillData : ScriptableObject
     {
         public string skillName;
-        public ItemTag tag;
         [TextArea(2, 5)] public string description;
         public int maxLevel = 5;
         [HideInInspector] public int currentLevel;

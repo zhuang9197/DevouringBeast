@@ -16,6 +16,7 @@ namespace DevouringBeast
         private EnemyBase _enemy;
         private float _lastHealthPercent = -1f;
         private float _lastCounterScaleX;
+        private float _nextRefreshTime;
 
         public static EnemyHealthBar EnsureFor(EnemyBase enemy)
         {
@@ -102,6 +103,11 @@ namespace DevouringBeast
         {
             if (_enemy == null)
                 return;
+            if (!_enemy.IsVisible)
+                return;
+            if (Time.unscaledTime < _nextRefreshTime)
+                return;
+            _nextRefreshTime = Time.unscaledTime + 0.1f;
 
             // EnemyAI 通过负 X 缩放转向；反向缩放血条，避免血量方向随朝向翻转。
             float counterScaleX = _enemy.transform.lossyScale.x < 0f ? -1f : 1f;
@@ -147,6 +153,7 @@ namespace DevouringBeast
             if (container != null)
                 container.SetActive(true);
             _lastHealthPercent = -1f;
+            _nextRefreshTime = 0f;
             Refresh(true);
         }
     }

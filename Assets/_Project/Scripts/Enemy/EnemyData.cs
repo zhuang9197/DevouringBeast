@@ -2,14 +2,6 @@ using UnityEngine;
 
 namespace DevouringBeast
 {
-    /// <summary>敌人类型</summary>
-    public enum EnemyType
-    {
-        Normal,
-        Elite,
-        Boss
-    }
-
     /// <summary>
     /// 敌人数据 ScriptableObject — 可配置的敌人属性
     /// </summary>
@@ -18,7 +10,6 @@ namespace DevouringBeast
     {
         [Header("基础")]
         public string displayName = "Enemy";
-        public EnemyType enemyType = EnemyType.Normal;
         public int tier = 1; // 等级 1~7
 
         [Header("战斗属性")]
@@ -31,9 +22,7 @@ namespace DevouringBeast
         public float detectRange = 8f;
 
         [Header("吸入属性")]
-        public ItemTag tag = ItemTag.Normal;
-        public float killMass = 20f;       // 击杀质量（活着时吸入）
-        public float deadMass = 5f;        // 阵亡质量（死后吸入）
+        public float massValue = 5f;
         public float aliveInhaleThreshold = 50f;
         public float deadInhaleThreshold = 10f;
 
@@ -50,7 +39,6 @@ namespace DevouringBeast
         {
             var copy = CreateInstance<EnemyData>();
             copy.displayName = displayName;
-            copy.enemyType = enemyType;
             copy.tier = tier;
             copy.maxHealth = maxHealth * healthMul;
             copy.attackDamage = attackDamage * damageMul;
@@ -58,9 +46,7 @@ namespace DevouringBeast
             copy.attackRange = attackRange;
             copy.attackCooldown = attackCooldown;
             copy.detectRange = detectRange;
-            copy.tag = tag;
-            copy.killMass = killMass;
-            copy.deadMass = deadMass;
+            copy.massValue = massValue;
             copy.aliveInhaleThreshold = aliveInhaleThreshold;
             copy.deadInhaleThreshold = deadInhaleThreshold;
             copy.animatorController = animatorController;

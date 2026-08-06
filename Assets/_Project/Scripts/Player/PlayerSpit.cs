@@ -49,9 +49,11 @@ namespace DevouringBeast
         }
         
         public bool IsCharging => _isCharging;
+        public float ChargeProgress => maxChargeTime > 0f ? Mathf.Clamp01(_chargeTimer / maxChargeTime) : 1f;
+        public bool IsChargeMaxed => _isCharging && ChargeProgress >= 1f;
         public bool CanCharge => _skillManager != null && _skillManager.Has(RogueSkillId.EvolutionCharged);
         public bool CanSpitWithoutItems => _skillManager != null &&
-            (_skillManager.Has(RogueSkillId.FaithAngel) || _skillManager.Has(RogueSkillId.FaithPope));
+            _skillManager.Has(RogueSkillId.FaithAngel);
 public float BaseDamage
         {
             get => _baseAttributes != null ? _baseAttributes.InitialEnergyBallDamage : baseDamage;
@@ -76,12 +78,11 @@ public float BaseDamage
         /// <summary>
         /// 吐出能量球
         /// </summary>
-public void Spit(float suppliedMass = -1f)
+public void Spit()
         {
             if (_playerController != null && _playerController.IsInhaling) return;
             if (!_container.HasItems && !CanSpitWithoutItems) return;
             if (CanSpitWithoutItems && Time.time < _nextAngelShotTime) return;
-            if (!EnsurePool()) return;
 
             bool chargedShot = _isCharging && CanCharge;
             var items = _container.HasItems ? _container.ClearItems() : new List<InhaleableItem>();
@@ -95,13 +96,26 @@ public void Spit(float suppliedMass = -1f)
                     item.ReleaseFromMouth();
                 }
             }
-            if (suppliedMass >= 0f) totalMass = suppliedMass;
+            FireEnergyBalls(totalMass, GetBallCount(), chargedShot);
+            if (CanSpitWithoutItems) _nextAngelShotTime = Time.time + 0.5f;
+        }
+
+        /// <summary>教皇在吞噬后额外发射的一颗教化能量球，不改变正常吸入/吐出。</summary>
+        public void SpitTeachingBall(float consumedMass)
+        {
+            if (_playerController != null && _playerController.IsInhaling) return;
+            bool chargedShot = _isCharging && CanCharge;
+            FireEnergyBalls(Mathf.Max(0f, consumedMass), 1, chargedShot);
+        }
+
+        private void FireEnergyBalls(float totalMass, int ballCount, bool chargedShot)
+        {
+            if (!EnsurePool()) return;
 
             float currentBaseDamage = _baseAttributes != null
                 ? _baseAttributes.EnergyBallBaseDamage : baseDamage;
             float extraDamageMultiplier = _extraDamageMultiplier + GetChargeBonus();
 
-            int ballCount = GetBallCount();
             float fullDamageMultiplier = GetPerBallDamageMultiplier(ballCount);
             EnergyBallShotSnapshot snapshot = _skillManager != null
                 ? _skillManager.CreateEnergyBallSnapshot(currentBaseDamage, totalMass,
@@ -116,7 +130,6 @@ public void Spit(float suppliedMass = -1f)
                 SpawnEnergyBall(snapshot, i, ballCount);
 
             onSpit?.RaiseEvent();
-            if (CanSpitWithoutItems) _nextAngelShotTime = Time.time + 0.5f;
         }
 
         private float GetChargeBonus()
@@ -248,7 +261,7 @@ public void StartCharge()
             if (_isCharging || !CanCharge || _container == null || (!_container.HasItems && !CanSpitWithoutItems)) return;
             _isCharging = true;
             _chargeTimer = 0f;
-            AudioManager.Instance.PlayLoop(AudioCue.Charged);
+            AudioManager.Instance.PlayOnceUntilStopped(AudioCue.Charged);
         }
 
         /// <summary>

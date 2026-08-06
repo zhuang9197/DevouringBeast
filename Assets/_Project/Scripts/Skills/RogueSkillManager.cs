@@ -24,6 +24,7 @@ namespace DevouringBeast
         private bool _choiceOpen;
         private int _witchProgress;
         [SerializeField, Min(1)] private int witchSwallowsRequired = 3;
+        private const float FaithKillMassMultiplier = 2f;
 
         public RogueSkillCatalog Catalog => catalog;
         public bool IsChoiceOpen => _choiceOpen;
@@ -64,12 +65,7 @@ namespace DevouringBeast
         private void CheckLevelUp()
         {
             if (!GameManager.Instance.IsPlaying || _choiceOpen || _container == null || !_container.CanLevelUp || catalog == null) return;
-            bool unrestrictedKillProgress = _faith == RogueSkillId.FaithAngel || _faith == RogueSkillId.FaithDemon;
-            RogueSchool preferred = MapSchool(_container.GetDominantTag());
-            List<RogueSkillDefinition> choices = unrestrictedKillProgress
-                ? GetUnrestrictedChoices(3)
-                : GetAvailableChoices(preferred, 3);
-            if (choices.Count == 0) choices = GetAvailableChoices(RogueSchool.Normal, 3);
+            List<RogueSkillDefinition> choices = GetRandomChoices(3);
             if (choices.Count == 0) return;
 
             _pendingChoices.Clear();
@@ -141,12 +137,6 @@ namespace DevouringBeast
 
         public void SelectSkill(RogueSkillData legacySkill) => AddSkill(legacySkill);
 
-        public List<RogueSkillData> GetAvailableChoices(ItemTag tag, int count)
-        {
-            // 旧 UI 的兼容入口；新 UI 使用 RogueSkillDefinition。
-            return new List<RogueSkillData>();
-        }
-
         public int GetLevel(RogueSkillId id) => _levels.TryGetValue(id, out int level) ? level : 0;
         public bool Has(RogueSkillId id) => GetLevel(id) > 0;
         public int GetOwnedSkillLevel(string nameFragment)
@@ -173,25 +163,10 @@ namespace DevouringBeast
                 new Dictionary<RogueSkillId, int>(_levels));
         }
 
-        public List<RogueSkillDefinition> GetAvailableChoices(RogueSchool preferred, int count)
+        public List<RogueSkillDefinition> GetRandomChoices(int count)
         {
-            List<RogueSkillDefinition> preferredPool = new();
-            List<RogueSkillDefinition> normalPool = new();
-            foreach (RogueSkillDefinition skill in catalog.skills)
-            {
-                if (!CanOffer(skill)) continue;
-                if (skill.school == preferred) preferredPool.Add(skill);
-                if (skill.school == RogueSchool.Normal ||
-                    (_faith == RogueSkillId.FaithAngel &&
-                     (skill.school != RogueSchool.Faith || skill.id == RogueSkillId.FaithAngel)))
-                    normalPool.Add(skill);
-            }
-
-            Shuffle(preferredPool);
-            Shuffle(normalPool);
-            List<RogueSkillDefinition> result = new(count);
-            AddUnique(result, preferredPool, count);
-            AddUnique(result, normalPool, count);
+            List<RogueSkillDefinition> result = AllAvailable();
+            if (result.Count > count) result.RemoveRange(count, result.Count - count);
             return result;
         }
 
@@ -217,13 +192,6 @@ namespace DevouringBeast
                 }
             }
             return true;
-        }
-
-        private List<RogueSkillDefinition> GetUnrestrictedChoices(int count)
-        {
-            List<RogueSkillDefinition> result = AllAvailable();
-            if (result.Count > count) result.RemoveRange(count, result.Count - count);
-            return result;
         }
 
         private bool IsUsefulForActiveFaith(RogueSkillId id)
@@ -272,12 +240,6 @@ namespace DevouringBeast
             return result;
         }
 
-        private static void AddUnique(List<RogueSkillDefinition> target, List<RogueSkillDefinition> source, int count)
-        {
-            for (int i = 0; i < source.Count && target.Count < count; i++)
-                if (!target.Contains(source[i])) target.Add(source[i]);
-        }
-
         private static void Shuffle<T>(List<T> list)
         {
             for (int i = list.Count - 1; i > 0; i--)
@@ -315,16 +277,6 @@ namespace DevouringBeast
             if (_spit != null) _spit.RefreshSkillModifiers();
         }
 
-        private static RogueSchool MapSchool(ItemTag tag) => tag switch
-        {
-            ItemTag.Poison => RogueSchool.Poison,
-            ItemTag.Fire => RogueSchool.Fire,
-            ItemTag.Evolution => RogueSchool.Evolution,
-            ItemTag.Superpower => RogueSchool.Superpower,
-            ItemTag.Faith => RogueSchool.Faith,
-            _ => RogueSchool.Normal
-        };
-
         private void RestoreFromActiveSave()
         {
             SaveSlotData save = SaveGameService.GetActiveSlot();
@@ -359,7 +311,8 @@ namespace DevouringBeast
         {
             if (!_faith.HasValue || _container == null) return;
             if (_faith.Value != RogueSkillId.FaithAngel && _faith.Value != RogueSkillId.FaithDemon) return;
-            float progress = enemy != null ? enemy.MassValue : 5f;
+            // This Faith benefit is binary: repeated Angel/Demon levels never stack the multiplier.
+            float progress = (enemy != null ? enemy.MassValue : 5f) * FaithKillMassMultiplier;
             _container.AddProgress(progress);
         }
     }

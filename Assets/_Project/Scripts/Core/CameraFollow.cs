@@ -16,6 +16,7 @@ namespace DevouringBeast
 
         private Camera _cam;
         private bool _hasInitializedPosition;
+        private bool _fixedToRoom;
 
         private void Awake()
         {
@@ -33,6 +34,7 @@ namespace DevouringBeast
 
         private void LateUpdate()
         {
+            if (_fixedToRoom) return;
             if (target == null) return;
 
             Vector3 desiredPos = target.position + offset;
@@ -73,6 +75,33 @@ namespace DevouringBeast
         public void SetTarget(Transform t)
         {
             target = t;
+            _fixedToRoom = false;
+        }
+
+        public void SetRoom(Vector2 center, Vector2 roomSize)
+        {
+            if (_cam == null) _cam = GetComponent<Camera>();
+            _fixedToRoom = true;
+            _hasInitializedPosition = true;
+            transform.position = new Vector3(center.x, center.y, offset.z);
+            _cam.orthographic = true;
+            _cam.orthographicSize = roomSize.y * 0.5f;
+            ApplyFixedAspect(roomSize.x / Mathf.Max(0.01f, roomSize.y));
+        }
+
+        private void ApplyFixedAspect(float targetAspect)
+        {
+            float screenAspect = Screen.width / (float)Mathf.Max(1, Screen.height);
+            if (screenAspect > targetAspect)
+            {
+                float width = targetAspect / screenAspect;
+                _cam.rect = new Rect((1f - width) * 0.5f, 0f, width, 1f);
+            }
+            else
+            {
+                float height = screenAspect / targetAspect;
+                _cam.rect = new Rect(0f, (1f - height) * 0.5f, 1f, height);
+            }
         }
     }
 }

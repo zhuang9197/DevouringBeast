@@ -1,240 +1,315 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace DevouringBeast
 {
-    /// <summary>
-    /// WaveManager — 波次管理器
-    /// 管理波次状态机：倒计时 → 生成 → 战斗 → 清敌 → 下一波
-    /// </summary>
-    public class WaveManager : MonoBehaviour
+    public enum RoomKind { Normal, Elite, Boss }
+
+    /// <summary>Runs one combat encounter for the currently entered room.</summary>
+    public sealed class WaveManager : MonoBehaviour
     {
         public static WaveManager Instance { get; private set; }
-        public enum Phase { Interlude, Spawning, Fighting }
+        public enum Phase { Idle, Spawning, Fighting, Cleared }
 
         [Header("配置")]
-        
         [SerializeField] private EnemyPrefabCatalog prefabCatalog;
-
-[SerializeField] private WaveConfig config;
+        [SerializeField] private WaveConfig config;
 
         [Header("生成")]
-        [SerializeField] private EnemySpawner spawner;
-        [SerializeField] private Transform[] spawnPoints;
         [SerializeField, Min(16)] private int maxPooledEnemies = 160;
-        [SerializeField, Min(0.1f), Tooltip("极小敌人自动放大后的最小视觉宽高（取较大边）")]
-        private float minimumEnemyVisualSize = 1.25f;
+        [SerializeField, Min(1)] private int spawnBatchSize = 1;
+        [SerializeField, Min(0.1f)] private float minimumEnemyVisualSize = 1.25f;
 
         [Header("事件")]
         [SerializeField] private VoidEventChannel onWaveStart;
         [SerializeField] private VoidEventChannel onWaveCleared;
 
-        [Header("UI 更新（供 WaveUI 订阅）")]
-        public System.Action<int, int, float, float> OnWaveInfoChanged; // (wave, enemiesRemaining, timer, maxTimer)
+        public Action<int, int, float, float> OnWaveInfoChanged;
 
-        private int _currentWave;
-        private int _enemiesRemaining;
-        private float _waveTimer;
-        private float _maxTimer;
-        private Phase _currentPhase = Phase.Interlude;
-        private bool _allSpawned;
-        private bool _resetTriggered;
-
-        // 预制体缓存（按等级分组）
-        private List<GameObject[]> _tierPrefabs = new();
-        private GameObject[] _elitePrefabs;
-        private GameObject[] _bossPrefabs;
+        private readonly List<GameObject[]> _tierPrefabs = new();
         private readonly Dictionary<GameObject, Queue<EnemyPoolMember>> _enemyPools = new();
         private readonly Dictionary<GameObject, Vector3> _enemySpawnScales = new();
         private readonly HashSet<EnemyPoolMember> _activeEnemies = new();
+        private readonly HashSet<EnemyBase> _activeBosses = new();
+        private GameObject[] _elitePrefabs = Array.Empty<GameObject>();
+        private GameObject[] _bossPrefabs = Array.Empty<GameObject>();
         private Transform _enemyPoolRoot;
+        private Coroutine _spawnRoutine;
+        private Action _roomCleared;
+        private Vector2 _roomCenter;
+        private Vector2 _roomSize;
+        private int _currentFloor = 1;
+        private int _enemiesRemaining;
         private int _pooledEnemyCount;
+        private float _roomTimer;
+        private float _maxTimer;
+        private float _nextCrisisEmpowerTime;
+        private float _crisisTimeScale = 1f;
+        private float _crisisElapsedUnscaledTime;
+        private float _bossMaxHealthTotal;
+        private bool _allSpawned;
+        private bool _isCrisis;
+        private Phase _currentPhase = Phase.Idle;
+        private Image _crisisOverlay;
+
+        public bool IsReady { get; private set; }
+        public RoomKind CurrentRoomKind { get; private set; }
+        public int CurrentWave => _currentFloor;
+        public int CurrentFloor => _currentFloor;
+        public int EnemiesRemaining => _enemiesRemaining;
+        public float Timer => Mathf.Max(0f, _roomTimer);
+        public float MaxTimer => _maxTimer;
+        public bool IsCrisis => _isCrisis;
+        public float GameplayTimeScale => _isCrisis ? _crisisTimeScale : 1f;
+        public bool ShouldShowBossHealth => CurrentRoomKind == RoomKind.Boss &&
+            (_currentPhase == Phase.Spawning || _currentPhase == Phase.Fighting);
+        public float BossHealthPercent
+        {
+            get
+            {
+                if (_bossMaxHealthTotal <= 0f) return 1f;
+                float current = 0f;
+                foreach (EnemyBase boss in _activeBosses)
+                    if (boss != null) current += Mathf.Max(0f, boss.CurrentHealth);
+                return Mathf.Clamp01(current / _bossMaxHealthTotal);
+            }
+        }
+        public int ActiveEnemyObjectCount => _activeEnemies.Count;
+        public int PooledEnemyObjectCount => _pooledEnemyCount;
 
         private void Awake()
         {
             Instance = this;
         }
 
-private void Start()
+        private void Start()
         {
-            GameObject poolRoot = new GameObject("EnemyPool");
+            GameObject poolRoot = new("EnemyPool");
             poolRoot.transform.SetParent(transform, false);
             _enemyPoolRoot = poolRoot.transform;
             LoadPrefabs();
-            SaveGameService.Initialize();
-            SaveSlotData activeSave = SaveGameService.GetActiveSlot();
-            _currentWave = activeSave != null ? Mathf.Max(0, activeSave.completedWave) : 0;
-            _waveTimer = 3f;
-            _maxTimer = 3f;
-            _currentPhase = Phase.Interlude;
-            AudioManager.Instance.PlayBgm(BgmTrack.Battle);
+            CreateCrisisOverlay();
+            IsReady = true;
         }
 
         private void Update()
         {
-            if (!GameManager.Instance.IsPlaying) return;
+            if (!IsReady || !GameManager.Instance.IsPlaying || _currentPhase != Phase.Fighting) return;
 
-            switch (_currentPhase)
+            if (!_isCrisis)
             {
-                case Phase.Interlude:
-                    _waveTimer -= Time.deltaTime;
-                    NotifyUI();
-                    if (_waveTimer <= 0f)
-                    {
-                        StartNextWave();
-                    }
-                    break;
-
-                case Phase.Fighting:
-                    _waveTimer -= Time.deltaTime;
-                    NotifyUI();
-
-                    // 清敌重置：所有敌人都被消灭且倒计时>3s时，重置为3s
-                    if (_allSpawned && _enemiesRemaining <= 0 && !_resetTriggered && _waveTimer > config.clearResetTimer)
-                    {
-                        _waveTimer = config.clearResetTimer;
-                        _resetTriggered = true;
-                        _maxTimer = config.clearResetTimer;
-                    }
-
-                    // 倒计时耗尽：直接进入下一波（场上残留敌人继续存在）
-                    if (_waveTimer <= 0f)
-                    {
-                        EndWave();
-                    }
-                    break;
+                _roomTimer = Mathf.Max(0f, _roomTimer - Time.deltaTime);
+                if (_roomTimer <= 0f) EnterCrisis();
             }
+            else
+            {
+                UpdateCrisisSpeed();
+                if (Time.time >= _nextCrisisEmpowerTime)
+                {
+                    _nextCrisisEmpowerTime = Time.time + Mathf.Max(1f, config.crisisEmpowerInterval);
+                    EmpowerLivingEnemies();
+                }
+                UpdateCrisisOverlay();
+            }
+
+            NotifyUI();
+            if (_allSpawned && _enemiesRemaining <= 0) CompleteRoom();
         }
 
-        private void StartNextWave()
+        public void BeginRoom(RoomKind roomKind, int floor, Vector2 center, Vector2 size, Action roomCleared)
         {
-            int nextWave = _currentWave + 1;
-            EmpowerSurvivingEnemies(nextWave);
-            _currentWave = nextWave;
-            AudioManager.Instance.SetBattleWave(_currentWave);
-            _enemiesRemaining = CountLivingActiveEnemies();
+            StopEncounter(true);
+            CurrentRoomKind = roomKind;
+            _currentFloor = Mathf.Max(1, floor);
+            _roomCenter = center;
+            _roomSize = size;
+            _roomCleared = roomCleared;
             _allSpawned = false;
-            _resetTriggered = false;
+            _isCrisis = false;
+            _enemiesRemaining = 0;
+            _activeBosses.Clear();
+            _bossMaxHealthTotal = 0f;
+            _roomTimer = config.GetRoomTimer(roomKind);
+            _maxTimer = _roomTimer;
+            SetCrisisOverlay(false);
             _currentPhase = Phase.Spawning;
+            AudioManager.Instance.SetBattleWave(roomKind == RoomKind.Boss ? 10 : 1);
+            _spawnRoutine = StartCoroutine(SpawnRoomRoutine());
+            NotifyUI();
+        }
 
-            int tier = config.GetTier(_currentWave);
-            int count = config.GetEnemyCount(_currentWave);
-            float healthMul = config.GetHealthMultiplier(_currentWave);
-            float speedMul = config.GetSpeedMultiplier(_currentWave);
+        public void LeaveClearedRoom()
+        {
+            StopEncounter(true);
+            _currentPhase = Phase.Idle;
+            _enemiesRemaining = 0;
+            _roomTimer = 0f;
+            _maxTimer = 0f;
+            NotifyUI();
+        }
 
-            // 生成普通怪
-            var tierPrefabs = GetTierPrefabs(tier);
-            for (int i = 0; i < count; i++)
+        public void ResetForFloor()
+        {
+            StopEncounter(true);
+            _currentPhase = Phase.Idle;
+            _roomCleared = null;
+            SetCrisisOverlay(false);
+        }
+
+        private IEnumerator SpawnRoomRoutine()
+        {
+            int tier = config.GetTier(_currentFloor);
+            int normalCount = Mathf.Max(1, config.GetEnemyCount(_currentFloor));
+            float healthMultiplier = config.GetHealthMultiplier(_currentFloor);
+            float speedMultiplier = config.GetSpeedMultiplier(_currentFloor);
+            int spawnedThisFrame = 0;
+
+            if (CurrentRoomKind == RoomKind.Normal)
             {
-                SpawnEnemy(tierPrefabs, healthMul, config.GetAttackDamage(_currentWave, EnemyType.Normal), speedMul, EnemyType.Normal);
+                yield return SpawnGroup(GetTierPrefabs(tier), normalCount, healthMultiplier,
+                    config.GetAttackDamage(_currentFloor), speedMultiplier, 5f, false, spawnedThisFrame);
+            }
+            else if (CurrentRoomKind == RoomKind.Elite)
+            {
+                yield return SpawnGroup(GetTierPrefabs(tier), Mathf.Max(1, normalCount / 2), healthMultiplier,
+                    config.GetAttackDamage(_currentFloor), speedMultiplier, 5f, false, spawnedThisFrame);
+                yield return SpawnGroup(_elitePrefabs, Mathf.Max(1, config.elitePer5Waves),
+                    healthMultiplier * config.eliteHealthMul,
+                    config.GetAttackDamage(_currentFloor, config.eliteDamageBonus),
+                    speedMultiplier * config.eliteSpeedMul, 20f, false, spawnedThisFrame);
+            }
+            else
+            {
+                yield return SpawnGroup(GetTierPrefabs(tier), Mathf.Max(1, normalCount / 2), healthMultiplier,
+                    config.GetAttackDamage(_currentFloor), speedMultiplier, 5f, false, spawnedThisFrame);
+                yield return SpawnGroup(_bossPrefabs, Mathf.Max(1, config.bossPer10Waves),
+                    healthMultiplier * config.bossHealthMul,
+                    config.GetAttackDamage(_currentFloor, config.bossDamageBonus),
+                    speedMultiplier * config.bossSpeedMul, 50f, true, spawnedThisFrame);
             }
 
-            // 每5波生成精英
-            if (_currentWave % 5 == 0 && _elitePrefabs != null && _elitePrefabs.Length > 0)
-            {
-                int eliteCount = config.elitePer5Waves;
-                for (int i = 0; i < eliteCount; i++)
-                {
-                    SpawnEnemy(_elitePrefabs,
-                        healthMul * config.eliteHealthMul,
-                        config.GetAttackDamage(_currentWave, EnemyType.Elite),
-                        speedMul * config.eliteSpeedMul,
-                        EnemyType.Elite);
-                }
-            }
-
-            // 每10波生成Boss
-            if (_currentWave % 10 == 0 && _bossPrefabs != null && _bossPrefabs.Length > 0)
-            {
-                int bossCount = config.bossPer10Waves;
-                for (int i = 0; i < bossCount; i++)
-                {
-                    SpawnEnemy(_bossPrefabs,
-                        healthMul * config.bossHealthMul,
-                        config.GetAttackDamage(_currentWave, EnemyType.Boss),
-                        speedMul * config.bossSpeedMul,
-                        EnemyType.Boss);
-                }
-            }
-
+            _spawnRoutine = null;
             _allSpawned = true;
             _currentPhase = Phase.Fighting;
-            _waveTimer = config.GetWaveTimer(_currentWave);
-            _maxTimer = _waveTimer;
-
             onWaveStart?.RaiseEvent();
-            Debug.Log($"[WaveManager] Wave {_currentWave} started — {count} enemies, tier={tier}");
+            if (_enemiesRemaining <= 0) CompleteRoom();
         }
 
-        private void EndWave()
+        private IEnumerator SpawnGroup(GameObject[] prefabs, int count, float health, int damage,
+            float speed, float mass, bool bossUnit, int spawnedThisFrame)
         {
-            _currentPhase = Phase.Interlude;
-            _waveTimer = 3f;
-            _maxTimer = 3f;
-            _resetTriggered = false;
-            
-            SaveGameService.SaveCompletedWave(_currentWave);
-onWaveCleared?.RaiseEvent();
-            Debug.Log($"[WaveManager] Wave {_currentWave} cleared!");
+            if (prefabs == null || prefabs.Length == 0) yield break;
+            for (int i = 0; i < count; i++)
+            {
+                while (!GameManager.Instance.IsPlaying) yield return null;
+                SpawnEnemy(prefabs, health, damage, speed, mass, bossUnit, i);
+                if (++spawnedThisFrame >= spawnBatchSize)
+                {
+                    spawnedThisFrame = 0;
+                    yield return null;
+                }
+            }
         }
 
-        private void SpawnEnemy(GameObject[] prefabs, float healthMul, int attackDamage, float speedMul, EnemyType type)
+        private void SpawnEnemy(GameObject[] prefabs, float healthMul, int attackDamage,
+            float speedMul, float mass, bool bossUnit, int spawnIndex)
         {
-            if (prefabs == null || prefabs.Length == 0) return;
-            if (spawnPoints == null || spawnPoints.Length == 0) return;
-
-            var prefab = prefabs[Random.Range(0, prefabs.Length)];
-            var point = spawnPoints[Random.Range(0, spawnPoints.Length)];
-
-            EnemyPoolMember poolMember = AcquireEnemy(prefab, point.position);
-            var enemy = poolMember.gameObject;
-
-            // 确保 EnemyBase 存在
-            var enemyBase = enemy.GetComponent<EnemyBase>();
-            if (enemyBase == null)
-                enemyBase = enemy.AddComponent<EnemyBase>();
+            GameObject prefab = prefabs[UnityEngine.Random.Range(0, prefabs.Length)];
+            Vector3 position = GetRoomSpawnPosition(spawnIndex);
+            EnemyPoolMember poolMember = AcquireEnemy(prefab, position);
+            EnemyBase enemyBase = poolMember.GetComponent<EnemyBase>();
+            if (enemyBase == null) enemyBase = poolMember.gameObject.AddComponent<EnemyBase>();
             poolMember.Bind(prefab, ReleaseEnemy);
 
-            // 创建临时 EnemyData
-            var data = enemyBase.GetOrCreateRuntimeData();
-            data.enemyType = type;
+            EnemyData data = enemyBase.GetOrCreateRuntimeData();
             data.maxHealth = 100f * healthMul;
             data.attackDamage = Mathf.Max(1, attackDamage);
             data.moveSpeed = 3f * speedMul;
             data.attackRange = 1.5f;
             data.attackCooldown = 0.9f;
-            data.detectRange = 10f;
-
-            // 从预制体的 InhaleableItem 读取 Tag 和 Mass，不覆盖
-            var prefabItem = prefab.GetComponent<InhaleableItem>();
-            if (prefabItem != null)
-            {
-                data.tag = prefabItem.Tag;
-                data.killMass = prefabItem.Mass;
-                data.deadMass = prefabItem.Mass * 0.3f; // 阵亡质量约为存活时的30%
-            }
-            else
-            {
-                data.tag = ItemTag.Normal;
-                data.killMass = 20f;
-                data.deadMass = 5f;
-            }
+            data.detectRange = Mathf.Max(_roomSize.x, _roomSize.y);
+            data.massValue = mass;
             data.aliveInhaleThreshold = 50f;
             data.deadInhaleThreshold = 10f;
-
-            // 从预制体获取 AnimatorController
-            var anim = enemy.GetComponentInChildren<Animator>();
+            Animator anim = poolMember.GetComponentInChildren<Animator>();
             if (anim != null && anim.runtimeAnimatorController != null)
                 data.animatorController = anim.runtimeAnimatorController;
 
             enemyBase.Initialize(data);
             enemyBase.OnDeath += OnEnemyKilled;
-
-            // 动态创建头顶血条
-            CreateHealthBar(enemy, enemyBase);
-
+            if (bossUnit)
+            {
+                _activeBosses.Add(enemyBase);
+                _bossMaxHealthTotal += enemyBase.MaxHealth;
+            }
+            GroundShadow.Ensure(poolMember.gameObject).BeginLanding(0.3f);
             _enemiesRemaining++;
+        }
+
+        private Vector3 GetRoomSpawnPosition(int index)
+        {
+            float halfX = Mathf.Max(2f, _roomSize.x * 0.5f - 4f);
+            float halfY = Mathf.Max(2f, _roomSize.y * 0.5f - 3f);
+            float angle = (index * 2.39996323f) + UnityEngine.Random.Range(-0.25f, 0.25f);
+            float radius = Mathf.Lerp(0.35f, 0.9f, UnityEngine.Random.value);
+            return _roomCenter + new Vector2(Mathf.Cos(angle) * halfX * radius, Mathf.Sin(angle) * halfY * radius);
+        }
+
+        private void EnterCrisis()
+        {
+            _isCrisis = true;
+            _nextCrisisEmpowerTime = Time.time;
+            _crisisTimeScale = Mathf.Clamp(config.crisisTimeScaleStart, 1f,
+                Mathf.Max(1f, config.crisisTimeScaleMax));
+            _crisisElapsedUnscaledTime = 0f;
+            Time.timeScale = _crisisTimeScale;
+            SetCrisisOverlay(true);
+            UpdateCrisisOverlay();
+        }
+
+        private void EmpowerLivingEnemies()
+        {
+            foreach (EnemyPoolMember member in _activeEnemies)
+                if (member != null && !member.IsReleased && member.Enemy != null && !member.Enemy.IsDead)
+                    member.Enemy.EmpowerForCrisis(config, _currentFloor);
+        }
+
+        private void CompleteRoom()
+        {
+            if (_currentPhase == Phase.Cleared) return;
+            _currentPhase = Phase.Cleared;
+            ResetGameplayTimeScale();
+            SetCrisisOverlay(false);
+            onWaveCleared?.RaiseEvent();
+            Action callback = _roomCleared;
+            _roomCleared = null;
+            callback?.Invoke();
+        }
+
+        private void StopEncounter(bool releaseEnemies)
+        {
+            if (_spawnRoutine != null)
+            {
+                StopCoroutine(_spawnRoutine);
+                _spawnRoutine = null;
+            }
+            if (releaseEnemies) ReleaseAllActiveEnemies();
+            _allSpawned = false;
+            ResetGameplayTimeScale();
+            _activeBosses.Clear();
+            _bossMaxHealthTotal = 0f;
+            _roomCleared = null;
+            SetCrisisOverlay(false);
+        }
+
+        private void ResetGameplayTimeScale()
+        {
+            _isCrisis = false;
+            _crisisTimeScale = 1f;
+            if (GameManager.Instance.IsPlaying) Time.timeScale = 1f;
         }
 
         private EnemyPoolMember AcquireEnemy(GameObject prefab, Vector3 position)
@@ -244,7 +319,6 @@ onWaveCleared?.RaiseEvent();
                 queue = new Queue<EnemyPoolMember>();
                 _enemyPools.Add(prefab, queue);
             }
-
             EnemyPoolMember member = null;
             while (queue.Count > 0 && member == null)
             {
@@ -257,12 +331,10 @@ onWaveCleared?.RaiseEvent();
                 member = instance.GetComponent<EnemyPoolMember>();
                 if (member == null) member = instance.AddComponent<EnemyPoolMember>();
             }
-
             member.Bind(prefab, ReleaseEnemy);
             member.SetSpawnScale(GetEnemySpawnScale(prefab));
             member.MarkSpawned();
-            Transform parent = spawner != null ? spawner.EnemiesParent : transform;
-            member.transform.SetParent(parent, false);
+            member.transform.SetParent(transform, false);
             member.transform.SetPositionAndRotation(position, Quaternion.identity);
             member.gameObject.SetActive(true);
             _activeEnemies.Add(member);
@@ -274,11 +346,11 @@ onWaveCleared?.RaiseEvent();
             if (member == null) return;
             EnemyBase enemy = member.Enemy;
             if (enemy != null) enemy.OnDeath -= OnEnemyKilled;
+            if (enemy != null) _activeBosses.Remove(enemy);
             _activeEnemies.Remove(member);
             member.RestoreSpawnScale();
             member.transform.SetParent(_enemyPoolRoot, false);
             member.gameObject.SetActive(false);
-
             if (_pooledEnemyCount >= maxPooledEnemies || member.SourcePrefab == null)
             {
                 Destroy(member.gameObject);
@@ -295,82 +367,31 @@ onWaveCleared?.RaiseEvent();
 
         private Vector3 GetEnemySpawnScale(GameObject prefab)
         {
-            if (prefab == null) return Vector3.one;
-            if (_enemySpawnScales.TryGetValue(prefab, out Vector3 cachedScale))
-                return cachedScale;
-
+            if (_enemySpawnScales.TryGetValue(prefab, out Vector3 cached)) return cached;
             Vector3 baseScale = prefab.transform.localScale;
-            Bounds visualBounds = default;
-            bool hasBounds = false;
-            SpriteRenderer[] renderers = prefab.GetComponentsInChildren<SpriteRenderer>(true);
-            foreach (SpriteRenderer renderer in renderers)
-            {
-                if (renderer == null || renderer.sprite == null) continue;
-                Bounds spriteBounds = renderer.sprite.bounds;
-                Vector3[] corners =
-                {
-                    new(spriteBounds.min.x, spriteBounds.min.y, 0f),
-                    new(spriteBounds.min.x, spriteBounds.max.y, 0f),
-                    new(spriteBounds.max.x, spriteBounds.min.y, 0f),
-                    new(spriteBounds.max.x, spriteBounds.max.y, 0f)
-                };
-                foreach (Vector3 corner in corners)
-                {
-                    Vector3 rootLocal = prefab.transform.InverseTransformPoint(renderer.transform.TransformPoint(corner));
-                    if (!hasBounds)
-                    {
-                        visualBounds = new Bounds(rootLocal, Vector3.zero);
-                        hasBounds = true;
-                    }
-                    else visualBounds.Encapsulate(rootLocal);
-                }
-            }
-
-            float visualSize = hasBounds
-                ? Mathf.Max(visualBounds.size.x * Mathf.Abs(baseScale.x), visualBounds.size.y * Mathf.Abs(baseScale.y))
-                : minimumEnemyVisualSize;
+            float visualSize = 0f;
+            foreach (SpriteRenderer renderer in prefab.GetComponentsInChildren<SpriteRenderer>(true))
+                if (renderer != null && renderer.sprite != null)
+                    visualSize = Mathf.Max(visualSize, renderer.sprite.bounds.size.x * Mathf.Abs(baseScale.x),
+                        renderer.sprite.bounds.size.y * Mathf.Abs(baseScale.y));
             float multiplier = visualSize > 0.001f && visualSize < minimumEnemyVisualSize
-                ? minimumEnemyVisualSize / visualSize
-                : 1f;
-            Vector3 spawnScale = new(baseScale.x * multiplier, baseScale.y * multiplier, baseScale.z);
-            _enemySpawnScales[prefab] = spawnScale;
-            return spawnScale;
+                ? minimumEnemyVisualSize / visualSize : 1f;
+            Vector3 result = new(baseScale.x * multiplier, baseScale.y * multiplier, baseScale.z);
+            _enemySpawnScales[prefab] = result;
+            return result;
         }
 
         private void ReleaseAllActiveEnemies()
         {
             if (_activeEnemies.Count == 0) return;
-            List<EnemyPoolMember> snapshot = new List<EnemyPoolMember>(_activeEnemies);
-            for (int i = 0; i < snapshot.Count; i++)
+            List<EnemyPoolMember> snapshot = new(_activeEnemies);
+            foreach (EnemyPoolMember member in snapshot)
             {
-                EnemyPoolMember member = snapshot[i];
                 if (member == null) continue;
                 InhaleableItem item = member.GetComponent<InhaleableItem>();
                 if (item != null && item.IsStoredInMouth) continue;
                 member.Release();
             }
-        }
-
-        private void EmpowerSurvivingEnemies(int nextWave)
-        {
-            foreach (EnemyPoolMember member in _activeEnemies)
-            {
-                if (member == null || member.IsReleased || member.Enemy == null || member.Enemy.IsDead) continue;
-                member.Enemy.EmpowerForNextWave(config, nextWave);
-            }
-        }
-
-        private int CountLivingActiveEnemies()
-        {
-            int count = 0;
-            foreach (EnemyPoolMember member in _activeEnemies)
-                if (member != null && !member.IsReleased && member.Enemy != null && !member.Enemy.IsDead) count++;
-            return count;
-        }
-
-        private void CreateHealthBar(GameObject enemy, EnemyBase enemyBase)
-        {
-            EnemyHealthBar.EnsureFor(enemyBase);
         }
 
         private void OnEnemyKilled(EnemyBase enemy)
@@ -381,48 +402,87 @@ onWaveCleared?.RaiseEvent();
 
         private GameObject[] GetTierPrefabs(int tier)
         {
-            int idx = Mathf.Min(tier - 1, _tierPrefabs.Count - 1);
-            if (idx < 0 || idx >= _tierPrefabs.Count) return null;
-            return _tierPrefabs[idx];
+            int index = Mathf.Clamp(tier - 1, 0, _tierPrefabs.Count - 1);
+            return _tierPrefabs.Count == 0 ? Array.Empty<GameObject>() : _tierPrefabs[index];
         }
 
-private void LoadPrefabs()
+        private void LoadPrefabs()
         {
-            if (prefabCatalog == null)
-                prefabCatalog = Resources.Load<EnemyPrefabCatalog>("System/EnemyPrefabCatalog");
-
+            if (prefabCatalog == null) prefabCatalog = Resources.Load<EnemyPrefabCatalog>("System/EnemyPrefabCatalog");
             _tierPrefabs.Clear();
-            if (prefabCatalog == null)
-            {
-                Debug.LogError("[WaveManager] EnemyPrefabCatalog is missing.");
-                for (int i = 0; i < 7; i++) _tierPrefabs.Add(System.Array.Empty<GameObject>());
-                _elitePrefabs = System.Array.Empty<GameObject>();
-                _bossPrefabs = System.Array.Empty<GameObject>();
-                return;
-            }
-
             for (int tier = 1; tier <= 7; tier++)
-                _tierPrefabs.Add(prefabCatalog.GetTier(tier) ?? System.Array.Empty<GameObject>());
+                _tierPrefabs.Add(prefabCatalog != null ? prefabCatalog.GetTier(tier) ?? Array.Empty<GameObject>() : Array.Empty<GameObject>());
+            if (prefabCatalog != null)
+            {
+                _elitePrefabs = prefabCatalog.elitePrefabs ?? Array.Empty<GameObject>();
+                _bossPrefabs = prefabCatalog.bossPrefabs ?? Array.Empty<GameObject>();
+            }
+        }
 
-            _elitePrefabs = prefabCatalog.elitePrefabs ?? System.Array.Empty<GameObject>();
-            _bossPrefabs = prefabCatalog.bossPrefabs ?? System.Array.Empty<GameObject>();
+        private void CreateCrisisOverlay()
+        {
+            GameObject canvasObject = new("CrisisOverlay", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            canvasObject.transform.SetParent(transform, false);
+            Canvas canvas = canvasObject.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = -1;
+            GameObject imageObject = new("RedScreen", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            imageObject.transform.SetParent(canvasObject.transform, false);
+            RectTransform rect = imageObject.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            _crisisOverlay = imageObject.GetComponent<Image>();
+            _crisisOverlay.color = new Color(0.75f, 0f, 0f, 0f);
+            _crisisOverlay.raycastTarget = false;
+            imageObject.SetActive(false);
+        }
+
+        private void SetCrisisOverlay(bool visible)
+        {
+            if (_crisisOverlay != null) _crisisOverlay.gameObject.SetActive(visible);
+        }
+
+        private void UpdateCrisisOverlay()
+        {
+            if (_crisisOverlay == null || !_isCrisis || config == null) return;
+            float maximumScale = Mathf.Max(1f, config.crisisTimeScaleMax);
+            float speedProgress = Mathf.InverseLerp(
+                Mathf.Clamp(config.crisisTimeScaleStart, 1f, maximumScale),
+                maximumScale,
+                _crisisTimeScale);
+            float minimumAlpha = Mathf.Clamp(config.crisisOverlayMinAlpha, 0f, 0.5f);
+            float maximumAlpha = Mathf.Clamp(config.crisisOverlayMaxAlpha, minimumAlpha, 0.5f);
+            float baseAlpha = Mathf.Lerp(minimumAlpha, maximumAlpha, speedProgress);
+            float pulseWave = (Mathf.Sin(_crisisElapsedUnscaledTime * Mathf.PI * 2f *
+                Mathf.Max(0.1f, config.crisisOverlayPulseFrequency)) + 1f) * 0.5f;
+            float warningPeak = Mathf.Pow(pulseWave, Mathf.Max(1f, config.crisisOverlayPulseSharpness));
+            float pulse = Mathf.Lerp(Mathf.Clamp01(config.crisisOverlayPulseFloor), 1f, warningPeak);
+            _crisisOverlay.color = new Color(0.85f, 0f, 0f, baseAlpha * pulse);
+        }
+
+        private void UpdateCrisisSpeed()
+        {
+            if (!_isCrisis || config == null) return;
+            float start = Mathf.Clamp(config.crisisTimeScaleStart, 1f,
+                Mathf.Max(1f, config.crisisTimeScaleMax));
+            _crisisElapsedUnscaledTime += Time.unscaledDeltaTime;
+            float increases = _crisisElapsedUnscaledTime /
+                Mathf.Max(0.1f, config.crisisTimeScaleIncreaseInterval);
+            _crisisTimeScale = Mathf.Min(
+                Mathf.Max(1f, config.crisisTimeScaleMax),
+                start + increases * Mathf.Max(0f, config.crisisTimeScaleStep));
+            Time.timeScale = _crisisTimeScale;
         }
 
         private void NotifyUI()
         {
-            OnWaveInfoChanged?.Invoke(_currentWave, _enemiesRemaining, Mathf.Max(0, _waveTimer), _maxTimer);
+            OnWaveInfoChanged?.Invoke(_currentFloor, _enemiesRemaining, Timer, _maxTimer);
         }
-
-        public int CurrentWave => _currentWave;
-        public int EnemiesRemaining => _enemiesRemaining;
-        public float Timer => Mathf.Max(0, _waveTimer);
-        public float MaxTimer => _maxTimer;
-        public int ActiveEnemyObjectCount => _activeEnemies.Count;
 
         private void OnDestroy()
         {
             if (Instance == this) Instance = null;
         }
-        public int PooledEnemyObjectCount => _pooledEnemyCount;
     }
 }
