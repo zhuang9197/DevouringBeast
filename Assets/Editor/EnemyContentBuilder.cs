@@ -239,7 +239,7 @@ namespace DevouringBeast.Editor
                 name = "Android",
                 overridden = true,
                 maxTextureSize = 2048,
-                format = TextureImporterFormat.ETC2_RGBA8,
+                format = TextureImporterFormat.ASTC_6x6,
                 compressionQuality = 50
             });
             SpriteAtlasExtensions.SetIncludeInBuild(atlas, false);
