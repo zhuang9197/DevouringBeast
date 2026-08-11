@@ -26,6 +26,7 @@ namespace DevouringBeast
         public int MaxHealth => maxHealth;
         public bool IsDead => currentHealth <= 0;
         public bool IsInvincible => _isInvincible;
+        private bool IsTestMode => GameManager.Existing != null && GameManager.Existing.IsTestMode;
 
         private void Awake()
         {
@@ -65,7 +66,7 @@ namespace DevouringBeast
 public void TakeDamage(int damage)
         {
             _controller?.NotifyPlayerActivity();
-            if (_isInvincible || IsDead) return;
+            if (IsTestMode || _isInvincible || IsDead) return;
 
             if (_controller != null && _controller.IsBeastForm)
                 damage = Mathf.Max(1, Mathf.CeilToInt(damage * (1f - _controller.BeastDamageReduction)));
@@ -87,6 +88,7 @@ public void TakeDamage(int damage)
         public bool TrySpendHealth(int amount)
         {
             if (amount <= 0) return true;
+            if (IsTestMode) return !IsDead;
             if (IsDead || _isInvincible || currentHealth <= amount) return false;
             _controller?.NotifyPlayerActivity();
             currentHealth -= amount;

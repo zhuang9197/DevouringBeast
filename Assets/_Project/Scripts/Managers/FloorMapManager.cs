@@ -162,8 +162,8 @@ namespace DevouringBeast
             LayoutVersion++;
             CreateFloorTilemap();
             bool testMode = GameManager.Instance.IsTestMode;
-            if (!testMode) CreateStatues();
-            else _environmentItems?.EnableTestMode();
+            CreateStatues();
+            if (testMode) _environmentItems?.EnableTestMode();
             FloorMinimapUI.EnsureFor(this);
             _currentRoom = 0;
             EnterRoom(0, Vector2Int.zero, true);
@@ -225,6 +225,18 @@ namespace DevouringBeast
             if (angel == null || demon == null || pope == null)
             {
                 Debug.LogWarning("[FloorMapManager] Statue sprites are missing from Resources/Statues.");
+                return;
+            }
+
+            if (GameManager.Instance.IsTestMode)
+            {
+                RoomState room = _rooms[0];
+                Vector2 center = GetRoomCenter(room.Cell);
+                _demonRoomIndex = 0;
+                room.IsDemonRoom = true;
+                CreateStatue(StatueKind.Pope, room, center + Vector2.left * 5f, pope, popeDestroyed);
+                CreateStatue(StatueKind.Angel, room, center + Vector2.up * 3f, angel, angelDestroyed);
+                CreateStatue(StatueKind.Demon, room, center + Vector2.right * 5f, demon, demonDestroyed);
                 return;
             }
 
