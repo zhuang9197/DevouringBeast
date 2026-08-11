@@ -157,6 +157,11 @@ namespace DevouringBeast
         private void UpdateStatusIcon()
         {
             if (_catalog == null || _statusRenderer == null) return;
+            if (!_enemy.IsVisible)
+            {
+                _statusRenderer.enabled = false;
+                return;
+            }
             int count = 0;
             if (IsPoisoned) _activeStatusSprites[count++] = _catalog.poisoningIcon;
             if (IsBurning) _activeStatusSprites[count++] = _catalog.burnIcon;
@@ -192,6 +197,8 @@ namespace DevouringBeast
             {
                 SpriteRenderer renderer = _erosionRenderers[i];
                 if (renderer == null) continue;
+                renderer.enabled = _enemy.IsVisible;
+                if (!renderer.enabled) continue;
                 float angle = Time.time * erosionOrbitSpeed + i * 360f / Mathf.Max(1, count);
                 renderer.transform.localPosition = Quaternion.Euler(0f, 0f, angle) * Vector3.right * erosionOrbitRadius;
                 renderer.transform.rotation = Quaternion.identity;
@@ -213,6 +220,11 @@ namespace DevouringBeast
 
         public void ResetForReuse()
         {
+            ClearAll();
+        }
+
+        public void ClearAll()
+        {
             _poisonDps = _poisonEnd = _poisonTick = 0f;
             _poisonStacks = 0;
             _burnDps = _burnEnd = _burnTick = 0f;
@@ -220,7 +232,7 @@ namespace DevouringBeast
             _nextIconSwitch = 0f;
             _iconIndex = 0;
             ClearErosion();
-            if (_statusRenderer != null) _statusRenderer.enabled = false;
+            HideVisuals();
             RefreshMovementModifier();
             enabled = false;
         }

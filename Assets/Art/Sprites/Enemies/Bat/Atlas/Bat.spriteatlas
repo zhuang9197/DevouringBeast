@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Bat
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 0
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings: []
+    packingSettings:
+      serializedVersion: 2
+      padding: 4
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 0
+      enableTightPacking: 0
+      enableAlphaDilation: 1
+    secondaryTextureSettings: {}
+    variantMultiplier: 1
+    packables:
+    - {fileID: 2800000, guid: 06181204cd0a239458d256239bd31bd3, type: 3}
+    - {fileID: 2800000, guid: 1f2d8ddb52ab51843b18c22882a91270, type: 3}
+    - {fileID: 2800000, guid: dc236f088eaa7d94facf5b956fbe3c84, type: 3}
+    - {fileID: 2800000, guid: 42af139328f850a45809dd81b6704c80, type: 3}
+    - {fileID: 2800000, guid: 3d00bdc0bfebf2847ad3b936415aa85e, type: 3}
+    - {fileID: 2800000, guid: 5c012d11f6724f0438d564159320fa21, type: 3}
+    - {fileID: 2800000, guid: 53f6a24106f03e0439a6ef00bb41464a, type: 3}
+    - {fileID: 2800000, guid: 52d59c9ce170fa84b87bc64d7231039d, type: 3}
+    bindAsDefault: 0
+    isAtlasV2: 0
+    cachedData: {fileID: 0}
+    packedSpriteRenderDataKeys:
+    - 3d00bdc0bfebf2847ad3b936415aa85e: 21300000
+    - 5c012d11f6724f0438d564159320fa21: 21300000
+    - 53f6a24106f03e0439a6ef00bb41464a: 21300000
+    - 42af139328f850a45809dd81b6704c80: 21300000
+    - 06181204cd0a239458d256239bd31bd3: 21300000
+    - dc236f088eaa7d94facf5b956fbe3c84: 21300000
+    - 1f2d8ddb52ab51843b18c22882a91270: 21300000
+    - 52d59c9ce170fa84b87bc64d7231039d: 21300000
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: 3d00bdc0bfebf2847ad3b936415aa85e, type: 3}
+  - {fileID: 21300000, guid: 5c012d11f6724f0438d564159320fa21, type: 3}
+  - {fileID: 21300000, guid: 53f6a24106f03e0439a6ef00bb41464a, type: 3}
+  - {fileID: 21300000, guid: 42af139328f850a45809dd81b6704c80, type: 3}
+  - {fileID: 21300000, guid: 06181204cd0a239458d256239bd31bd3, type: 3}
+  - {fileID: 21300000, guid: dc236f088eaa7d94facf5b956fbe3c84, type: 3}
+  - {fileID: 21300000, guid: 1f2d8ddb52ab51843b18c22882a91270, type: 3}
+  - {fileID: 21300000, guid: 52d59c9ce170fa84b87bc64d7231039d, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - 005
+  - 006
+  - 007
+  - 004
+  - 001
+  - 003
+  - 002
+  - 008
+  m_RenderDataMap: {}
+  m_Tag: Bat
+  m_IsVariant: 0

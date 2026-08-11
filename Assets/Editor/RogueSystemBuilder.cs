@@ -10,12 +10,12 @@ namespace DevouringBeast.Editor
 {
     public static class RogueSystemBuilder
     {
-        private const string CatalogPath = "Assets/Resources/Rogue/RogueSkillCatalog.asset";
+        private const string CatalogPath = "Assets/_Project/Config/Resources/Rogue/RogueSkillCatalog.asset";
 
         [MenuItem("Tools/Devouring Beast/Build Rogue System")]
         public static void Build()
         {
-            EnsureFolder("Assets/Resources/Rogue");
+            EnsureFolder("Assets/_Project/Config/Resources/Rogue");
             RogueSkillCatalog catalog = AssetDatabase.LoadAssetAtPath<RogueSkillCatalog>(CatalogPath);
             if (catalog == null)
             {
@@ -33,6 +33,9 @@ namespace DevouringBeast.Editor
             catalog.erosionIcon = LoadSprite("Assets/Art/Sprites/Rogue/status/erosion.png");
             catalog.skillIcons = AssetDatabase.LoadAllAssetsAtPath("Assets/Art/Sprites/Rogue/Skills/skills.png")
                 .OfType<Sprite>().OrderBy(sprite => sprite.name).ToList();
+            AddIcon(catalog.skillIcons, "Assets/Art/Sprites/Rogue/Skills/chef.png");
+            AddIcon(catalog.skillIcons, "Assets/Art/Sprites/Rogue/Skills/hot_dog_lover.png");
+            AddIcon(catalog.skillIcons, "Assets/Art/Sprites/Rogue/Skills/sushi_master.png");
             catalog.beastFront = LoadSprite("Assets/Art/Sprites/Player/beast_front.png");
             catalog.beastBack = LoadSprite("Assets/Art/Sprites/Player/beast_back.png");
             catalog.beastSide = LoadSprite("Assets/Art/Sprites/Player/beast_side.png");
@@ -57,6 +60,17 @@ namespace DevouringBeast.Editor
                 serialized.FindProperty("catalog").objectReferenceValue = catalog;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
                 EditorUtility.SetDirty(manager);
+            }
+            EnvironmentItemSpawner foodSpawner = UnityEngine.Object.FindFirstObjectByType<EnvironmentItemSpawner>();
+            if (foodSpawner != null)
+            {
+                SerializedObject foodSerialized = new(foodSpawner);
+                foodSerialized.FindProperty("riceBallSprite").objectReferenceValue = LoadSprite("Assets/Art/Sprites/Env/foods/rice_ball.png");
+                foodSerialized.FindProperty("baoziSprite").objectReferenceValue = LoadSprite("Assets/Art/Sprites/Env/foods/baozi.png");
+                foodSerialized.FindProperty("hotDogSprite").objectReferenceValue = LoadSprite("Assets/Art/Sprites/Env/foods/hot_dog.png");
+                foodSerialized.FindProperty("sushiSprite").objectReferenceValue = LoadSprite("Assets/Art/Sprites/Env/foods/sushi.png");
+                foodSerialized.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(foodSpawner);
             }
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -93,8 +107,17 @@ namespace DevouringBeast.Editor
             D(RogueSkillId.FaithAngel,RogueSchool.Faith,"天使","无消耗连续吐出；击杀升级不受种类池限制；排除吸入类技能。","faith_angel",0,false,true),
             D(RogueSkillId.FaithDemon,RogueSchool.Faith,"恶魔","吸力伤害大幅提高但不能吸入物体；击杀升级不受种类池限制；排除吐出类技能。","faith_demon",0,false,true),
             D(RogueSkillId.FaithPope,RogueSchool.Faith,"教皇","吞噬变为教化，同时吐出附带肉鸽效果且强化的能量球。","faith_pope",0,false,true),
-            D(RogueSkillId.FaithWitch,RogueSchool.Faith,"女巫","吞噬累积通灵进度，叠满后变身野兽吞吞滚动攻击；变身减伤 20%，升级提升减伤与滚动伤害。","faith_witch",0,false,true)
+            D(RogueSkillId.FaithWitch,RogueSchool.Faith,"女巫","吞噬累积通灵进度，叠满后变身野兽吞吞滚动攻击；变身减伤 20%，升级提升减伤与滚动伤害。","faith_witch",0,false,true),
+            D(RogueSkillId.Chef,RogueSchool.Normal,"厨师","所有食物在吞噬时提供的质量提升 5 点；每级额外提升 1 点。","chef",5),
+            D(RogueSkillId.HotDogLover,RogueSchool.Normal,"热狗爱好者","解锁热狗。热狗提供 15 点质量（受厨师增益），并进入兴奋 5 秒，移动速度提升 30%；每级额外提升 5%。","hot_dog_lover",5),
+            D(RogueSkillId.SushiMaster,RogueSchool.Normal,"寿司大师","解锁寿司。寿司提供 15 点质量（受厨师增益），有 50% 概率回复半点生命、10% 概率提升半点生命上限；每级概率分别提升 5% 和 3%。","sushi_master",5)
         };
+
+        private static void AddIcon(List<Sprite> icons, string path)
+        {
+            Sprite icon = LoadSprite(path);
+            if (icon != null) icons.Add(icon);
+        }
 
         private static RogueSkillDefinition D(RogueSkillId id, RogueSchool school, string name, string description,
             string icon, int maxLevel, bool requireMax = false, bool mythic = false, params RogueSkillId[] prerequisites)

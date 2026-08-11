@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: DoubleWhite
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 0
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings: []
+    packingSettings:
+      serializedVersion: 2
+      padding: 4
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 0
+      enableTightPacking: 0
+      enableAlphaDilation: 1
+    secondaryTextureSettings: {}
+    variantMultiplier: 1
+    packables:
+    - {fileID: 2800000, guid: 6f74864b1add89f42aa6daa1e8ac2867, type: 3}
+    - {fileID: 2800000, guid: 46d3dac650af54747bfc1be3c9983e56, type: 3}
+    - {fileID: 2800000, guid: 01a7d0f1f9167bc4685410f07d6db639, type: 3}
+    - {fileID: 2800000, guid: 312f549b5f5f8a84abb90737d0439360, type: 3}
+    - {fileID: 2800000, guid: 2b1135fd903a4cc4ebc0783c453da3d1, type: 3}
+    - {fileID: 2800000, guid: 959177e650ac62e468d6bc4931d3e191, type: 3}
+    - {fileID: 2800000, guid: 215d55c73dc593a44b14a38721098630, type: 3}
+    - {fileID: 2800000, guid: dd9bb73af2d89d04fabe2fd937b5fc9c, type: 3}
+    - {fileID: 2800000, guid: 5fc4b57468b70f642b5e9b69c6c5e175, type: 3}
+    bindAsDefault: 0
+    isAtlasV2: 0
+    cachedData: {fileID: 0}
+    packedSpriteRenderDataKeys:
+    - 01a7d0f1f9167bc4685410f07d6db639: 21300000
+    - 5fc4b57468b70f642b5e9b69c6c5e175: 21300000
+    - 46d3dac650af54747bfc1be3c9983e56: 21300000
+    - 959177e650ac62e468d6bc4931d3e191: 21300000
+    - 215d55c73dc593a44b14a38721098630: 21300000
+    - dd9bb73af2d89d04fabe2fd937b5fc9c: 21300000
+    - 6f74864b1add89f42aa6daa1e8ac2867: 21300000
+    - 312f549b5f5f8a84abb90737d0439360: 21300000
+    - 2b1135fd903a4cc4ebc0783c453da3d1: 21300000
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: 01a7d0f1f9167bc4685410f07d6db639, type: 3}
+  - {fileID: 21300000, guid: 5fc4b57468b70f642b5e9b69c6c5e175, type: 3}
+  - {fileID: 21300000, guid: 46d3dac650af54747bfc1be3c9983e56, type: 3}
+  - {fileID: 21300000, guid: 959177e650ac62e468d6bc4931d3e191, type: 3}
+  - {fileID: 21300000, guid: 215d55c73dc593a44b14a38721098630, type: 3}
+  - {fileID: 21300000, guid: dd9bb73af2d89d04fabe2fd937b5fc9c, type: 3}
+  - {fileID: 21300000, guid: 6f74864b1add89f42aa6daa1e8ac2867, type: 3}
+  - {fileID: 21300000, guid: 312f549b5f5f8a84abb90737d0439360, type: 3}
+  - {fileID: 21300000, guid: 2b1135fd903a4cc4ebc0783c453da3d1, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - 003
+  - 009
+  - 002
+  - 006
+  - 007
+  - 008
+  - 001
+  - 004
+  - 005
+  m_RenderDataMap: {}
+  m_Tag: DoubleWhite
+  m_IsVariant: 0

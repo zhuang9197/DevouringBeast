@@ -1,0 +1,89 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Group_Minions
+  m_EditorClassIdentifier: 
+  m_GroupName: Group_Minions
+  m_Data:
+    m_SerializedData: []
+  m_GUID: 85241429526cf19439d8a1dda0e8bdee
+  m_SerializeEntries:
+  - m_GUID: cc7e85c58b962514a911cd0fbef28ce4
+    m_Address: Enemy/Bat/Content
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - EnemyContent_All
+    - EnemyContent_Minions
+    - Enemy_Bat
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 461d096fe83abc94eb22a8c47a3dd59e
+    m_Address: Enemy/Fly/Content
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - EnemyContent_All
+    - EnemyContent_Minions
+    - Enemy_Fly
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 166462b1bb4e9864887203fdb2902265
+    m_Address: Enemy/GroundWorm/Content
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - EnemyContent_All
+    - EnemyContent_Minions
+    - Enemy_GroundWorm
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d5f8b21401e17ba4fb6e603982754160
+    m_Address: Enemy/Meatballs/Content
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - EnemyContent_All
+    - EnemyContent_Minions
+    - Enemy_Meatballs
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3be226c75d5478149831c53e90be97bb
+    m_Address: Enemy/BloodBag/Content
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - EnemyContent_All
+    - EnemyContent_Minions
+    - Enemy_BloodBag
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2d8e6f37d9305bb4eb717d3098d97303
+    m_Address: Enemy/Spider/Content
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - EnemyContent_All
+    - EnemyContent_Minions
+    - Enemy_Spider
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bf8d8e98838b2244690166f103c85551
+    m_Address: Enemy/Mushroom/Content
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - EnemyContent_All
+    - EnemyContent_Minions
+    - Enemy_Mushroom
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1e167adf09addc6408384024541648e6
+    m_Address: Enemy/White/Content
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - EnemyContent_All
+    - EnemyContent_Minions
+    - Enemy_White
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 07235bcc904939a449f630bf25d6a9b6, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 711e8e0f8c38c744490233c8072310eb, type: 2}
+    - {fileID: 11400000, guid: ee0507bebbc311d47bcaa9527396b82c, type: 2}

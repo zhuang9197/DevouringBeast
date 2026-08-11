@@ -15,14 +15,17 @@ namespace DevouringBeast
         private Image _primaryImage, _swallowImage, _progressFill;
         private Button _primaryButton, _swallowButton;
         private Text _levelText, _progressText;
+        private Text _foodText;
         private bool _lastHasItems, _lastAngel;
         private bool _displayHasItems;
         private bool _primaryHoldVisualActive;
         private bool _swallowHoldVisualActive;
         private bool _lastSwallowInteractable, _lastPrimaryInteractable, _lastWitchActive;
         private int _lastLevel = int.MinValue, _lastMass = int.MinValue, _lastRequiredMass = int.MinValue;
+        private int _lastRemainingFood = int.MinValue;
         private float _lastProgress = -1f, _lastWitchProgress = -1f;
         private GameObject _witchPanel;
+        private GameObject _returnConfirmation;
         private Image _witchFill;
         private Text _witchText;
 
@@ -47,12 +50,121 @@ namespace DevouringBeast
             BindButtons();
             BuildLevelProgress();
             BuildWitchProgress();
+            BuildFoodCounter();
+            BuildReturnToMenuButton();
             Refresh(true);
+        }
+
+        private void BuildFoodCounter()
+        {
+            Canvas canvas = FindGameplayCanvas();
+            if (canvas == null || GameObject.Find("FoodRemainingText") != null) return;
+            _foodText = CreateText("FoodRemainingText", canvas.transform, 18, TextAnchor.MiddleRight);
+            RectTransform rect = _foodText.rectTransform;
+            rect.anchorMin = rect.anchorMax = Vector2.one;
+            rect.pivot = Vector2.one;
+            // Keep the counter under the top-right minimap and away from centered wave UI.
+            rect.anchoredPosition = new Vector2(-24f, -266f);
+            rect.sizeDelta = new Vector2(230f, 36f);
+        }
+
+        private void BuildReturnToMenuButton()
+        {
+            Canvas canvas = FindGameplayCanvas();
+            if (canvas == null || GameObject.Find("ReturnToMenuButton") != null) return;
+            GameObject buttonObject = new("ReturnToMenuButton", typeof(RectTransform), typeof(Image), typeof(Button));
+            buttonObject.transform.SetParent(canvas.transform, false);
+            RectTransform rect = buttonObject.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            // Health is at y=-20 and level progress at y=-72; place the button below both.
+            rect.anchoredPosition = new Vector2(18f, -124f);
+            rect.sizeDelta = new Vector2(150f, 42f);
+            Image image = buttonObject.GetComponent<Image>();
+            image.sprite = _catalog != null ? _catalog.buttonBackground : null;
+            image.type = image.sprite != null ? Image.Type.Sliced : Image.Type.Simple;
+            image.color = image.sprite != null ? Color.white : new Color(0.12f, 0.14f, 0.18f, 0.9f);
+            Text label = CreateText("Label", buttonObject.transform, 16, TextAnchor.MiddleCenter);
+            Stretch(label.rectTransform);
+            label.text = "\u8fd4\u56de\u4e3b\u9875";
+            buttonObject.GetComponent<Button>().onClick.AddListener(ShowReturnConfirmation);
+            BuildReturnConfirmation(canvas);
+        }
+
+        private void BuildReturnConfirmation(Canvas canvas)
+        {
+            if (_returnConfirmation != null) return;
+            _returnConfirmation = new GameObject("ReturnConfirmation", typeof(RectTransform),
+                typeof(CanvasRenderer), typeof(Image));
+            _returnConfirmation.transform.SetParent(canvas.transform, false);
+            Stretch(_returnConfirmation.GetComponent<RectTransform>());
+            Image blocker = _returnConfirmation.GetComponent<Image>();
+            blocker.color = new Color(0f, 0f, 0f, 0.72f);
+            blocker.raycastTarget = true;
+
+            GameObject dialog = new("Dialog", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            dialog.transform.SetParent(_returnConfirmation.transform, false);
+            RectTransform dialogRect = dialog.GetComponent<RectTransform>();
+            dialogRect.anchorMin = dialogRect.anchorMax = new Vector2(0.5f, 0.5f);
+            dialogRect.pivot = new Vector2(0.5f, 0.5f);
+            dialogRect.sizeDelta = new Vector2(420f, 190f);
+            Image dialogImage = dialog.GetComponent<Image>();
+            dialogImage.sprite = _catalog != null ? _catalog.buttonBackground : null;
+            dialogImage.type = dialogImage.sprite != null ? Image.Type.Sliced : Image.Type.Simple;
+            dialogImage.color = dialogImage.sprite != null ? new Color(0.82f, 0.82f, 0.82f, 1f)
+                : new Color(0.12f, 0.14f, 0.18f, 1f);
+
+            Text prompt = CreateText("Prompt", dialog.transform, 22, TextAnchor.MiddleCenter);
+            SetRect(prompt.rectTransform, new Vector2(0.08f, 0.48f), new Vector2(0.92f, 0.92f));
+            prompt.text = "\u786e\u5b9a\u8fd4\u56de\u4e3b\u9875\uff1f\n\u5f53\u524d\u8fdb\u5ea6\u5c06\u81ea\u52a8\u4fdd\u5b58";
+
+            Button cancel = CreateDialogButton("Cancel", dialog.transform, new Vector2(0.08f, 0.12f),
+                new Vector2(0.46f, 0.4f), "\u53d6\u6d88");
+            Button confirm = CreateDialogButton("Confirm", dialog.transform, new Vector2(0.54f, 0.12f),
+                new Vector2(0.92f, 0.4f), "\u786e\u5b9a");
+            cancel.onClick.AddListener(HideReturnConfirmation);
+            confirm.onClick.AddListener(ConfirmReturnToMenu);
+            _returnConfirmation.SetActive(false);
+        }
+
+        private Button CreateDialogButton(string name, Transform parent, Vector2 anchorMin,
+            Vector2 anchorMax, string labelText)
+        {
+            GameObject buttonObject = new(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
+            buttonObject.transform.SetParent(parent, false);
+            SetRect(buttonObject.GetComponent<RectTransform>(), anchorMin, anchorMax);
+            Image image = buttonObject.GetComponent<Image>();
+            image.sprite = _catalog != null ? _catalog.buttonBackground : null;
+            image.type = image.sprite != null ? Image.Type.Sliced : Image.Type.Simple;
+            image.color = image.sprite != null ? Color.white : new Color(0.22f, 0.25f, 0.3f, 1f);
+            Text label = CreateText("Label", buttonObject.transform, 18, TextAnchor.MiddleCenter);
+            Stretch(label.rectTransform);
+            label.text = labelText;
+            return buttonObject.GetComponent<Button>();
+        }
+
+        private void ShowReturnConfirmation()
+        {
+            if (_returnConfirmation == null || !GameManager.Instance.IsPlaying) return;
+            _returnConfirmation.transform.SetAsLastSibling();
+            _returnConfirmation.SetActive(true);
+            GameManager.Instance.PauseGame();
+        }
+
+        private void HideReturnConfirmation()
+        {
+            if (_returnConfirmation != null) _returnConfirmation.SetActive(false);
+            if (GameManager.Instance.IsPaused) GameManager.Instance.ResumeGame();
+        }
+
+        private void ConfirmReturnToMenu()
+        {
+            GameManager.Instance.ReturnToMainMenu();
         }
 
         private void BuildWitchProgress()
         {
-            Canvas canvas=FindFirstObjectByType<Canvas>();
+            Canvas canvas=FindGameplayCanvas();
             if(canvas==null||GameObject.Find("WitchProgressPanel")!=null)return;
             _witchPanel=new GameObject("WitchProgressPanel",typeof(RectTransform));
             _witchPanel.transform.SetParent(canvas.transform,false);
@@ -115,7 +227,7 @@ namespace DevouringBeast
 
         private void BuildLevelProgress()
         {
-            Canvas canvas = FindFirstObjectByType<Canvas>();
+            Canvas canvas = FindGameplayCanvas();
             if (canvas == null || GameObject.Find("LevelProgressPanel") != null) return;
             GameObject panel = new("LevelProgressPanel", typeof(RectTransform)); panel.transform.SetParent(canvas.transform,false);
             RectTransform panelRect=panel.GetComponent<RectTransform>();
@@ -178,6 +290,12 @@ namespace DevouringBeast
             _lastMass=mass;
             _lastRequiredMass=requiredMass;
 
+            int remainingFood = EnvironmentItemSpawner.Instance != null
+                ? EnvironmentItemSpawner.Instance.CurrentRoomRemaining : 0;
+            if (_foodText != null && (force || remainingFood != _lastRemainingFood))
+                _foodText.text = "\u5269\u4f59\u98df\u7269: " + remainingFood;
+            _lastRemainingFood = remainingFood;
+
             if (_witchPanel != null && (force || witch!=_lastWitchActive))
                 _witchPanel.SetActive(witch);
             _lastWitchActive=witch;
@@ -229,5 +347,12 @@ namespace DevouringBeast
         { GameObject go=new(name,typeof(RectTransform),typeof(Text)); go.transform.SetParent(parent,false); Text text=go.GetComponent<Text>(); text.font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); text.fontSize=size; text.fontStyle=FontStyle.Bold; text.alignment=anchor; text.color=Color.white; text.raycastTarget=false; return text; }
         private static void Stretch(RectTransform rect) => SetRect(rect,Vector2.zero,Vector2.one);
         private static void SetRect(RectTransform rect,Vector2 min,Vector2 max) { rect.anchorMin=min; rect.anchorMax=max; rect.offsetMin=rect.offsetMax=Vector2.zero; }
+
+        private static Canvas FindGameplayCanvas()
+        {
+            GameObject canvasObject = GameObject.Find("Canvas");
+            Canvas canvas = canvasObject != null ? canvasObject.GetComponent<Canvas>() : null;
+            return canvas != null ? canvas : FindFirstObjectByType<Canvas>();
+        }
     }
 }

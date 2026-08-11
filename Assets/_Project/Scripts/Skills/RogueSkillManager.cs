@@ -22,6 +22,7 @@ namespace DevouringBeast
         private RogueSelectionUI _selectionUI;
         private RogueSkillId? _faith;
         private bool _choiceOpen;
+        private bool _choiceFromStatue;
         private int _witchProgress;
         [SerializeField, Min(1)] private int witchSwallowsRequired = 3;
         private const float FaithKillMassMultiplier = 2f;
@@ -58,8 +59,9 @@ namespace DevouringBeast
             if (Active == this) Active = null;
             if (_container != null) _container.OnLevelUpCheck -= CheckLevelUp;
             EnemyBase.OnAnyEnemyDeath -= HandleEnemyDeath;
-            if (_choiceOpen && GameManager.Instance.CurrentState == GameState.RogueChoosing)
-                GameManager.Instance.ExitRogueSelection();
+            GameManager game = GameManager.Existing;
+            if (_choiceOpen && game != null && game.CurrentState == GameState.RogueChoosing)
+                game.ExitRogueSelection();
         }
 
         private void CheckLevelUp()
@@ -71,6 +73,7 @@ namespace DevouringBeast
             _pendingChoices.Clear();
             _pendingChoices.AddRange(choices);
             _choiceOpen = true;
+            _choiceFromStatue = false;
             AudioManager.Instance.PlaySfx(AudioCue.LevelUp);
             GameManager.Instance.EnterRogueSelection();
             onLevelUp?.RaiseEvent();
@@ -82,14 +85,32 @@ namespace DevouringBeast
         {
             if (!_choiceOpen || skill == null || !_pendingChoices.Contains(skill)) return;
             AddSkill(skill.id);
-            _container.ResetForLevelUp();
+            if (!_choiceFromStatue) _container.ResetForLevelUp();
             _pendingChoices.Clear();
             _choiceOpen = false;
+            bool wasStatueChoice = _choiceFromStatue;
+            _choiceFromStatue = false;
             GameManager.Instance.ExitRogueSelection();
             if (_selectionUI != null) Destroy(_selectionUI.gameObject);
             _selectionUI = null;
             SaveProgress();
-            if (_container.CanLevelUp) _container.CheckAndNotify();
+            if (!wasStatueChoice && _container.CanLevelUp) _container.CheckAndNotify();
+        }
+
+        public bool RequestBasicStatueChoice()
+        {
+            if (!GameManager.Instance.IsPlaying || _choiceOpen || catalog == null) return false;
+            List<RogueSkillDefinition> choices = GetBasicStatueChoices();
+            if (choices.Count == 0) return false;
+            _pendingChoices.Clear();
+            _pendingChoices.AddRange(choices);
+            _choiceOpen = true;
+            _choiceFromStatue = true;
+            AudioManager.Instance.PlaySfx(AudioCue.LevelUp);
+            GameManager.Instance.EnterRogueSelection();
+            _selectionUI = RogueSelectionUI.Show(this, catalog, choices);
+            OnSkillChoiceRequired?.Invoke(choices);
+            return true;
         }
 
         public void AddSkill(RogueSkillId id, int amount = 1, bool apply = true)
@@ -103,23 +124,11 @@ namespace DevouringBeast
             if (definition.mythic && !_faith.HasValue)
             {
                 _faith = id;
-                if (id == RogueSkillId.FaithAngel) ClearNonFaithSkills();
             }
 
             _levels[id] = next;
             if (apply) ApplyAllPlayerModifiers();
             OnSkillLevelChanged?.Invoke(id, next);
-        }
-
-        private void ClearNonFaithSkills()
-        {
-            List<RogueSkillId> remove = new();
-            foreach (RogueSkillId id in _levels.Keys)
-            {
-                RogueSkillDefinition definition = catalog.Get(id);
-                if (definition != null && definition.school != RogueSchool.Faith) remove.Add(id);
-            }
-            foreach (RogueSkillId id in remove) _levels.Remove(id);
         }
 
         public void AddSkill(RogueSkillData legacySkill)
@@ -173,15 +182,19 @@ namespace DevouringBeast
         private bool CanOffer(RogueSkillDefinition skill)
         {
             if (skill == null || skill.IsMaxLevel(GetLevel(skill.id))) return false;
+            if (IsBasicStatueSkill(skill.id)) return false;
             if (!IsUsefulForActiveFaith(skill.id)) return false;
             if (_faith.HasValue)
             {
                 if (_faith.Value == RogueSkillId.FaithAngel)
-                    return skill.id == RogueSkillId.FaithAngel || skill.school != RogueSchool.Faith;
-                if (skill.school == RogueSchool.Faith)
-                    return skill.id == _faith.Value;
+                {
+                    if (skill.school == RogueSchool.Faith && skill.id != RogueSkillId.FaithAngel)
+                        return false;
+                }
+                else if (skill.school == RogueSchool.Faith && skill.id != _faith.Value)
+                    return false;
             }
-            foreach (RogueSkillId prerequisite in skill.prerequisites)
+            foreach (RogueSkillId prerequisite in skill.prerequisites ?? Array.Empty<RogueSkillId>())
             {
                 int level = GetLevel(prerequisite);
                 if (level <= 0) return false;
@@ -192,6 +205,28 @@ namespace DevouringBeast
                 }
             }
             return true;
+        }
+
+        private List<RogueSkillDefinition> GetBasicStatueChoices()
+        {
+            List<RogueSkillDefinition> choices = new(3);
+            AddBasicChoice(RogueSkillId.NormalFast, choices);
+            AddBasicChoice(RogueSkillId.NormalSuction, choices);
+            AddBasicChoice(RogueSkillId.NormalPower, choices);
+            Shuffle(choices);
+            return choices;
+        }
+
+        private void AddBasicChoice(RogueSkillId id, List<RogueSkillDefinition> choices)
+        {
+            RogueSkillDefinition skill = catalog.Get(id);
+            if (skill != null && !skill.IsMaxLevel(GetLevel(id)))
+                choices.Add(skill);
+        }
+
+        private static bool IsBasicStatueSkill(RogueSkillId id)
+        {
+            return id == RogueSkillId.NormalFast || id == RogueSkillId.NormalSuction || id == RogueSkillId.NormalPower;
         }
 
         private bool IsUsefulForActiveFaith(RogueSkillId id)
@@ -266,6 +301,7 @@ namespace DevouringBeast
                 _inhale.BonusInhaleDuration = Has(RogueSkillId.EvolutionBigMouth)
                     ? 3f + Mathf.Max(0, GetLevel(RogueSkillId.EvolutionBigMouth) - 1) * 2f : 0f;
                 _inhale.DamageOnlyMode = Has(RogueSkillId.FaithDemon) || Has(RogueSkillId.FaithAngel);
+                _inhale.ExternalInterruptImmune = Has(RogueSkillId.FaithDemon);
             }
             if (_baseAttributes != null)
             {
@@ -279,6 +315,7 @@ namespace DevouringBeast
 
         private void RestoreFromActiveSave()
         {
+            if (GameManager.Instance.IsTestMode) return;
             SaveSlotData save = SaveGameService.GetActiveSlot();
             if (save?.rogueSkills != null)
             {
@@ -290,10 +327,30 @@ namespace DevouringBeast
 
         public void SaveProgress()
         {
+            if (GameManager.Instance.IsTestMode) return;
             List<RogueSkillSaveEntry> entries = new();
             foreach (var pair in _levels)
                 entries.Add(new RogueSkillSaveEntry { id = pair.Key.ToString(), level = pair.Value });
             SaveGameService.SaveRogueSkills(entries);
+        }
+
+        public void ResetForTesting()
+        {
+            _pendingChoices.Clear();
+            _levels.Clear();
+            _faith = null;
+            _witchProgress = 0;
+            if (_choiceOpen)
+            {
+                _choiceOpen = false;
+                _choiceFromStatue = false;
+                if (_selectionUI != null) Destroy(_selectionUI.gameObject);
+                _selectionUI = null;
+                if (GameManager.Instance.CurrentState == GameState.RogueChoosing)
+                    GameManager.Instance.ExitRogueSelection();
+            }
+            ApplyAllPlayerModifiers();
+            OnWitchProgressChanged?.Invoke(0f, false);
         }
 
         public void NotifySwallow()

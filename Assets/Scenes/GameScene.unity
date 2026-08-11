@@ -543,7 +543,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 596dfb11afca30a44a7939214ddb48b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefabCatalog: {fileID: 11400000, guid: 2dc1567aa89c1af459d6f4be09a933a8, type: 2}
   config: {fileID: 11400000, guid: 6cb649df8b8443f41b2ce8efc843bbb2, type: 2}
   maxPooledEnemies: 160
   spawnBatchSize: 1
@@ -1769,18 +1768,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68538756ac3815548b680bd59204b855, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 8
-  fullWalkSpeedMultiplier: 0.8
   animData: {fileID: 11400000, guid: 04d5374c7fa4c8d4388fb2dd73fb9010, type: 2}
   frameAnimator: {fileID: 1876638585}
   spriteRenderer: {fileID: 1876638584}
   hasInhaleWalkSkill: 0
-  runStepInterval: 0.45
-  walkStepInterval: 0.6
-  idleSoundDelay: 8
-  idleSoundRepeatInterval: 12
-  inhaleWalkMultiplier: 0.5
-  beastRollingSpeedMultiplier: 1.4
 --- !u!50 &1772682454
 Rigidbody2D:
   serializedVersion: 4
@@ -1870,9 +1861,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f81a5cb51883f1240b9a1d238606f454, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 10
-  currentHealth: 0
-  invincibleDuration: 1
   OnHealthChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -1908,15 +1896,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   energyBallPrefab: {fileID: 9116973311058264906, guid: f7bfdd762e44d9947be89a388527fa8a, type: 3}
-  spitSpeed: 15
-  maxFlyDistance: 20
-  baseDamage: 25
-  spawnForwardOffset: 0.75
-  poolInitialSize: 12
-  poolMaxSize: 64
-  maxChargeTime: 1.5
-  bigMassThreshold: 30
-  maxChargeBonus: 0.3
   onSpit: {fileID: 11400000, guid: 0dbbebf585fada84885122aba0d97fdb, type: 2}
 --- !u!114 &1772682461
 MonoBehaviour:
@@ -1930,18 +1909,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 285b5ce8eb33a1f4e8c0d24e5bac5fff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  inhaleAngle: 75
-  inhaleRadius: 5
-  maxInhaleDuration: 3
-  maxSuctionForce: 10
-  suctionRampTime: 1.5
-  intakeDistance: 0.65
-  minimumPullSpeed: 1
-  maximumPullSpeed: 16
-  corpsePullSpeedMultiplier: 2
-  corpseMaximumPullSpeed: 28
-  suctionMassSpeedFactor: 0.35
-  aliveEnemyMaxSpeedBoost: 1.25
   inhaleableLayer:
     serializedVersion: 2
     m_Bits: 64
@@ -1960,9 +1927,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 858f4a93890749444a9ac7e875935094, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  initialMoveSpeed: 8
-  initialSuction: 100
-  initialEnergyBallDamage: 25
 --- !u!1 &1818476885
 GameObject:
   m_ObjectHideFlags: 0
@@ -2329,20 +2293,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f87ddb965ee15084ba17b08a932b1fdb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bigStoneSprite: {fileID: 21300000, guid: 8c3e0eff301eb194ca489f6c11bee110, type: 3}
-  stoneSprite: {fileID: 21300000, guid: 5a3fc9aa563239f449be139c1d3e7cbf, type: 3}
-  mushroomSprite: {fileID: 177690367, guid: a2f32baff5f6641479756850101fef5b, type: 3}
-  riceBallSprite: {fileID: 1126726709, guid: a2f32baff5f6641479756850101fef5b, type: 3}
-  bigStoneTarget: 2
-  stoneTarget: 10
-  mushroomTarget: 100
-  riceBallTarget: 100
-  bigStoneRefreshSeconds: 30
-  stoneRefreshSeconds: 20
-  foodRefreshSeconds: 8
-  minimumSpacing: 1.5
-  boundsPadding: 1
-  placementAttempts: 24
+  riceBallSprite: {fileID: 21300000, guid: 39dfc31ef9a209a4b80207a540a08dac, type: 3}
+  baoziSprite: {fileID: 21300000, guid: 3f4bb962c0cbbec4aa33912d8dc1631a, type: 3}
+  hotDogSprite: {fileID: 21300000, guid: 835fabc4b4a40034ebec0922d32f00b4, type: 3}
+  sushiSprite: {fileID: 21300000, guid: c5f627247cea0e14d9a057ba1c6ff409, type: 3}
 --- !u!1 &2127749519
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec0ce73976fed884c97087b7cca2874a, type: 3}
+  m_Name: HomeSpider
+  m_EditorClassIdentifier: 
+  displayName: HomeSpider
+  archetype: 9
+  tier: 1
+  maxHealth: 100
+  attackDamage: 1
+  moveSpeed: 0.65
+  attackRange: 0.8
+  attackCooldown: 1.5
+  detectRange: 40
+  aimedProjectileSpeed: 8
+  radialProjectileSpeed: 7
+  behavior:
+    wanderIntervalRange: {x: 1.5, y: 1.5}
+    proximityRange: 4.472136
+    specialMoveSpeed: 1.5
+    dashSpeed: 0
+    jumpSpeed: 0
+    fireballFallDuration: 0
+    dashDuration: 0.5
+    movementCycleDuration: 3
+    movementActiveDuration: 2
+    movementIdleDuration: 1
+    actionsPerSpecial: 6
+    wanderMaximumTurnAngle: 75
+    wanderTurnSpeed: 70
+    evasiveTurnSpeed: 180
+    orbitAngularSpeed: 4.5
+    orbitPursuitWeight: 0.45
+    orbitTangentWeight: 0.82
+    orbitSeparationWeight: 0.3
+    specialAttackCooldown: 1.5
+    jumpHeight: 0
+    takeoffDuration: 0
+    airborneDuration: 0
+    landingDuration: 0
+    offscreenPadding: 2
+    stateTransitionDuration: 1
+    stateHoldDuration: 5
+    dashPreparationDuration: 0.5
+    dashRecoveryDuration: 0.5
+    healthLossEffectInterval: 0
+    healthLossEffectMaximumTriggers: 0
+    healthLossEffectBulletCount: 0
+    healthLossEffectSummonsMeatball: 0
+    healthLossEffectMaximumScale: 1.35
+    healthLossEffectPulseDuration: 0.12
+  massValue: 20
+  aliveInhaleThreshold: 3.4028235e+38
+  deadInhaleThreshold: 10
+  animatorController: {fileID: 9100000, guid: 7927868c018c13040b8ff5ad250651cc, type: 2}
+  fakeDeathHoldSprite: {fileID: 0}
+  phaseTwoIdleSprite: {fileID: 0}
+  popInClip: {fileID: 0}
+  deathMode: 2
+  deathSprite: {fileID: 21300000, guid: 16a73540e66a70240b6ec57cfe293e17, type: 3}
+  deathAnimationDuration: 1
+  deathAnimationStartFrame: 9
+  deathFrameIndex: 15
+  deathEffect:
+    effect: 2
+    delay: 0.9
+    radius: 0
+    damage: 0
+    knockback: 0
+    summonCount: 4
+    secondaryChance: 0.5

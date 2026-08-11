@@ -1,0 +1,122 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5fdccba37d6b7344815453646aadd99, type: 3}
+  m_Name: GameBalanceConfig
+  m_EditorClassIdentifier: 
+  player:
+    baseMoveSpeed: 8
+    baseSuction: 100
+    baseEnergyBallDamage: 25
+    maxHealth: 10
+    invincibleDuration: 1
+    fullWalkSpeedMultiplier: 0.8
+    inhaleWalkSpeedMultiplier: 0.5
+    runStepInterval: 0.28
+    walkStepInterval: 0.42
+    idleSoundDelay: 8
+    idleSoundRepeatInterval: 12
+    knockbackDuration: 0.12
+    beastRollingSpeedMultiplier: 1.4
+    beastDamageReductionBase: 0.2
+    beastDamageReductionPerLevel: 0.05
+    beastDamageReductionLimit: 0.9
+    beastHitRadius: 0.8
+    beastDamagePerSecond: 20
+    beastDamagePerLevel: 0.1
+    beastHitSoundCooldown: 0.25
+  inhale:
+    angle: 60
+    radius: 5
+    maximumDuration: 3
+    maximumSuctionForce: 100
+    suctionRampTime: 1.5
+    intakeDistance: 0.65
+    minimumPullSpeed: 1
+    maximumPullSpeed: 16
+    corpsePullSpeedMultiplier: 2
+    corpseMaximumPullSpeed: 28
+    suctionMassSpeedFactor: 0.35
+    aliveEnemyMaximumSpeedBoost: 1.25
+  spit:
+    speed: 15
+    maximumDistance: 20
+    spawnForwardOffset: 0.75
+    poolInitialSize: 12
+    poolMaximumSize: 64
+    maximumChargeTime: 1.5
+    bigMassThreshold: 30
+    spreadAngle: 10
+    angelShotCooldown: 0.5
+    popeDamageMultiplier: 0.5
+    chargeBonusPerLevel: 0.1
+    multipleMouthPerBallMultiplier: 0.6
+    multipleMouthPowerPerLevel: 0.1
+    maximumBallCount: 4
+  food:
+    initialFoodPerRoom: 30
+    refreshBatchSize: 10
+    maxActiveFood: 20
+    refreshSeconds: 10
+    clearedRefreshSeconds: 5
+    popeGuaranteeRefreshSeconds: 10
+    minimumSpacing: 1.5
+    boundsPadding: 1
+    placementAttempts: 32
+    landingDuration: 0.25
+    colliderRadius: 0.42
+    worldScale: 0.72
+    riceBallMass: 10
+    baoziMass: 8
+    hotDogMass: 15
+    sushiMass: 15
+  statues:
+    healthCost: 1
+    angelBreakHits: 100
+    angelHeartDrops: 3
+    popeFoodPerHealth: 3
+    popeFoodPerOffering: 1
+    visualHeight: 3
+    frontContactDot: 0.55
+  enemy:
+    normalizedSpeedLimit: 2
+    separationRadius: 1.25
+    chaseWeight: 0.55
+    irregularChaseWeight: 0.45
+    separationWeight: 0.9
+    horizontalFacingDeadZone: 0.08
+    initialAttackDelayRange: {x: 0.25, y: 1}
+    steeringSpeedRange: {x: 0.75, y: 1.25}
+    steeringRadiusRange: {x: 0.45, y: 1.05}
+    colliderContactTolerance: 0.05
+    fallbackContactRadius: 0.7
+    contactKnockbackDistance: 0.65
+    areaKnockbackDistance: 2
+    contactCooldown: 0.75
+    aimedProjectileSpeed: 8
+    radialProjectileSpeed: 7
+    summonOffsetMinimum: 0.8
+    summonOffsetMaximum: 1.8
+    corpseLifetime: 20
+    fireballFallHeight: 4.5
+    fireballOffscreenPadding: 1.5
+    fireballFallDuration: 0.72
+    fireballOrbitRadius: 0.9
+    fireballOrbitTurns: 1.75
+    fireballVisualScale: 1.8
+    fireballParticleScale: 1.8
+    fireballLandingMarkerScale: 1.65
+    fireballExplosionRadius: 1.25
+    fireballExplosionDamage: 2
+    fireballBurnRadius: 0.9
+    fireballBurnDuration: 2
+    fireballBurnDamage: 1
+    fireballBurnVisualScale: 1.6

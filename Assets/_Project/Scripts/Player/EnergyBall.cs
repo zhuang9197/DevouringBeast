@@ -132,6 +132,19 @@ namespace DevouringBeast
             if (_owner != null && other.transform.IsChildOf(_owner))
                 return;
 
+            StatueController statue = other.GetComponentInParent<StatueController>();
+            if (statue != null && statue.ReceiveAttack())
+            {
+                Release();
+                return;
+            }
+            SpiderOvary ovary = other.GetComponentInParent<SpiderOvary>();
+            if (ovary != null)
+            {
+                ovary.TakeDamage(_snapshot != null ? _snapshot.Damage : 0f);
+                Release();
+                return;
+            }
             TryHitEnemy(other.GetComponentInParent<EnemyBase>());
         }
 
@@ -160,6 +173,19 @@ namespace DevouringBeast
                 if (collider == null || (_owner != null && collider.transform.IsChildOf(_owner)))
                     continue;
 
+                StatueController statue = collider.GetComponentInParent<StatueController>();
+                if (statue != null && statue.ReceiveAttack())
+                {
+                    Release();
+                    continue;
+                }
+                SpiderOvary ovary = collider.GetComponentInParent<SpiderOvary>();
+                if (ovary != null)
+                {
+                    ovary.TakeDamage(_snapshot != null ? _snapshot.Damage : 0f);
+                    Release();
+                    continue;
+                }
                 TryHitEnemy(collider.GetComponentInParent<EnemyBase>());
             }
         }
@@ -172,6 +198,12 @@ namespace DevouringBeast
             int enemyId = enemy.GetInstanceID();
             if (!_hitEnemies.Add(enemyId))
                 return;
+
+            if (enemy.TryReflectEnergyBall())
+            {
+                Release();
+                return;
+            }
 
             AudioManager.Instance.PlaySfx(
                 _snapshot.HasExplosion ? AudioCue.Bomb : AudioCue.Hit);

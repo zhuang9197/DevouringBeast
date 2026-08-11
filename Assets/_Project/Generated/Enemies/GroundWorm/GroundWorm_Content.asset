@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de0d595d1967440449dd31fcf476964e, type: 3}
+  m_Name: GroundWorm_Content
+  m_EditorClassIdentifier: 
+  archetype: 14
+  category: 0
+  prefab: {fileID: 7982483186872677862, guid: 700bbe1239a3c8b4e926f2d63278842f, type: 3}
+  data: {fileID: 11400000, guid: a73a6263c0d1fed43a1e0039c40bd454, type: 2}
+  atlas: {fileID: 4343727234628468602, guid: f6bf61c9f87f25048bd62b853f3e5ef9, type: 2}

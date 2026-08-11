@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Meatballs
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 0
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings: []
+    packingSettings:
+      serializedVersion: 2
+      padding: 4
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 0
+      enableTightPacking: 0
+      enableAlphaDilation: 1
+    secondaryTextureSettings: {}
+    variantMultiplier: 1
+    packables:
+    - {fileID: 2800000, guid: 1de75260ce1d3d647aba3c9e2109b16c, type: 3}
+    - {fileID: 2800000, guid: f17d0e11a605ac54d8c67a9b31fe5915, type: 3}
+    - {fileID: 2800000, guid: b2f38f2dae7484546a33051c1d396786, type: 3}
+    - {fileID: 2800000, guid: 1df09950f0dc6ea4ab497467a62b2499, type: 3}
+    - {fileID: 2800000, guid: f50863e33c95b5a4cb56b36c31e77757, type: 3}
+    - {fileID: 2800000, guid: 84715cf943b7ccd47aeaabcbd57b61c7, type: 3}
+    - {fileID: 2800000, guid: f45f32f2b497bbe418f1aa3bd7e23729, type: 3}
+    - {fileID: 2800000, guid: 63f2ae71a81ab3c4a8b3c9e09006186c, type: 3}
+    bindAsDefault: 0
+    isAtlasV2: 0
+    cachedData: {fileID: 0}
+    packedSpriteRenderDataKeys:
+    - 1df09950f0dc6ea4ab497467a62b2499: 21300000
+    - 1de75260ce1d3d647aba3c9e2109b16c: 21300000
+    - f17d0e11a605ac54d8c67a9b31fe5915: 21300000
+    - 63f2ae71a81ab3c4a8b3c9e09006186c: 21300000
+    - f45f32f2b497bbe418f1aa3bd7e23729: 21300000
+    - f50863e33c95b5a4cb56b36c31e77757: 21300000
+    - 84715cf943b7ccd47aeaabcbd57b61c7: 21300000
+    - b2f38f2dae7484546a33051c1d396786: 21300000
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: 1df09950f0dc6ea4ab497467a62b2499, type: 3}
+  - {fileID: 21300000, guid: 1de75260ce1d3d647aba3c9e2109b16c, type: 3}
+  - {fileID: 21300000, guid: f17d0e11a605ac54d8c67a9b31fe5915, type: 3}
+  - {fileID: 21300000, guid: 63f2ae71a81ab3c4a8b3c9e09006186c, type: 3}
+  - {fileID: 21300000, guid: f45f32f2b497bbe418f1aa3bd7e23729, type: 3}
+  - {fileID: 21300000, guid: f50863e33c95b5a4cb56b36c31e77757, type: 3}
+  - {fileID: 21300000, guid: 84715cf943b7ccd47aeaabcbd57b61c7, type: 3}
+  - {fileID: 21300000, guid: b2f38f2dae7484546a33051c1d396786, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - 004
+  - 001
+  - 002
+  - 008
+  - 007
+  - 005
+  - 006
+  - 003
+  m_RenderDataMap: {}
+  m_Tag: Meatballs
+  m_IsVariant: 0

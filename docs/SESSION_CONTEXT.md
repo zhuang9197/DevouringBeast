@@ -1,6 +1,6 @@
 # DevouringBeast - 系统实现上下文
 
-> 当前实现基线：2026-07-31
+> 当前实现基线：2026-08-07
 
 ## 1. 场景与状态
 
@@ -39,6 +39,7 @@
 
 1. `BeginRoom` 接收房间类型、楼层、中心、尺寸和清理回调。
 2. 敌人继续按来源 Prefab 池化，并以 `spawnBatchSize` 分帧创建。
+   敌人来源由 `EnemyContent_All` 标签解析；每个 `EnemyContentDefinition` 使用独立 Addressables handle 加载并在 `WaveManager` 销毁时释放。
 3. 普通房生成普通敌人；精英房生成普通敌人与精英敌人；Boss 房生成普通敌人与 Boss。
    `WaveManager` 单独跟踪本次遭遇中的 Boss 生命总值；`WaveUI` 只在 Boss 房生成/战斗阶段于倒计时条下显示红色总血条。
 4. 计时归零只调用 `EnterCrisis`，不生成敌人、不结束房间、不打开门。
@@ -92,13 +93,25 @@
 - 血量掉落回池时从 `ActiveDrops` 移除，换层统一释放。
 - 环境物品换层时先释放所有活动成员，再按单房间容量补充。
 
-## 10. 存档兼容
+## 10. 敌人虚拟图集与 Addressables
+
+- 每种敌人的 `Textures` 全部加入同目录 `Atlas/<Enemy>.spriteatlas`，关闭旋转和 Tight Packing，Padding 为 4，过滤模式为 Point，不生成 Mipmap。
+- 所有 Atlas 的 `Include in Build` 均关闭；Atlas 由该敌人的 `EnemyContentDefinition` 强引用，作为 Addressables 依赖进入运行时内容包。
+- 生成的 Prefab、EnemyData、动画和材质位于 `Assets/_Project/Generated/Enemies/<Enemy>`，不在 `Resources` 下。
+- `Group_Minions`、`Group_Elites`、`Group_Bosses` 使用 `PackSeparately`，因此一个内容定义对应一个可独立持有和释放的敌人包。
+- 地址格式为 `Enemy/<Enemy>/Content`；通用标签为 `EnemyContent_All`，并附带分类标签和 `Enemy_<Enemy>` 个体标签。
+- Addressables 随 Player Build 自动构建。只有内容定义是公开加载入口，禁止逐帧加载 Texture/Sprite。
+- 虚拟图集仍会在运行时产生真实的打包纹理。关闭 `Include in Build` 的作用是阻止 Atlas 被 Player 自动内置，并不意味着独立源纹理无需加载 Atlas 即可自动合批。
+
+## 11. 存档兼容
 
 `SaveSlotData.completedWave` 字段暂时保留，避免破坏已有 JSON 存档；它现在表示“已完成楼层”。进入下一层入口时写入当前层号。旧 `CurrentWave` API 同理仅用于兼容 UI 和掉落概率代码。
 
-## 11. 验证清单
+## 12. 验证清单
 
-- 编译：程序集 0 Error；当前仅有 2 个既有未使用字段警告。
+- 编译：程序集 0 Error；当前仅有 1 个既有未使用字段警告。
+- 敌人内容：20 个定义有效，20 个 Atlas 共 343 个 Packable，全部 `Include in Build=false`；分类组条目数为 8 / 7 / 5。
+- Addressables：Windows 内容构建成功并输出 20 个敌人 Bundle；Play Mode 加载 20 个内容定义，活动敌人 Sprite 全部通过对应 Atlas 绑定，Console 为 0 Error / 0 Warning。
 - 地图：Play Mode 已确认 `new_map` 语义 Tile 构成的 16 x 9 房间连续覆盖固定视口；五段连续地板切片的镜像延展不再出现逐格硬接缝，墙角和墙按边缘方向正确旋转。
 - 结构：每层 10 房，初始普通，精英 1，Boss 1，全部连通。
 - 战斗：未清理锁门，清敌开门，清理房不重刷。

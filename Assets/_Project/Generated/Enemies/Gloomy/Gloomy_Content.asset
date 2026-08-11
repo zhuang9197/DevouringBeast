@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de0d595d1967440449dd31fcf476964e, type: 3}
+  m_Name: Gloomy_Content
+  m_EditorClassIdentifier: 
+  archetype: 11
+  category: 1
+  prefab: {fileID: 732859818459797199, guid: 4f6fbbdd7045c1e46a25f3c176f74fca, type: 3}
+  data: {fileID: 11400000, guid: 0c8b4147bb0f0134cb046e6be15beafb, type: 2}
+  atlas: {fileID: 4343727234628468602, guid: 9e9971d782812e94da1e4d857481d390, type: 2}

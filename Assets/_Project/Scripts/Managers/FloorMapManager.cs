@@ -11,11 +11,15 @@ namespace DevouringBeast
     [DisallowMultipleComponent]
     public sealed class FloorMapManager : MonoBehaviour
     {
+        public const int FinalFloor = 5;
         private sealed class RoomState
         {
             public Vector2Int Cell;
             public RoomKind Kind;
             public bool Cleared;
+            public bool Visited;
+            public bool IsDemonRoom;
+            public bool HasFloorExit;
         }
 
         private static readonly Vector2Int[] Directions =
@@ -24,8 +28,8 @@ namespace DevouringBeast
         };
         private const int RoomColumns = 16;
         private const int RoomRows = 9;
+        private const int RequiredRoomsPerFloor = 10;
 
-        [SerializeField, Min(10)] private int roomsPerFloor = 10;
         [SerializeField] private Vector2 roomSize = new(32f, 18f);
         [SerializeField, Min(2f)] private float doorWidth = 2f;
         [SerializeField, Min(0.2f)] private float wallThickness = 1.5f;
@@ -35,6 +39,7 @@ namespace DevouringBeast
         [SerializeField, Range(0.05f, 1f)] private float doorEnterInputThreshold = 0.35f;
 
         private readonly List<RoomState> _rooms = new(10);
+        private readonly List<StatueController> _statues = new();
         private readonly Dictionary<Vector2Int, int> _roomByCell = new();
         private Vector2 _floorOrigin = new(40f, 40f);
         private Transform _roomCollisionRoot;
@@ -53,11 +58,47 @@ namespace DevouringBeast
         private EnvironmentItemSpawner _environmentItems;
         private int _currentRoom;
         private int _floor = 1;
+        private int _clearedElites;
+        private int _demonRoomIndex = -1;
         private bool _transitioning;
+        private bool _roomCombatLocked;
         private GameObject _floorExit;
 
         public int CurrentFloor => _floor;
         public int CurrentRoomIndex => _currentRoom;
+        public int MinimapRoomCount => _rooms.Count;
+        public int LayoutVersion { get; private set; }
+        public event Action MinimapChanged;
+
+        public bool TryGetMinimapRoom(int index, out Vector2Int cell, out bool visited,
+            out bool cleared, out bool current, out bool adjacent)
+        {
+            return TryGetMinimapRoom(index, out cell, out visited, out cleared, out current, out adjacent,
+                out _, out _);
+        }
+
+        public bool TryGetMinimapRoom(int index, out Vector2Int cell, out bool visited,
+            out bool cleared, out bool current, out bool adjacent, out bool demonRoom, out bool floorExit)
+        {
+            if (index < 0 || index >= _rooms.Count)
+            {
+                cell = default;
+                visited = cleared = current = adjacent = demonRoom = floorExit = false;
+                return false;
+            }
+
+            RoomState room = _rooms[index];
+            cell = room.Cell;
+            visited = room.Visited;
+            cleared = room.Cleared;
+            current = index == _currentRoom;
+            demonRoom = room.IsDemonRoom;
+            floorExit = room.HasFloorExit;
+            adjacent = _currentRoom >= 0 && _currentRoom < _rooms.Count &&
+                Mathf.Abs(room.Cell.x - _rooms[_currentRoom].Cell.x) +
+                Mathf.Abs(room.Cell.y - _rooms[_currentRoom].Cell.y) == 1;
+            return true;
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -67,8 +108,15 @@ namespace DevouringBeast
 
         public static void EnsureForScene(Scene scene)
         {
-            if (scene.name != SceneNames.Game || FindObjectOfType<FloorMapManager>() != null) return;
-            new GameObject("FloorMapManager").AddComponent<FloorMapManager>();
+            if (scene.name != SceneNames.Game || !scene.isLoaded) return;
+
+            FloorMapManager[] managers = FindObjectsOfType<FloorMapManager>(true);
+            foreach (FloorMapManager manager in managers)
+                if (manager != null && manager.gameObject.scene == scene) return;
+
+            GameObject managerObject = new("FloorMapManager");
+            SceneManager.MoveGameObjectToScene(managerObject, scene);
+            managerObject.AddComponent<FloorMapManager>();
         }
 
         private IEnumerator Start()
@@ -83,7 +131,7 @@ namespace DevouringBeast
             _cameraFollow = camera != null ? camera.GetComponent<CameraFollow>() : null;
             if (_player != null) GroundShadow.Ensure(_player.gameObject);
 
-            while (_waves == null || !_waves.IsReady)
+            while (_waves == null)
             {
                 _waves = FindObjectOfType<WaveManager>();
                 yield return null;
@@ -91,7 +139,7 @@ namespace DevouringBeast
 
             SaveGameService.Initialize();
             SaveSlotData save = SaveGameService.GetActiveSlot();
-            _floor = save != null ? Mathf.Max(1, save.completedWave + 1) : 1;
+            _floor = save != null ? Mathf.Clamp(save.completedWave + 1, 1, FinalFloor) : 1;
             BuildFloor();
         }
 
@@ -99,14 +147,27 @@ namespace DevouringBeast
         {
             _waves.ResetForFloor();
             BloodDrop.ReleaseFloorDrops();
+            EnemyRewardChest.ReleaseFloorChests();
+            _environmentItems?.ResetForFloor();
             if (_floorVisualRoot != null) Destroy(_floorVisualRoot);
             if (_roomCollisionRoot != null) Destroy(_roomCollisionRoot.gameObject);
             if (_floorExit != null) Destroy(_floorExit);
+            foreach (StatueController statue in _statues)
+                if (statue != null) Destroy(statue.gameObject);
+            _statues.Clear();
+            _clearedElites = 0;
+            _demonRoomIndex = -1;
+            _roomCombatLocked = false;
             GenerateLayout();
+            LayoutVersion++;
             CreateFloorTilemap();
+            bool testMode = GameManager.Instance.IsTestMode;
+            if (!testMode) CreateStatues();
+            else _environmentItems?.EnableTestMode();
+            FloorMinimapUI.EnsureFor(this);
             _currentRoom = 0;
             EnterRoom(0, Vector2Int.zero, true);
-            _environmentItems?.ResetForFloor();
+            if (testMode) DeveloperTestPanel.EnsureFor(this);
         }
 
         private void GenerateLayout()
@@ -114,31 +175,80 @@ namespace DevouringBeast
             _rooms.Clear();
             _roomByCell.Clear();
             AddRoom(Vector2Int.zero);
+            if (GameManager.Instance.IsTestMode)
+            {
+                _rooms[0].Cleared = true;
+                return;
+            }
             int safety = 0;
-            while (_rooms.Count < roomsPerFloor && safety++ < 1000)
+            while (_rooms.Count < RequiredRoomsPerFloor && safety++ < 1000)
             {
                 RoomState source = _rooms[UnityEngine.Random.Range(0, _rooms.Count)];
                 Vector2Int candidate = source.Cell + Directions[UnityEngine.Random.Range(0, Directions.Length)];
                 if (!_roomByCell.ContainsKey(candidate)) AddRoom(candidate);
             }
 
-            int boss = 1;
-            int farthest = -1;
-            for (int i = 1; i < _rooms.Count; i++)
+            int firstElite = UnityEngine.Random.Range(1, _rooms.Count);
+            int secondElite;
+            do secondElite = UnityEngine.Random.Range(1, _rooms.Count); while (secondElite == firstElite);
+            _rooms[firstElite].Kind = RoomKind.Elite;
+            _rooms[secondElite].Kind = RoomKind.Elite;
+            int boss = -1;
+            if (_floor >= FinalFloor)
             {
-                int distance = Mathf.Abs(_rooms[i].Cell.x) + Mathf.Abs(_rooms[i].Cell.y);
-                if (distance > farthest)
+                int farthest = -1;
+                for (int i = 1; i < _rooms.Count; i++)
                 {
-                    farthest = distance;
-                    boss = i;
+                    int distance = Mathf.Abs(_rooms[i].Cell.x) + Mathf.Abs(_rooms[i].Cell.y);
+                    if (distance > farthest)
+                    {
+                        farthest = distance;
+                        boss = i;
+                    }
                 }
+                _rooms[firstElite].Kind = RoomKind.Normal;
+                _rooms[secondElite].Kind = RoomKind.Normal;
+                _rooms[boss].Kind = RoomKind.Boss;
             }
-            _rooms[boss].Kind = RoomKind.Boss;
+            string eliteSummary = _floor < FinalFloor ? $"{firstElite},{secondElite}" : "none";
+            Debug.Log($"[FloorMapManager] Floor {_floor}: rooms={_rooms.Count}, elites={eliteSummary}, boss={boss}");
+        }
 
-            int elite;
-            do elite = UnityEngine.Random.Range(1, _rooms.Count); while (elite == boss);
-            _rooms[elite].Kind = RoomKind.Elite;
-            Debug.Log($"[FloorMapManager] Floor {_floor}: rooms={_rooms.Count}, start={_rooms[0].Kind}, elite={elite}, boss={boss}");
+        private void CreateStatues()
+        {
+            Sprite angel = Resources.Load<Sprite>("Statues/angel_statue");
+            Sprite angelDestroyed = Resources.Load<Sprite>("Statues/angel_statue_destory");
+            Sprite demon = Resources.Load<Sprite>("Statues/demon_statue");
+            Sprite demonDestroyed = Resources.Load<Sprite>("Statues/demon_statue_destory");
+            Sprite pope = Resources.Load<Sprite>("Statues/pope_statue");
+            Sprite popeDestroyed = Resources.Load<Sprite>("Statues/pope_statue_destory");
+            if (angel == null || demon == null || pope == null)
+            {
+                Debug.LogWarning("[FloorMapManager] Statue sprites are missing from Resources/Statues.");
+                return;
+            }
+
+            int demonRoom = UnityEngine.Random.Range(1, _rooms.Count);
+            _demonRoomIndex = demonRoom;
+            _rooms[demonRoom].IsDemonRoom = true;
+            foreach (RoomState room in _rooms)
+            {
+                CreateStatue(StatueKind.Pope, room, GetRoomCenter(room.Cell) + Vector2.left * 5f, pope, popeDestroyed);
+                if (room == _rooms[0])
+                    CreateStatue(StatueKind.Angel, room, GetRoomCenter(room.Cell) + Vector2.up * 3f, angel, angelDestroyed);
+                if (_rooms.IndexOf(room) == demonRoom)
+                    CreateStatue(StatueKind.Demon, room, GetRoomCenter(room.Cell) + Vector2.right * 5f, demon, demonDestroyed);
+            }
+        }
+
+        private void CreateStatue(StatueKind kind, RoomState room, Vector2 position, Sprite intact, Sprite destroyed)
+        {
+            GameObject statueObject = new($"{kind}Statue", typeof(SpriteRenderer), typeof(CircleCollider2D), typeof(StatueController));
+            statueObject.transform.SetParent(transform, false);
+            statueObject.transform.position = position;
+            StatueController statue = statueObject.GetComponent<StatueController>();
+            statue.Initialize(kind, room.Cell, this, _environmentItems, intact, destroyed);
+            _statues.Add(statue);
         }
 
         private void AddRoom(Vector2Int cell)
@@ -325,9 +435,14 @@ namespace DevouringBeast
         private void EnterRoom(int roomIndex, Vector2Int travelDirection, bool initial)
         {
             if (roomIndex < 0 || roomIndex >= _rooms.Count) return;
+            if (!initial && _currentRoom == 0 && roomIndex != 0)
+                foreach (StatueController statue in _statues)
+                    if (statue != null && statue.Kind == StatueKind.Angel && statue.Room == _rooms[0].Cell)
+                        statue.DestroyWhenLeavingStartRoom();
             _transitioning = true;
             _currentRoom = roomIndex;
             RoomState room = _rooms[roomIndex];
+            room.Visited = true;
             Vector2 center = GetRoomCenter(room.Cell);
             if (_player != null)
             {
@@ -340,15 +455,20 @@ namespace DevouringBeast
             _mapBounds?.ConfigureRoom(center, roomSize, false, walkableInset);
             _cameraFollow?.SetRoom(center, roomSize);
             RebuildRoomCollisions(room);
-            _environmentItems?.SetCurrentRoomCleared(room.Cleared);
+            _environmentItems?.SetCurrentRoom(room.Cell, center, roomSize, room.Cleared);
 
             if (room.Cleared)
+            {
+                _roomCombatLocked = false;
                 _waves.LeaveClearedRoom();
+            }
             else
             {
+                _roomCombatLocked = true;
                 SetDoorsLocked(true);
                 _waves.BeginRoom(room.Kind, _floor, center, roomSize, HandleRoomCleared);
             }
+            MinimapChanged?.Invoke();
             StartCoroutine(ReleaseTransitionLock());
         }
 
@@ -362,14 +482,67 @@ namespace DevouringBeast
         {
             RoomState room = _rooms[_currentRoom];
             room.Cleared = true;
+            _roomCombatLocked = false;
+            if (room.Kind == RoomKind.Elite) _clearedElites++;
             SetDoorsLocked(false);
             _environmentItems?.SetCurrentRoomCleared(true);
-            if (room.Kind == RoomKind.Boss) CreateFloorExit(GetRoomCenter(room.Cell));
+            if (_floor >= FinalFloor && room.Kind == RoomKind.Boss)
+            {
+                CompleteRun();
+            }
+            else if (_floor < FinalFloor && _clearedElites >= 2)
+            {
+                CreateFloorExit(GetRoomCenter(room.Cell));
+            }
+            MinimapChanged?.Invoke();
+        }
+
+        public bool TryStartDemonChallenge(int touchCount, Action completed)
+        {
+            if (_waves == null || _waves.IsEncounterActive || _currentRoom < 0 || _currentRoom >= _rooms.Count ||
+                !_rooms[_currentRoom].Cleared || _roomCombatLocked) return false;
+            int normal = 1;
+            int elite = 0;
+            int boss = 0;
+            if (touchCount >= 36)
+            {
+                normal = 0;
+                boss = 2;
+            }
+            else if (touchCount % 15 == 0)
+            {
+                normal = 1;
+                boss = 1;
+            }
+            else if (touchCount % 5 == 0)
+            {
+                normal = 1;
+                elite = 1;
+            }
+            else if (touchCount % 3 == 0)
+            {
+                normal = UnityEngine.Random.Range(1, 5);
+            }
+
+            SetDoorsLocked(true);
+            _roomCombatLocked = true;
+            _environmentItems?.SetCurrentRoomCleared(false);
+            Vector2 center = GetRoomCenter(_rooms[_currentRoom].Cell);
+            bool started = _waves.BeginStatueEncounter(_floor, center, roomSize, normal, elite, boss, () =>
+            {
+                SetDoorsLocked(false);
+                _roomCombatLocked = false;
+                _environmentItems?.SetCurrentRoomCleared(true);
+                completed?.Invoke();
+            });
+            if (!started) { SetDoorsLocked(false); _roomCombatLocked = false; }
+            return started;
         }
 
         public void TryTravel(Vector2Int direction)
         {
-            if (_transitioning || !_rooms[_currentRoom].Cleared) return;
+            if (_transitioning || _roomCombatLocked || !_rooms[_currentRoom].Cleared ||
+                (_waves != null && _waves.IsEncounterActive)) return;
             if (_playerController == null ||
                 Vector2.Dot(_playerController.MoveDirection, direction) < doorEnterInputThreshold) return;
             Vector2Int targetCell = _rooms[_currentRoom].Cell + direction;
@@ -446,6 +619,8 @@ namespace DevouringBeast
         private void CreateFloorExit(Vector2 center)
         {
             if (_floorExit != null) return;
+            if (_currentRoom >= 0 && _currentRoom < _rooms.Count)
+                _rooms[_currentRoom].HasFloorExit = true;
             _floorExit = new GameObject("NextFloorEntrance", typeof(SpriteRenderer), typeof(CircleCollider2D), typeof(FloorExitTrigger));
             _floorExit.transform.position = center + Vector2.up * 2f;
             SpriteRenderer renderer = _floorExit.GetComponent<SpriteRenderer>();
@@ -461,12 +636,20 @@ namespace DevouringBeast
 
         public void EnterNextFloor()
         {
-            if (_transitioning) return;
+            if (_transitioning || _floorExit == null || _floor >= FinalFloor) return;
             _transitioning = true;
             SaveGameService.SaveCompletedWave(_floor);
             _floor++;
             BuildFloor();
             _transitioning = false;
+        }
+
+        private void CompleteRun()
+        {
+            if (_transitioning) return;
+            _transitioning = true;
+            CompletedRunData history = SaveGameService.CompleteActiveRun();
+            GameManager.Instance.CompleteRun(history);
         }
 
         private Vector2 GetRoomCenter(Vector2Int cell)

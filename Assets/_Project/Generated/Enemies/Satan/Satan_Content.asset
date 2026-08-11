@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de0d595d1967440449dd31fcf476964e, type: 3}
+  m_Name: Satan_Content
+  m_EditorClassIdentifier: 
+  archetype: 3
+  category: 2
+  prefab: {fileID: 3644093144724938034, guid: 265be46c56cf17642848e2a7be2cb76f, type: 3}
+  data: {fileID: 11400000, guid: 3e4f2bd520f8af842ab3627f8bddea61, type: 2}
+  atlas: {fileID: 4343727234628468602, guid: 1e4590e0351f1414ab148846cf381cf6, type: 2}

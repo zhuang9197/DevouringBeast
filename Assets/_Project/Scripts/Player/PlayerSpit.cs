@@ -11,20 +11,22 @@ namespace DevouringBeast
     {
         [Header("吐出参数")]
         [SerializeField] private GameObject energyBallPrefab;
-        [SerializeField] private float spitSpeed = 15f;
-        [SerializeField] private float maxFlyDistance = 20f;
-        [SerializeField] private float baseDamage = 25f;
-        [SerializeField, Min(0f), Tooltip("能量球从玩家朝向前方生成的距离")]
-        private float spawnForwardOffset = 0.75f;
-
-        [Header("对象池")]
-        [SerializeField, Min(0)] private int poolInitialSize = 12;
-        [SerializeField, Min(1)] private int poolMaxSize = 64;
-
-        [Header("蓄力（尖嘴技能）")]
-        [SerializeField] private float maxChargeTime = 1.5f;
-                [SerializeField, Min(0f)] private float bigMassThreshold = 30f;
-[SerializeField] private float maxChargeBonus = 0.3f; // 30% 额外伤害
+        private float spitSpeed;
+        private float maxFlyDistance;
+        private float baseDamage;
+        private float spawnForwardOffset;
+        private int poolInitialSize;
+        private int poolMaxSize;
+        private float maxChargeTime;
+        private float bigMassThreshold;
+        private float maxChargeBonus;
+        private float spreadAngle;
+        private float angelShotCooldown;
+        private float popeDamageMultiplier;
+        private float chargeBonusPerLevel;
+        private float multipleMouthPerBallMultiplier;
+        private float multipleMouthPowerPerLevel;
+        private int maximumBallCount;
 
         [Header("事件")]
         [SerializeField] private VoidEventChannel onSpit;
@@ -66,12 +68,33 @@ public float BaseDamage
 
         private void Awake()
         {
+            SpitBalanceSettings config = GameBalance.Current?.Spit;
+            PlayerBalanceSettings playerConfig = GameBalance.Current?.Player;
+            if (config != null)
+            {
+                spitSpeed = config.speed;
+                maxFlyDistance = config.maximumDistance;
+                spawnForwardOffset = config.spawnForwardOffset;
+                poolInitialSize = config.poolInitialSize;
+                poolMaxSize = config.poolMaximumSize;
+                maxChargeTime = config.maximumChargeTime;
+                bigMassThreshold = config.bigMassThreshold;
+                spreadAngle = config.spreadAngle;
+                angelShotCooldown = config.angelShotCooldown;
+                popeDamageMultiplier = config.popeDamageMultiplier;
+                chargeBonusPerLevel = config.chargeBonusPerLevel;
+                multipleMouthPerBallMultiplier = config.multipleMouthPerBallMultiplier;
+                multipleMouthPowerPerLevel = config.multipleMouthPowerPerLevel;
+                maximumBallCount = config.maximumBallCount;
+            }
+            if (playerConfig != null) baseDamage = playerConfig.baseEnergyBallDamage;
             _playerController = GetComponent<PlayerController>();
             _container = GetComponent<SwallowContainer>();
             _skillManager = GetComponent<RogueSkillManager>();
             _baseAttributes = GetComponent<PlayerBaseAttributes>();
             if (_baseAttributes == null) _baseAttributes = gameObject.AddComponent<PlayerBaseAttributes>();
-            _baseAttributes.InitialEnergyBallDamage = baseDamage;
+            _baseAttributes.InitializeFromConfig();
+            baseDamage = _baseAttributes.InitialEnergyBallDamage;
             EnergyBallHitVfxService.WarmUp();
         }
 
@@ -96,16 +119,21 @@ public void Spit()
                     item.ReleaseFromMouth();
                 }
             }
-            FireEnergyBalls(totalMass, GetBallCount(), chargedShot);
-            if (CanSpitWithoutItems) _nextAngelShotTime = Time.time + 0.5f;
+            FireCurrentSkillVolley(totalMass, chargedShot);
+            if (CanSpitWithoutItems) _nextAngelShotTime = Time.time + angelShotCooldown;
         }
 
-        /// <summary>教皇在吞噬后额外发射的一颗教化能量球，不改变正常吸入/吐出。</summary>
+        /// <summary>教皇在吞噬后额外发射教化能量球，不改变正常吸入/吐出。</summary>
         public void SpitTeachingBall(float consumedMass)
         {
             if (_playerController != null && _playerController.IsInhaling) return;
             bool chargedShot = _isCharging && CanCharge;
-            FireEnergyBalls(Mathf.Max(0f, consumedMass), 1, chargedShot);
+            FireCurrentSkillVolley(Mathf.Max(0f, consumedMass), chargedShot);
+        }
+
+        private void FireCurrentSkillVolley(float totalMass, bool chargedShot)
+        {
+            FireEnergyBalls(totalMass, GetBallCount(), chargedShot);
         }
 
         private void FireEnergyBalls(float totalMass, int ballCount, bool chargedShot)
@@ -142,21 +170,24 @@ public void Spit()
         private int GetBallCount()
         {
             if (_skillManager == null || !_skillManager.Has(RogueSkillId.EvolutionMoreMouth)) return 1;
-            return Mathf.Clamp(2 + _skillManager.GetLevel(RogueSkillId.EvolutionMoreMouthMore), 2, 4);
+            return Mathf.Clamp(2 + _skillManager.GetLevel(RogueSkillId.EvolutionMoreMouthMore),
+                2, maximumBallCount);
         }
 
         private float GetPerBallDamageMultiplier(int ballCount)
         {
             if (ballCount <= 1) return 1f;
-            return 0.6f * (1f + (_skillManager != null ? _skillManager.GetLevel(RogueSkillId.EvolutionMoreMouthPower) * 0.1f : 0f));
+            return multipleMouthPerBallMultiplier * (1f + (_skillManager != null
+                ? _skillManager.GetLevel(RogueSkillId.EvolutionMoreMouthPower) * multipleMouthPowerPerLevel
+                : 0f));
         }
 
         public void RefreshSkillModifiers()
         {
             if (_skillManager == null) return;
-            _extraDamageMultiplier = _skillManager.Has(RogueSkillId.FaithPope) ? 0.5f : 0f;
+            _extraDamageMultiplier = _skillManager.Has(RogueSkillId.FaithPope) ? popeDamageMultiplier : 0f;
             int chargedLevel = _skillManager.GetLevel(RogueSkillId.EvolutionCharged);
-            maxChargeBonus = chargedLevel * 0.1f;
+            maxChargeBonus = chargedLevel * chargeBonusPerLevel;
         }
 
         public void StartAngelFire()
@@ -175,8 +206,7 @@ public void Spit()
             // 多颗球时略微偏移方向
             if (total > 1)
             {
-                float spread = 10f; // 分散角度
-                float offset = (index - (total - 1) * 0.5f) * spread;
+                float offset = (index - (total - 1) * 0.5f) * spreadAngle;
                 dir = Quaternion.Euler(0, 0, offset) * dir;
             }
 

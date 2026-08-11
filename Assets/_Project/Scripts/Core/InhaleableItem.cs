@@ -20,6 +20,8 @@ namespace DevouringBeast
         /// <summary>是否存活</summary>
         public bool IsAlive { get; set; } = true;
 
+        [field: SerializeField] public bool IgnoreSuctionThreshold { get; set; }
+
         /// <summary>当前吸入阈值：存活时无穷大（无法吸入），阵亡后为 deadThreshold</summary>
         public float CurrentThreshold => IsAlive ? float.MaxValue : DeadInhaleThreshold;
 
@@ -59,6 +61,8 @@ namespace DevouringBeast
 
             var col = GetComponent<Collider2D>();
             if (col != null) col.enabled = false;
+            Rigidbody2D body = GetComponent<Rigidbody2D>();
+            if (body != null) body.simulated = false;
 
             StartCoroutine(InhaleFlyRoutine(mouthTransform));
         }
@@ -105,6 +109,12 @@ namespace DevouringBeast
                 if (worldItem != null) worldItem.Release();
                 else
                 {
+                    EnemyRewardChest chest = GetComponent<EnemyRewardChest>();
+                    if (chest != null)
+                    {
+                        chest.Release();
+                        return;
+                    }
                     BloodDrop bloodDrop = GetComponent<BloodDrop>();
                     if (bloodDrop != null) bloodDrop.Release();
                     else Destroy(gameObject);
@@ -120,6 +130,13 @@ namespace DevouringBeast
             IsStoredInMouth = false;
             Collider2D col = GetComponent<Collider2D>();
             if (col != null) col.enabled = true;
+            Rigidbody2D body = GetComponent<Rigidbody2D>();
+            if (body != null)
+            {
+                body.simulated = true;
+                body.velocity = Vector2.zero;
+                body.angularVelocity = 0f;
+            }
         }
     }
 }

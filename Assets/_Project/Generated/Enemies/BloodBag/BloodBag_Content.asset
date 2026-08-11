@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de0d595d1967440449dd31fcf476964e, type: 3}
+  m_Name: BloodBag_Content
+  m_EditorClassIdentifier: 
+  archetype: 16
+  category: 0
+  prefab: {fileID: 5173681734905497054, guid: 197e944d6a6f50044a763f667152dfc2, type: 3}
+  data: {fileID: 11400000, guid: e2ff45c0f8d027746abdc75a5780599b, type: 2}
+  atlas: {fileID: 4343727234628468602, guid: e11bee532b1e2b144bd71065ff3b0881, type: 2}

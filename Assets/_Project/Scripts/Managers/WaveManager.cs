@@ -1,7 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine;
+using UnityEngine.U2D;
 using UnityEngine.UI;
 
 namespace DevouringBeast
@@ -11,11 +15,12 @@ namespace DevouringBeast
     /// <summary>Runs one combat encounter for the currently entered room.</summary>
     public sealed class WaveManager : MonoBehaviour
     {
+        private const string EnemyContentLabel = "EnemyContent_All";
+
         public static WaveManager Instance { get; private set; }
         public enum Phase { Idle, Spawning, Fighting, Cleared }
 
         [Header("配置")]
-        [SerializeField] private EnemyPrefabCatalog prefabCatalog;
         [SerializeField] private WaveConfig config;
 
         [Header("生成")]
@@ -30,6 +35,11 @@ namespace DevouringBeast
         public Action<int, int, float, float> OnWaveInfoChanged;
 
         private readonly List<GameObject[]> _tierPrefabs = new();
+        private readonly Dictionary<EnemyArchetype, EnemyContentDefinition> _contentByArchetype = new();
+        private readonly Dictionary<GameObject, EnemyData> _dataByPrefab = new();
+        private readonly Dictionary<string, SpriteAtlas> _loadedAtlases = new();
+        private readonly Dictionary<string, List<Action<SpriteAtlas>>> _pendingAtlasRequests = new();
+        private readonly List<AsyncOperationHandle<EnemyContentDefinition>> _contentHandles = new();
         private readonly Dictionary<GameObject, Queue<EnemyPoolMember>> _enemyPools = new();
         private readonly Dictionary<GameObject, Vector3> _enemySpawnScales = new();
         private readonly HashSet<EnemyPoolMember> _activeEnemies = new();
@@ -78,21 +88,57 @@ namespace DevouringBeast
             }
         }
         public int ActiveEnemyObjectCount => _activeEnemies.Count;
+        public bool IsEncounterActive => _currentPhase == Phase.Spawning || _currentPhase == Phase.Fighting;
         public int PooledEnemyObjectCount => _pooledEnemyCount;
+        public int ActiveLivingEnemyCount
+        {
+            get
+            {
+                int count = 0;
+                foreach (EnemyPoolMember member in _activeEnemies)
+                    if (member != null && member.Enemy != null && !member.Enemy.IsDead) count++;
+                return count;
+            }
+        }
+
+        public bool HasLivingArchetype(EnemyArchetype archetype)
+        {
+            foreach (EnemyPoolMember member in _activeEnemies)
+            {
+                EnemyActor actor = member != null ? member.GetComponent<EnemyActor>() : null;
+                if (actor != null && !actor.GetComponent<EnemyBase>().IsDead && actor.Archetype == archetype) return true;
+            }
+            return false;
+        }
+
+        public bool HasOtherLivingEnemy(EnemyBase excluded, bool excludeYellow)
+        {
+            foreach (EnemyPoolMember member in _activeEnemies)
+            {
+                EnemyBase enemy = member != null ? member.Enemy : null;
+                if (enemy == null || enemy == excluded || enemy.IsDead) continue;
+                if (excludeYellow && enemy.GetComponent<EnemyActor>()?.IsYellowVariant == true) continue;
+                return true;
+            }
+            return false;
+        }
 
         private void Awake()
         {
             Instance = this;
+            SpriteAtlasManager.atlasRequested += OnAtlasRequested;
         }
 
-        private void Start()
+        private IEnumerator Start()
         {
             GameObject poolRoot = new("EnemyPool");
             poolRoot.transform.SetParent(transform, false);
             _enemyPoolRoot = poolRoot.transform;
-            LoadPrefabs();
             CreateCrisisOverlay();
-            IsReady = true;
+            yield return LoadEnemyContent();
+            IsReady = _contentByArchetype.Count > 0;
+            if (!IsReady)
+                Debug.LogError("[WaveManager] No Addressable enemy content was loaded. Rebuild enemy content and Addressables.");
         }
 
         private void Update()
@@ -121,7 +167,7 @@ namespace DevouringBeast
 
         public void BeginRoom(RoomKind roomKind, int floor, Vector2 center, Vector2 size, Action roomCleared)
         {
-            StopEncounter(true);
+            StopEncounter(false);
             CurrentRoomKind = roomKind;
             _currentFloor = Mathf.Max(1, floor);
             _roomCenter = center;
@@ -137,18 +183,74 @@ namespace DevouringBeast
             SetCrisisOverlay(false);
             _currentPhase = Phase.Spawning;
             AudioManager.Instance.SetBattleWave(roomKind == RoomKind.Boss ? 10 : 1);
-            _spawnRoutine = StartCoroutine(SpawnRoomRoutine());
+            _spawnRoutine = StartCoroutine(BeginRoomWhenReadyRoutine());
             NotifyUI();
+        }
+
+        private IEnumerator BeginRoomWhenReadyRoutine()
+        {
+            while (!IsReady) yield return null;
+            yield return SpawnRoomRoutine();
         }
 
         public void LeaveClearedRoom()
         {
-            StopEncounter(true);
+            StopEncounter(false);
             _currentPhase = Phase.Idle;
             _enemiesRemaining = 0;
             _roomTimer = 0f;
             _maxTimer = 0f;
             NotifyUI();
+        }
+
+        public bool BeginStatueEncounter(int floor, Vector2 center, Vector2 size,
+            int normalCount, int eliteCount, int bossCount, Action cleared)
+        {
+            if (!IsReady || IsEncounterActive) return false;
+            StopEncounter(false);
+            _currentFloor = Mathf.Max(1, floor);
+            _roomCenter = center;
+            _roomSize = size;
+            _roomCleared = cleared;
+            _allSpawned = false;
+            _isCrisis = false;
+            _enemiesRemaining = 0;
+            _activeBosses.Clear();
+            _bossMaxHealthTotal = 0f;
+            CurrentRoomKind = bossCount > 0 ? RoomKind.Boss : eliteCount > 0 ? RoomKind.Elite : RoomKind.Normal;
+            _roomTimer = config.GetRoomTimer(CurrentRoomKind);
+            _maxTimer = _roomTimer;
+            SetCrisisOverlay(false);
+            _currentPhase = Phase.Spawning;
+            AudioManager.Instance.SetBattleWave(CurrentRoomKind == RoomKind.Boss ? 10 : 1);
+            _spawnRoutine = StartCoroutine(SpawnStatueEncounterRoutine(
+                Mathf.Max(0, normalCount), Mathf.Max(0, eliteCount), Mathf.Max(0, bossCount)));
+            NotifyUI();
+            return true;
+        }
+
+        private IEnumerator SpawnStatueEncounterRoutine(int normalCount, int eliteCount, int bossCount)
+        {
+            int tier = config.GetTier(_currentFloor);
+            float healthMultiplier = config.GetHealthMultiplier(_currentFloor);
+            float speedMultiplier = config.GetSpeedMultiplier(_currentFloor);
+            int attackDamage = config.GetAttackDamage(_currentFloor);
+            if (normalCount > 0)
+                yield return SpawnGroup(GetTierPrefabs(tier), normalCount, healthMultiplier,
+                    attackDamage, speedMultiplier, 5f, false, true, 0);
+            if (eliteCount > 0)
+                yield return SpawnGroup(_elitePrefabs, eliteCount, healthMultiplier * config.eliteHealthMul,
+                    config.GetAttackDamage(_currentFloor, config.eliteDamageBonus),
+                    speedMultiplier * config.eliteSpeedMul, 20f, false, false, 0);
+            if (bossCount > 0)
+                yield return SpawnGroup(_bossPrefabs, bossCount, healthMultiplier * config.bossHealthMul,
+                    config.GetAttackDamage(_currentFloor, config.bossDamageBonus),
+                    speedMultiplier * config.bossSpeedMul, 50f, true, false, 0);
+            _spawnRoutine = null;
+            _allSpawned = true;
+            _currentPhase = Phase.Fighting;
+            onWaveStart?.RaiseEvent();
+            if (_enemiesRemaining <= 0) CompleteRoom();
         }
 
         public void ResetForFloor()
@@ -170,25 +272,25 @@ namespace DevouringBeast
             if (CurrentRoomKind == RoomKind.Normal)
             {
                 yield return SpawnGroup(GetTierPrefabs(tier), normalCount, healthMultiplier,
-                    config.GetAttackDamage(_currentFloor), speedMultiplier, 5f, false, spawnedThisFrame);
+                    config.GetAttackDamage(_currentFloor), speedMultiplier, 5f, false, true, spawnedThisFrame);
             }
             else if (CurrentRoomKind == RoomKind.Elite)
             {
                 yield return SpawnGroup(GetTierPrefabs(tier), Mathf.Max(1, normalCount / 2), healthMultiplier,
-                    config.GetAttackDamage(_currentFloor), speedMultiplier, 5f, false, spawnedThisFrame);
+                    config.GetAttackDamage(_currentFloor), speedMultiplier, 5f, false, true, spawnedThisFrame);
                 yield return SpawnGroup(_elitePrefabs, Mathf.Max(1, config.elitePer5Waves),
                     healthMultiplier * config.eliteHealthMul,
                     config.GetAttackDamage(_currentFloor, config.eliteDamageBonus),
-                    speedMultiplier * config.eliteSpeedMul, 20f, false, spawnedThisFrame);
+                    speedMultiplier * config.eliteSpeedMul, 20f, false, false, spawnedThisFrame);
             }
             else
             {
                 yield return SpawnGroup(GetTierPrefabs(tier), Mathf.Max(1, normalCount / 2), healthMultiplier,
-                    config.GetAttackDamage(_currentFloor), speedMultiplier, 5f, false, spawnedThisFrame);
+                    config.GetAttackDamage(_currentFloor), speedMultiplier, 5f, false, true, spawnedThisFrame);
                 yield return SpawnGroup(_bossPrefabs, Mathf.Max(1, config.bossPer10Waves),
                     healthMultiplier * config.bossHealthMul,
                     config.GetAttackDamage(_currentFloor, config.bossDamageBonus),
-                    speedMultiplier * config.bossSpeedMul, 50f, true, spawnedThisFrame);
+                    speedMultiplier * config.bossSpeedMul, 50f, true, false, spawnedThisFrame);
             }
 
             _spawnRoutine = null;
@@ -199,13 +301,20 @@ namespace DevouringBeast
         }
 
         private IEnumerator SpawnGroup(GameObject[] prefabs, int count, float health, int damage,
-            float speed, float mass, bool bossUnit, int spawnedThisFrame)
+            float speed, float mass, bool bossUnit, bool playSpawnSmoke, int spawnedThisFrame)
         {
             if (prefabs == null || prefabs.Length == 0) yield break;
+            Vector3[] positions = new Vector3[count];
+            for (int i = 0; i < count; i++)
+            {
+                positions[i] = bossUnit ? _roomCenter : GetRoomSpawnPosition(i);
+                if (playSpawnSmoke) EnemySpawnSmokeEffect.Play(positions[i]);
+            }
+            if (playSpawnSmoke) yield return new WaitForSeconds(0.5f);
             for (int i = 0; i < count; i++)
             {
                 while (!GameManager.Instance.IsPlaying) yield return null;
-                SpawnEnemy(prefabs, health, damage, speed, mass, bossUnit, i);
+                SpawnEnemy(prefabs, health, damage, speed, mass, bossUnit, positions[i]);
                 if (++spawnedThisFrame >= spawnBatchSize)
                 {
                     spawnedThisFrame = 0;
@@ -215,30 +324,23 @@ namespace DevouringBeast
         }
 
         private void SpawnEnemy(GameObject[] prefabs, float healthMul, int attackDamage,
-            float speedMul, float mass, bool bossUnit, int spawnIndex)
+            float speedMul, float mass, bool bossUnit, Vector3 position)
         {
             GameObject prefab = prefabs[UnityEngine.Random.Range(0, prefabs.Length)];
-            Vector3 position = GetRoomSpawnPosition(spawnIndex);
             EnemyPoolMember poolMember = AcquireEnemy(prefab, position);
             EnemyBase enemyBase = poolMember.GetComponent<EnemyBase>();
             if (enemyBase == null) enemyBase = poolMember.gameObject.AddComponent<EnemyBase>();
             poolMember.Bind(prefab, ReleaseEnemy);
 
-            EnemyData data = enemyBase.GetOrCreateRuntimeData();
-            data.maxHealth = 100f * healthMul;
-            data.attackDamage = Mathf.Max(1, attackDamage);
-            data.moveSpeed = 3f * speedMul;
-            data.attackRange = 1.5f;
-            data.attackCooldown = 0.9f;
-            data.detectRange = Mathf.Max(_roomSize.x, _roomSize.y);
-            data.massValue = mass;
-            data.aliveInhaleThreshold = 50f;
-            data.deadInhaleThreshold = 10f;
-            Animator anim = poolMember.GetComponentInChildren<Animator>();
-            if (anim != null && anim.runtimeAnimatorController != null)
-                data.animatorController = anim.runtimeAnimatorController;
+            EnemyData template = GetEnemyData(prefab);
+            EnemyData data = enemyBase.CreateScaledRuntimeData(template, healthMul, speedMul);
+            data.attackDamage = Mathf.Max(data.attackDamage, attackDamage);
+            data.attackCooldown = Mathf.Max(0.2f, data.attackCooldown);
+            data.detectRange = Mathf.Max(data.detectRange, Mathf.Max(_roomSize.x, _roomSize.y));
+            data.massValue = Mathf.Max(data.massValue, mass);
 
             enemyBase.Initialize(data);
+            PlaceEnemy(poolMember, position);
             enemyBase.OnDeath += OnEnemyKilled;
             if (bossUnit)
             {
@@ -247,6 +349,25 @@ namespace DevouringBeast
             }
             GroundShadow.Ensure(poolMember.gameObject).BeginLanding(0.3f);
             _enemiesRemaining++;
+        }
+
+        public EnemyBase SpawnSummoned(EnemyArchetype archetype, Vector2 position)
+        {
+            if (!IsReady || !_contentByArchetype.TryGetValue(archetype, out EnemyContentDefinition content) ||
+                content == null || !content.IsValid) return null;
+            GameObject prefab = content.Prefab;
+            EnemyPoolMember member = AcquireEnemy(prefab, position);
+            member.Bind(prefab, ReleaseEnemy);
+            EnemyBase enemy = member.Enemy != null ? member.Enemy : member.GetComponent<EnemyBase>();
+            if (enemy == null) return null;
+            EnemyData template = content.Data;
+            EnemyData data = enemy.CreateScaledRuntimeData(template, config.GetHealthMultiplier(_currentFloor), config.GetSpeedMultiplier(_currentFloor));
+            enemy.Initialize(data);
+            PlaceEnemy(member, position);
+            enemy.OnDeath += OnEnemyKilled;
+            _activeEnemies.Add(member);
+            _enemiesRemaining++;
+            return enemy;
         }
 
         private Vector3 GetRoomSpawnPosition(int index)
@@ -337,8 +458,31 @@ namespace DevouringBeast
             member.transform.SetParent(transform, false);
             member.transform.SetPositionAndRotation(position, Quaternion.identity);
             member.gameObject.SetActive(true);
+            Rigidbody2D body = member.GetComponent<Rigidbody2D>();
+            if (body != null)
+            {
+                body.position = position;
+                body.velocity = Vector2.zero;
+                body.angularVelocity = 0f;
+            }
+            Physics2D.SyncTransforms();
             _activeEnemies.Add(member);
             return member;
+        }
+
+        private static void PlaceEnemy(EnemyPoolMember member, Vector3 position)
+        {
+            if (member == null) return;
+            member.transform.SetPositionAndRotation(position, Quaternion.identity);
+            Rigidbody2D body = member.GetComponent<Rigidbody2D>();
+            if (body != null)
+            {
+                body.position = position;
+                body.velocity = Vector2.zero;
+                body.angularVelocity = 0f;
+            }
+            member.GetComponent<EnemyActor>()?.SetSpawnPosition(position);
+            Physics2D.SyncTransforms();
         }
 
         private void ReleaseEnemy(EnemyPoolMember member)
@@ -406,17 +550,101 @@ namespace DevouringBeast
             return _tierPrefabs.Count == 0 ? Array.Empty<GameObject>() : _tierPrefabs[index];
         }
 
-        private void LoadPrefabs()
+        private IEnumerator LoadEnemyContent()
         {
-            if (prefabCatalog == null) prefabCatalog = Resources.Load<EnemyPrefabCatalog>("System/EnemyPrefabCatalog");
+            AsyncOperationHandle<IList<IResourceLocation>> locationsHandle =
+                Addressables.LoadResourceLocationsAsync(EnemyContentLabel, typeof(EnemyContentDefinition));
+            yield return locationsHandle;
+            if (locationsHandle.Status != AsyncOperationStatus.Succeeded || locationsHandle.Result == null)
+            {
+                Debug.LogError($"[WaveManager] Failed to resolve Addressables label '{EnemyContentLabel}'.");
+                if (locationsHandle.IsValid()) Addressables.Release(locationsHandle);
+                yield break;
+            }
+
+            foreach (IResourceLocation location in locationsHandle.Result)
+                _contentHandles.Add(Addressables.LoadAssetAsync<EnemyContentDefinition>(location));
+            Addressables.Release(locationsHandle);
+
+            foreach (AsyncOperationHandle<EnemyContentDefinition> handle in _contentHandles)
+            {
+                yield return handle;
+                if (handle.Status != AsyncOperationStatus.Succeeded || handle.Result == null || !handle.Result.IsValid)
+                {
+                    Debug.LogError($"[WaveManager] Failed to load an enemy content bundle: {handle.OperationException}");
+                    continue;
+                }
+
+                EnemyContentDefinition content = handle.Result;
+                RegisterLoadedAtlas(content.Atlas);
+                _contentByArchetype[content.Archetype] = content;
+                _dataByPrefab[content.Prefab] = content.Data;
+            }
+
+            BuildPrefabLists();
+            Debug.Log($"[WaveManager] Loaded {_contentByArchetype.Count} atomic enemy content bundles.");
+        }
+
+        private void BuildPrefabLists()
+        {
+            List<GameObject> minions = new();
+            List<GameObject> elites = new();
+            List<GameObject> bosses = new();
+            foreach (EnemyContentDefinition content in _contentByArchetype.Values)
+            {
+                switch (content.Category)
+                {
+                    case EnemyContentCategory.Minion: minions.Add(content.Prefab); break;
+                    case EnemyContentCategory.Elite: elites.Add(content.Prefab); break;
+                    case EnemyContentCategory.Boss: bosses.Add(content.Prefab); break;
+                }
+            }
+
             _tierPrefabs.Clear();
             for (int tier = 1; tier <= 7; tier++)
-                _tierPrefabs.Add(prefabCatalog != null ? prefabCatalog.GetTier(tier) ?? Array.Empty<GameObject>() : Array.Empty<GameObject>());
-            if (prefabCatalog != null)
+                _tierPrefabs.Add(minions.ToArray());
+            _elitePrefabs = elites.ToArray();
+            _bossPrefabs = bosses.ToArray();
+        }
+
+        private EnemyData GetEnemyData(GameObject prefab)
+        {
+            return prefab != null && _dataByPrefab.TryGetValue(prefab, out EnemyData data) ? data : null;
+        }
+
+        private void OnAtlasRequested(string tag, Action<SpriteAtlas> register)
+        {
+            if (register == null || string.IsNullOrEmpty(tag)) return;
+            if (_loadedAtlases.TryGetValue(tag, out SpriteAtlas atlas) && atlas != null)
             {
-                _elitePrefabs = prefabCatalog.elitePrefabs ?? Array.Empty<GameObject>();
-                _bossPrefabs = prefabCatalog.bossPrefabs ?? Array.Empty<GameObject>();
+                register(atlas);
+                return;
             }
+
+            if (!_pendingAtlasRequests.TryGetValue(tag, out List<Action<SpriteAtlas>> requests))
+            {
+                requests = new List<Action<SpriteAtlas>>();
+                _pendingAtlasRequests.Add(tag, requests);
+            }
+            requests.Add(register);
+        }
+
+        private void RegisterLoadedAtlas(SpriteAtlas atlas)
+        {
+            if (atlas == null) return;
+            string tag = string.IsNullOrEmpty(atlas.tag) ? atlas.name : atlas.tag;
+            _loadedAtlases[tag] = atlas;
+            _loadedAtlases[atlas.name] = atlas;
+            FulfillAtlasRequests(tag, atlas);
+            if (!string.Equals(tag, atlas.name, StringComparison.Ordinal))
+                FulfillAtlasRequests(atlas.name, atlas);
+        }
+
+        private void FulfillAtlasRequests(string tag, SpriteAtlas atlas)
+        {
+            if (!_pendingAtlasRequests.TryGetValue(tag, out List<Action<SpriteAtlas>> requests)) return;
+            _pendingAtlasRequests.Remove(tag);
+            foreach (Action<SpriteAtlas> register in requests) register?.Invoke(atlas);
         }
 
         private void CreateCrisisOverlay()
@@ -482,6 +710,12 @@ namespace DevouringBeast
 
         private void OnDestroy()
         {
+            SpriteAtlasManager.atlasRequested -= OnAtlasRequested;
+            _pendingAtlasRequests.Clear();
+            _loadedAtlases.Clear();
+            foreach (AsyncOperationHandle<EnemyContentDefinition> handle in _contentHandles)
+                if (handle.IsValid()) Addressables.Release(handle);
+            _contentHandles.Clear();
             if (Instance == this) Instance = null;
         }
     }

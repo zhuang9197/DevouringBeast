@@ -9,10 +9,10 @@ namespace DevouringBeast
     [DisallowMultipleComponent]
     public sealed class PlayerBaseAttributes : MonoBehaviour
     {
-        [Header("Character Starting Attributes")]
-        [SerializeField, Min(0f)] private float initialMoveSpeed = 8f;
-        [SerializeField, Min(0f)] private float initialSuction = 100f;
-        [SerializeField, Min(0f)] private float initialEnergyBallDamage = 25f;
+        private float initialMoveSpeed;
+        private float initialSuction;
+        private float initialEnergyBallDamage;
+        private bool _configInitialized;
 
         public float BonusMoveSpeed { get; set; }
         public float BonusSuction { get; set; }
@@ -39,6 +39,19 @@ namespace DevouringBeast
         {
             get => initialEnergyBallDamage;
             set => initialEnergyBallDamage = Mathf.Max(0f, value);
+        }
+
+        private void Awake() => InitializeFromConfig();
+
+        public void InitializeFromConfig()
+        {
+            if (_configInitialized) return;
+            PlayerBalanceSettings config = GameBalance.Current?.Player;
+            if (config == null) return;
+            initialMoveSpeed = config.baseMoveSpeed;
+            initialSuction = config.baseSuction;
+            initialEnergyBallDamage = config.baseEnergyBallDamage;
+            _configInitialized = true;
         }
     }
 }

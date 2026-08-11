@@ -8,12 +8,9 @@ namespace DevouringBeast
     /// </summary>
     public class PlayerHealth : MonoBehaviour
     {
-        [Header("属性")]
-        [SerializeField] private int maxHealth = 10;
-        [SerializeField] private int currentHealth;
-
-        [Header("无敌帧")]
-        [SerializeField] private float invincibleDuration = 1f;
+        private int maxHealth;
+        private int currentHealth;
+        private float invincibleDuration;
 
         [Header("事件")]
         public UnityEvent<int, int> OnHealthChanged; // (current, max)
@@ -28,9 +25,16 @@ namespace DevouringBeast
         public int CurrentHealth => currentHealth;
         public int MaxHealth => maxHealth;
         public bool IsDead => currentHealth <= 0;
+        public bool IsInvincible => _isInvincible;
 
         private void Awake()
         {
+            PlayerBalanceSettings config = GameBalance.Current?.Player;
+            if (config != null)
+            {
+                maxHealth = config.maxHealth;
+                invincibleDuration = config.invincibleDuration;
+            }
             currentHealth = maxHealth;
             _spriteRenderer = GetComponentInChildren<SpriteRenderer>();
             _controller = GetComponent<PlayerController>();
@@ -66,7 +70,9 @@ public void TakeDamage(int damage)
             if (_controller != null && _controller.IsBeastForm)
                 damage = Mathf.Max(1, Mathf.CeilToInt(damage * (1f - _controller.BeastDamageReduction)));
 
+            int healthBeforeDamage = currentHealth;
             currentHealth = Mathf.Max(0, currentHealth - damage);
+            SaveGameService.RecordHealthSpent(healthBeforeDamage - currentHealth);
             OnHealthChanged?.Invoke(currentHealth, maxHealth);
 
             if (currentHealth <= 0)
@@ -78,12 +84,34 @@ public void TakeDamage(int damage)
             }
         }
 
+        public bool TrySpendHealth(int amount)
+        {
+            if (amount <= 0) return true;
+            if (IsDead || _isInvincible || currentHealth <= amount) return false;
+            _controller?.NotifyPlayerActivity();
+            currentHealth -= amount;
+            SaveGameService.RecordHealthSpent(amount);
+            OnHealthChanged?.Invoke(currentHealth, maxHealth);
+            AudioManager.Instance.PlaySfx(AudioCue.Hurt);
+            StartInvincibility();
+            return true;
+        }
+
         /// <summary>
         /// 治疗
         /// </summary>
         public void Heal(int amount)
         {
+            if (amount <= 0) return;
             currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
+            OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        }
+
+        public void IncreaseMaxHealth(int amount, bool alsoHeal = false)
+        {
+            if (amount <= 0) return;
+            maxHealth += amount;
+            if (alsoHeal) currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
             OnHealthChanged?.Invoke(currentHealth, maxHealth);
         }
 

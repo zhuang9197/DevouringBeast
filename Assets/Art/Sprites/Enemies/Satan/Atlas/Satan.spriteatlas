@@ -1,0 +1,148 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Satan
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 0
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings: []
+    packingSettings:
+      serializedVersion: 2
+      padding: 4
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 0
+      enableTightPacking: 0
+      enableAlphaDilation: 1
+    secondaryTextureSettings: {}
+    variantMultiplier: 1
+    packables:
+    - {fileID: 2800000, guid: f83eb21309b98494baeb0ca086d51f75, type: 3}
+    - {fileID: 2800000, guid: f720e5c0ac7a0734fadc15c9de1d9833, type: 3}
+    - {fileID: 2800000, guid: a90d21a0b6563324b9fbea3c598379d6, type: 3}
+    - {fileID: 2800000, guid: c05885f19fd308c4c91244d11a26e190, type: 3}
+    - {fileID: 2800000, guid: 5eb2f06a82f7c1143a8d3296846e0864, type: 3}
+    - {fileID: 2800000, guid: bafb9565bd1dc544e8920a88d330492a, type: 3}
+    - {fileID: 2800000, guid: 2b9cba71dd7333e4f99d14d58da81b85, type: 3}
+    - {fileID: 2800000, guid: b01c18b0ec998d0418f9e7e400576368, type: 3}
+    - {fileID: 2800000, guid: 1ab85a9490317f84aa1d3b4846526de0, type: 3}
+    - {fileID: 2800000, guid: 9224c359e991f794db01f318bc0335bb, type: 3}
+    - {fileID: 2800000, guid: 87a0d406ff5f1bb499449f7e7cf252ac, type: 3}
+    - {fileID: 2800000, guid: 5ba27dc4a3723974b99e8e7b4922604e, type: 3}
+    - {fileID: 2800000, guid: 7c724e1d7dacb394b962b8f5d682b10a, type: 3}
+    - {fileID: 2800000, guid: 7dcf328b14957324c8406ee34825fafa, type: 3}
+    - {fileID: 2800000, guid: 0c13803181baf824196f769346ee3103, type: 3}
+    - {fileID: 2800000, guid: 9e907a5cf04136b47b3aeaa3ac2c4bec, type: 3}
+    - {fileID: 2800000, guid: 12fc70f2fd2eecb4fa72d72dbf02595c, type: 3}
+    - {fileID: 2800000, guid: 237da277b6e6d774984db971c0fb95bf, type: 3}
+    - {fileID: 2800000, guid: 656a0c443ad54654ba3b119a1a3abc38, type: 3}
+    - {fileID: 2800000, guid: 6828e2e10114d83468c026543a341584, type: 3}
+    - {fileID: 2800000, guid: ac3a2341a40864b4291449e2f2a05f8e, type: 3}
+    - {fileID: 2800000, guid: 5043027e54a1b9140840d972b212aa05, type: 3}
+    - {fileID: 2800000, guid: 19c0d29a7bb12a744a3c96e0974c7ca6, type: 3}
+    - {fileID: 2800000, guid: 534e66e94d87b8d42881b135fd7f5bc0, type: 3}
+    - {fileID: 2800000, guid: a911404a2987efe4788933071753b158, type: 3}
+    - {fileID: 2800000, guid: 55a3a93a33c353744bccf22312999038, type: 3}
+    bindAsDefault: 0
+    isAtlasV2: 0
+    cachedData: {fileID: 0}
+    packedSpriteRenderDataKeys:
+    - a90d21a0b6563324b9fbea3c598379d6: 21300000
+    - b01c18b0ec998d0418f9e7e400576368: 21300000
+    - f720e5c0ac7a0734fadc15c9de1d9833: 21300000
+    - 0c13803181baf824196f769346ee3103: 21300000
+    - ac3a2341a40864b4291449e2f2a05f8e: 21300000
+    - 2b9cba71dd7333e4f99d14d58da81b85: 21300000
+    - 6828e2e10114d83468c026543a341584: 21300000
+    - c05885f19fd308c4c91244d11a26e190: 21300000
+    - 12fc70f2fd2eecb4fa72d72dbf02595c: 21300000
+    - f83eb21309b98494baeb0ca086d51f75: 21300000
+    - 656a0c443ad54654ba3b119a1a3abc38: 21300000
+    - 1ab85a9490317f84aa1d3b4846526de0: 21300000
+    - 5ba27dc4a3723974b99e8e7b4922604e: 21300000
+    - bafb9565bd1dc544e8920a88d330492a: 21300000
+    - 87a0d406ff5f1bb499449f7e7cf252ac: 21300000
+    - 237da277b6e6d774984db971c0fb95bf: 21300000
+    - 9224c359e991f794db01f318bc0335bb: 21300000
+    - 534e66e94d87b8d42881b135fd7f5bc0: 21300000
+    - 55a3a93a33c353744bccf22312999038: 21300000
+    - a911404a2987efe4788933071753b158: 21300000
+    - 5eb2f06a82f7c1143a8d3296846e0864: 21300000
+    - 19c0d29a7bb12a744a3c96e0974c7ca6: 21300000
+    - 7dcf328b14957324c8406ee34825fafa: 21300000
+    - 9e907a5cf04136b47b3aeaa3ac2c4bec: 21300000
+    - 7c724e1d7dacb394b962b8f5d682b10a: 21300000
+    - 5043027e54a1b9140840d972b212aa05: 21300000
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: a90d21a0b6563324b9fbea3c598379d6, type: 3}
+  - {fileID: 21300000, guid: b01c18b0ec998d0418f9e7e400576368, type: 3}
+  - {fileID: 21300000, guid: f720e5c0ac7a0734fadc15c9de1d9833, type: 3}
+  - {fileID: 21300000, guid: 0c13803181baf824196f769346ee3103, type: 3}
+  - {fileID: 21300000, guid: ac3a2341a40864b4291449e2f2a05f8e, type: 3}
+  - {fileID: 21300000, guid: 2b9cba71dd7333e4f99d14d58da81b85, type: 3}
+  - {fileID: 21300000, guid: 6828e2e10114d83468c026543a341584, type: 3}
+  - {fileID: 21300000, guid: c05885f19fd308c4c91244d11a26e190, type: 3}
+  - {fileID: 21300000, guid: 12fc70f2fd2eecb4fa72d72dbf02595c, type: 3}
+  - {fileID: 21300000, guid: f83eb21309b98494baeb0ca086d51f75, type: 3}
+  - {fileID: 21300000, guid: 656a0c443ad54654ba3b119a1a3abc38, type: 3}
+  - {fileID: 21300000, guid: 1ab85a9490317f84aa1d3b4846526de0, type: 3}
+  - {fileID: 21300000, guid: 5ba27dc4a3723974b99e8e7b4922604e, type: 3}
+  - {fileID: 21300000, guid: bafb9565bd1dc544e8920a88d330492a, type: 3}
+  - {fileID: 21300000, guid: 87a0d406ff5f1bb499449f7e7cf252ac, type: 3}
+  - {fileID: 21300000, guid: 237da277b6e6d774984db971c0fb95bf, type: 3}
+  - {fileID: 21300000, guid: 9224c359e991f794db01f318bc0335bb, type: 3}
+  - {fileID: 21300000, guid: 534e66e94d87b8d42881b135fd7f5bc0, type: 3}
+  - {fileID: 21300000, guid: 55a3a93a33c353744bccf22312999038, type: 3}
+  - {fileID: 21300000, guid: a911404a2987efe4788933071753b158, type: 3}
+  - {fileID: 21300000, guid: 5eb2f06a82f7c1143a8d3296846e0864, type: 3}
+  - {fileID: 21300000, guid: 19c0d29a7bb12a744a3c96e0974c7ca6, type: 3}
+  - {fileID: 21300000, guid: 7dcf328b14957324c8406ee34825fafa, type: 3}
+  - {fileID: 21300000, guid: 9e907a5cf04136b47b3aeaa3ac2c4bec, type: 3}
+  - {fileID: 21300000, guid: 7c724e1d7dacb394b962b8f5d682b10a, type: 3}
+  - {fileID: 21300000, guid: 5043027e54a1b9140840d972b212aa05, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - 003
+  - 008
+  - 002
+  - 015
+  - 021
+  - 007
+  - 020
+  - 004
+  - 017
+  - 001
+  - 019
+  - 009
+  - 012
+  - 006
+  - 011
+  - 018
+  - 010
+  - 024
+  - 026
+  - 025
+  - 005
+  - 023
+  - 014
+  - 016
+  - 013
+  - 022
+  m_RenderDataMap: {}
+  m_Tag: Satan
+  m_IsVariant: 0

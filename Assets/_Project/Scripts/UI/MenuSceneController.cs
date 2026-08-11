@@ -25,9 +25,11 @@ namespace DevouringBeast
         private bool _newGameMode;
         private bool _confirmDelete;
         private readonly List<Selectable> _blockedMenuSelectables = new();
+        private float _ignoreInputUntil;
 
         private void Start()
         {
+            _ignoreInputUntil = Time.unscaledTime + 0.25f;
             AudioManager.EnsureInitialized();
             SaveGameService.Initialize();
             AudioManager.Instance.PlayBgm(BgmTrack.Normal);
@@ -45,22 +47,63 @@ namespace DevouringBeast
                 sfxSlider.onValueChanged.AddListener(AudioManager.Instance.SetSfxVolume);
             }
             ConfigureOptionsPanel();
+            ConfigureSaveListScrolling();
+            BuildTestButton();
+        }
+
+        private void BuildTestButton()
+        {
+            if (GameObject.Find("TestRoomButton") != null) return;
+            Canvas canvas = FindFirstObjectByType<Canvas>();
+            if (canvas == null) return;
+            GameObject buttonObject = new("TestRoomButton", typeof(RectTransform), typeof(Image),
+                typeof(Button), typeof(UIButtonAudio));
+            buttonObject.transform.SetParent(canvas.transform, false);
+            RectTransform rect = buttonObject.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(1f, 0f);
+            rect.pivot = new Vector2(1f, 0f);
+            rect.anchoredPosition = new Vector2(-24f, 24f);
+            rect.sizeDelta = new Vector2(160f, 46f);
+            Image image = buttonObject.GetComponent<Image>();
+            image.color = new Color(0.14f, 0.16f, 0.2f, 0.96f);
+            Text label = new GameObject("Label", typeof(RectTransform), typeof(Text)).GetComponent<Text>();
+            label.transform.SetParent(buttonObject.transform, false);
+            label.rectTransform.anchorMin = Vector2.zero;
+            label.rectTransform.anchorMax = Vector2.one;
+            label.rectTransform.offsetMin = label.rectTransform.offsetMax = Vector2.zero;
+            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            label.fontSize = 18;
+            label.fontStyle = FontStyle.Bold;
+            label.alignment = TextAnchor.MiddleCenter;
+            label.color = Color.white;
+            label.text = "\u6d4b\u8bd5\u623f\u95f4";
+            buttonObject.GetComponent<Button>().onClick.AddListener(OnTestRoom);
+        }
+
+        public void OnTestRoom()
+        {
+            if (Time.unscaledTime < _ignoreInputUntil) return;
+            GameManager.Instance.StartTestGame();
+            SceneManager.LoadScene(SceneNames.Game);
         }
 
         public void OnNewGame()
         {
+            if (Time.unscaledTime < _ignoreInputUntil) return;
             _newGameMode = true;
             ShowSaveList("选择新游戏存档位");
         }
 
         public void OnContinueGame()
         {
+            if (Time.unscaledTime < _ignoreInputUntil) return;
             _newGameMode = false;
             ShowSaveList("选择要继续的存档");
         }
 
         public void OnOptions()
         {
+            if (Time.unscaledTime < _ignoreInputUntil) return;
             HideAllPanels();
             if (optionsPanel == null) return;
             optionsPanel.transform.SetAsLastSibling();
@@ -72,6 +115,7 @@ namespace DevouringBeast
 
         public void OnContinueSelected()
         {
+            if (Time.unscaledTime < _ignoreInputUntil) return;
             SaveSlotData data = SaveGameService.GetSlot(_selectedSlot);
             if (data == null) return;
             SaveGameService.SetActiveSlot(_selectedSlot);
@@ -80,6 +124,7 @@ namespace DevouringBeast
 
         public void OnDeleteSelected()
         {
+            if (Time.unscaledTime < _ignoreInputUntil) return;
             SaveSlotData data = SaveGameService.GetSlot(_selectedSlot);
             if (data == null) return;
             _confirmDelete = true;
@@ -89,6 +134,7 @@ namespace DevouringBeast
 
         public void OnConfirmYes()
         {
+            if (Time.unscaledTime < _ignoreInputUntil) return;
             if (_selectedSlot < 0) return;
             if (_confirmDelete)
             {
@@ -125,7 +171,7 @@ namespace DevouringBeast
                 Destroy(saveListContent.GetChild(i).gameObject);
 
             SaveSlotData[] slots = SaveGameService.GetAllSlots();
-            for (int i = 0; i < SaveGameService.SlotCount; i++)
+            for (int i = 0; i < slots.Length; i++)
             {
                 int slotIndex = i;
                 GameObject buttonObject = Instantiate(borderButtonPrefab, saveListContent);
@@ -205,6 +251,42 @@ namespace DevouringBeast
             if (group == null) group = optionsPanel.AddComponent<CanvasGroup>();
             group.interactable = true;
             group.blocksRaycasts = true;
+        }
+
+        private void ConfigureSaveListScrolling()
+        {
+            if (saveListContent == null || saveListContent.parent == null ||
+                saveListContent.GetComponentInParent<ScrollRect>() != null) return;
+            RectTransform contentRect = saveListContent as RectTransform;
+            if (contentRect == null) return;
+            Transform parent = contentRect.parent;
+            GameObject viewportObject = new("SaveListViewport", typeof(RectTransform), typeof(RectMask2D), typeof(ScrollRect));
+            viewportObject.transform.SetParent(parent, false);
+            RectTransform viewport = viewportObject.GetComponent<RectTransform>();
+            viewport.anchorMin = contentRect.anchorMin;
+            viewport.anchorMax = contentRect.anchorMax;
+            viewport.pivot = contentRect.pivot;
+            viewport.anchoredPosition = contentRect.anchoredPosition;
+            viewport.sizeDelta = contentRect.sizeDelta;
+
+            contentRect.SetParent(viewport, false);
+            contentRect.anchorMin = new Vector2(0f, 1f);
+            contentRect.anchorMax = new Vector2(1f, 1f);
+            contentRect.pivot = new Vector2(0.5f, 1f);
+            contentRect.anchoredPosition = Vector2.zero;
+            contentRect.sizeDelta = Vector2.zero;
+            ContentSizeFitter fitter = contentRect.GetComponent<ContentSizeFitter>();
+            if (fitter == null) fitter = contentRect.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            ScrollRect scroll = viewportObject.GetComponent<ScrollRect>();
+            scroll.viewport = viewport;
+            scroll.content = contentRect;
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 36f;
         }
 
         private void BlockUnderlyingMenuInput()

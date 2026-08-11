@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: White
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 0
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings: []
+    packingSettings:
+      serializedVersion: 2
+      padding: 4
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 0
+      enableTightPacking: 0
+      enableAlphaDilation: 1
+    secondaryTextureSettings: {}
+    variantMultiplier: 1
+    packables:
+    - {fileID: 2800000, guid: 99609353e21929f44b94ed36b90d9443, type: 3}
+    - {fileID: 2800000, guid: 70434468abff10c4999a71d0eac61dca, type: 3}
+    - {fileID: 2800000, guid: 24d8c925f1d62d5469e5effc1ecdadbd, type: 3}
+    - {fileID: 2800000, guid: 90dbc15c81ddff347a2773cac83000c2, type: 3}
+    - {fileID: 2800000, guid: 42bd0bd794983d04d8e01c892aa12383, type: 3}
+    - {fileID: 2800000, guid: fb9ebfdd41f45954ca82561133960921, type: 3}
+    - {fileID: 2800000, guid: 5dd9c181a2e4ca24f9b1bb0b8d2d41f3, type: 3}
+    - {fileID: 2800000, guid: f1089085d508be349a97060331f39f22, type: 3}
+    bindAsDefault: 0
+    isAtlasV2: 0
+    cachedData: {fileID: 0}
+    packedSpriteRenderDataKeys:
+    - 5dd9c181a2e4ca24f9b1bb0b8d2d41f3: 21300000
+    - 99609353e21929f44b94ed36b90d9443: 21300000
+    - 24d8c925f1d62d5469e5effc1ecdadbd: 21300000
+    - f1089085d508be349a97060331f39f22: 21300000
+    - 42bd0bd794983d04d8e01c892aa12383: 21300000
+    - 70434468abff10c4999a71d0eac61dca: 21300000
+    - 90dbc15c81ddff347a2773cac83000c2: 21300000
+    - fb9ebfdd41f45954ca82561133960921: 21300000
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: 5dd9c181a2e4ca24f9b1bb0b8d2d41f3, type: 3}
+  - {fileID: 21300000, guid: 99609353e21929f44b94ed36b90d9443, type: 3}
+  - {fileID: 21300000, guid: 24d8c925f1d62d5469e5effc1ecdadbd, type: 3}
+  - {fileID: 21300000, guid: f1089085d508be349a97060331f39f22, type: 3}
+  - {fileID: 21300000, guid: 42bd0bd794983d04d8e01c892aa12383, type: 3}
+  - {fileID: 21300000, guid: 70434468abff10c4999a71d0eac61dca, type: 3}
+  - {fileID: 21300000, guid: 90dbc15c81ddff347a2773cac83000c2, type: 3}
+  - {fileID: 21300000, guid: fb9ebfdd41f45954ca82561133960921, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - 007
+  - 001
+  - 003
+  - 008
+  - 005
+  - 002
+  - 004
+  - 006
+  m_RenderDataMap: {}
+  m_Tag: White
+  m_IsVariant: 0

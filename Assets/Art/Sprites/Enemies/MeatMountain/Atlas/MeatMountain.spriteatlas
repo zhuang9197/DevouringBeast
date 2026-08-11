@@ -1,0 +1,160 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: MeatMountain
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 0
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings: []
+    packingSettings:
+      serializedVersion: 2
+      padding: 4
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 0
+      enableTightPacking: 0
+      enableAlphaDilation: 1
+    secondaryTextureSettings: {}
+    variantMultiplier: 1
+    packables:
+    - {fileID: 2800000, guid: a1b6af319b589164680f44b51190a34d, type: 3}
+    - {fileID: 2800000, guid: 26f2fb95368b89d49a56d9792fde5de2, type: 3}
+    - {fileID: 2800000, guid: dac7f5b7bf1aef0489d13cd81d89ddc6, type: 3}
+    - {fileID: 2800000, guid: 70d2885473ef59247b5080b33cbfb396, type: 3}
+    - {fileID: 2800000, guid: 12c14196ff684f6418e336f4cf38cbfe, type: 3}
+    - {fileID: 2800000, guid: 4ccd3491475f8f34cb8b5d5b971c2e53, type: 3}
+    - {fileID: 2800000, guid: b2095ee8208f05d4d8a98a1984d669f1, type: 3}
+    - {fileID: 2800000, guid: c7034e169adbd7a41abd9a218aee9c78, type: 3}
+    - {fileID: 2800000, guid: e2f3afd7b12fa5a4eb1822d10f4a1582, type: 3}
+    - {fileID: 2800000, guid: a97a1f75892840e48ae1ee148f1d9262, type: 3}
+    - {fileID: 2800000, guid: bcc4b69c6d74e274ab05a85602b9deb7, type: 3}
+    - {fileID: 2800000, guid: f49aed9227552be47b4270dd871cc392, type: 3}
+    - {fileID: 2800000, guid: 938984e46fa45fa4789b3be106834f2d, type: 3}
+    - {fileID: 2800000, guid: 9186f516226d2c042a78d4ad8c3f0f53, type: 3}
+    - {fileID: 2800000, guid: e7166468e78aff04581e3d9f4f28e06b, type: 3}
+    - {fileID: 2800000, guid: 304920f45fe93794c8d30b72cb497a07, type: 3}
+    - {fileID: 2800000, guid: f1186511ce5fbc34389556ad31996425, type: 3}
+    - {fileID: 2800000, guid: 9b5da95c5530a4f4ebfcac5670c91131, type: 3}
+    - {fileID: 2800000, guid: 3f0adf69c3401cc43a5a7b61f5052a8a, type: 3}
+    - {fileID: 2800000, guid: 6f3c3c3adb2a8a446b4770f7b889dca0, type: 3}
+    - {fileID: 2800000, guid: 088370dea767f4145beb448678ee31dd, type: 3}
+    - {fileID: 2800000, guid: 315277df862f71b4f8e7eb94b0ce753d, type: 3}
+    - {fileID: 2800000, guid: 1bb85a5992fd4e447816c48820ec04cf, type: 3}
+    - {fileID: 2800000, guid: cf2cd137ecff78c4faed329933e17b2d, type: 3}
+    - {fileID: 2800000, guid: 9ce68c73d11f63f4fbd2202a3db9d012, type: 3}
+    - {fileID: 2800000, guid: 6ecfac2dd2642164e955833a2682cc85, type: 3}
+    - {fileID: 2800000, guid: a94c9760416bb1e4caa7e16acdda9139, type: 3}
+    - {fileID: 2800000, guid: 5f9ab4c2fd3a02b45bfb633a45571164, type: 3}
+    - {fileID: 2800000, guid: aee4125b5da61034b9e45164f86e0511, type: 3}
+    bindAsDefault: 0
+    isAtlasV2: 0
+    cachedData: {fileID: 0}
+    packedSpriteRenderDataKeys:
+    - a94c9760416bb1e4caa7e16acdda9139: 21300000
+    - f1186511ce5fbc34389556ad31996425: 21300000
+    - a1b6af319b589164680f44b51190a34d: 21300000
+    - 4ccd3491475f8f34cb8b5d5b971c2e53: 21300000
+    - f49aed9227552be47b4270dd871cc392: 21300000
+    - 5f9ab4c2fd3a02b45bfb633a45571164: 21300000
+    - 9ce68c73d11f63f4fbd2202a3db9d012: 21300000
+    - 70d2885473ef59247b5080b33cbfb396: 21300000
+    - 938984e46fa45fa4789b3be106834f2d: 21300000
+    - 304920f45fe93794c8d30b72cb497a07: 21300000
+    - a97a1f75892840e48ae1ee148f1d9262: 21300000
+    - 26f2fb95368b89d49a56d9792fde5de2: 21300000
+    - 9186f516226d2c042a78d4ad8c3f0f53: 21300000
+    - c7034e169adbd7a41abd9a218aee9c78: 21300000
+    - 12c14196ff684f6418e336f4cf38cbfe: 21300000
+    - cf2cd137ecff78c4faed329933e17b2d: 21300000
+    - dac7f5b7bf1aef0489d13cd81d89ddc6: 21300000
+    - e2f3afd7b12fa5a4eb1822d10f4a1582: 21300000
+    - e7166468e78aff04581e3d9f4f28e06b: 21300000
+    - b2095ee8208f05d4d8a98a1984d669f1: 21300000
+    - 1bb85a5992fd4e447816c48820ec04cf: 21300000
+    - 3f0adf69c3401cc43a5a7b61f5052a8a: 21300000
+    - 6f3c3c3adb2a8a446b4770f7b889dca0: 21300000
+    - aee4125b5da61034b9e45164f86e0511: 21300000
+    - 9b5da95c5530a4f4ebfcac5670c91131: 21300000
+    - bcc4b69c6d74e274ab05a85602b9deb7: 21300000
+    - 6ecfac2dd2642164e955833a2682cc85: 21300000
+    - 088370dea767f4145beb448678ee31dd: 21300000
+    - 315277df862f71b4f8e7eb94b0ce753d: 21300000
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: a94c9760416bb1e4caa7e16acdda9139, type: 3}
+  - {fileID: 21300000, guid: f1186511ce5fbc34389556ad31996425, type: 3}
+  - {fileID: 21300000, guid: a1b6af319b589164680f44b51190a34d, type: 3}
+  - {fileID: 21300000, guid: 4ccd3491475f8f34cb8b5d5b971c2e53, type: 3}
+  - {fileID: 21300000, guid: f49aed9227552be47b4270dd871cc392, type: 3}
+  - {fileID: 21300000, guid: 5f9ab4c2fd3a02b45bfb633a45571164, type: 3}
+  - {fileID: 21300000, guid: 9ce68c73d11f63f4fbd2202a3db9d012, type: 3}
+  - {fileID: 21300000, guid: 70d2885473ef59247b5080b33cbfb396, type: 3}
+  - {fileID: 21300000, guid: 938984e46fa45fa4789b3be106834f2d, type: 3}
+  - {fileID: 21300000, guid: 304920f45fe93794c8d30b72cb497a07, type: 3}
+  - {fileID: 21300000, guid: a97a1f75892840e48ae1ee148f1d9262, type: 3}
+  - {fileID: 21300000, guid: 26f2fb95368b89d49a56d9792fde5de2, type: 3}
+  - {fileID: 21300000, guid: 9186f516226d2c042a78d4ad8c3f0f53, type: 3}
+  - {fileID: 21300000, guid: c7034e169adbd7a41abd9a218aee9c78, type: 3}
+  - {fileID: 21300000, guid: 12c14196ff684f6418e336f4cf38cbfe, type: 3}
+  - {fileID: 21300000, guid: cf2cd137ecff78c4faed329933e17b2d, type: 3}
+  - {fileID: 21300000, guid: dac7f5b7bf1aef0489d13cd81d89ddc6, type: 3}
+  - {fileID: 21300000, guid: e2f3afd7b12fa5a4eb1822d10f4a1582, type: 3}
+  - {fileID: 21300000, guid: e7166468e78aff04581e3d9f4f28e06b, type: 3}
+  - {fileID: 21300000, guid: b2095ee8208f05d4d8a98a1984d669f1, type: 3}
+  - {fileID: 21300000, guid: 1bb85a5992fd4e447816c48820ec04cf, type: 3}
+  - {fileID: 21300000, guid: 3f0adf69c3401cc43a5a7b61f5052a8a, type: 3}
+  - {fileID: 21300000, guid: 6f3c3c3adb2a8a446b4770f7b889dca0, type: 3}
+  - {fileID: 21300000, guid: aee4125b5da61034b9e45164f86e0511, type: 3}
+  - {fileID: 21300000, guid: 9b5da95c5530a4f4ebfcac5670c91131, type: 3}
+  - {fileID: 21300000, guid: bcc4b69c6d74e274ab05a85602b9deb7, type: 3}
+  - {fileID: 21300000, guid: 6ecfac2dd2642164e955833a2682cc85, type: 3}
+  - {fileID: 21300000, guid: 088370dea767f4145beb448678ee31dd, type: 3}
+  - {fileID: 21300000, guid: 315277df862f71b4f8e7eb94b0ce753d, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - 027
+  - 017
+  - 001
+  - 006
+  - 012
+  - 028
+  - 025
+  - 004
+  - 013
+  - 016
+  - 010
+  - 002
+  - 014
+  - 008
+  - 005
+  - 024
+  - 003
+  - 009
+  - 015
+  - 007
+  - 023
+  - 019
+  - 020
+  - 029
+  - 018
+  - 011
+  - 026
+  - 021
+  - 022
+  m_RenderDataMap: {}
+  m_Tag: MeatMountain
+  m_IsVariant: 0

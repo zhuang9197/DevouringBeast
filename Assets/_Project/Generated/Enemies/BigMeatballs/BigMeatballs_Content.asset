@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de0d595d1967440449dd31fcf476964e, type: 3}
+  m_Name: BigMeatballs_Content
+  m_EditorClassIdentifier: 
+  archetype: 8
+  category: 1
+  prefab: {fileID: 1598598499738995355, guid: 549b4d25791d1204aaaf16f6b0583a71, type: 3}
+  data: {fileID: 11400000, guid: b965c0cfeb8ff4046b2198760febe34b, type: 2}
+  atlas: {fileID: 4343727234628468602, guid: bf05c7f10da3b6444993b344c69ee671, type: 2}

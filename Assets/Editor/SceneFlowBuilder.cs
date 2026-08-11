@@ -24,7 +24,6 @@ namespace DevouringBeast.EditorTools
         private const string LoadClipPath = "Assets/_Project/Animations/UI/LoadLoop.anim";
         private const string LoadControllerPath = "Assets/_Project/Animations/UI/LoadLoop.controller";
         private const string AudioPrefabPath = "Assets/Resources/System/AudioManager.prefab";
-        private const string CatalogPath = "Assets/Resources/System/EnemyPrefabCatalog.asset";
 
         private static Font _font;
 
@@ -37,14 +36,13 @@ namespace DevouringBeast.EditorTools
             EnsureFolder(SceneFolder);
 
             BuildAudioManagerPrefab();
-            EnemyPrefabCatalog catalog = BuildEnemyCatalog();
             RuntimeAnimatorController loadController = BuildLoadAnimation();
             GameObject buttonPrefab = BuildButtonPrefab();
 
             MoveGameScene();
             BuildLoadScene(loadController);
             BuildMenuScene(buttonPrefab);
-            ConfigureGameScene(catalog);
+            ConfigureGameScene();
             ConfigureBuildSettings();
 
             AssetDatabase.SaveAssets();
@@ -120,32 +118,6 @@ namespace DevouringBeast.EditorTools
             AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
             if (clip == null) Debug.LogWarning("[SceneFlowBuilder] Missing audio: " + path);
             serialized.FindProperty(property).objectReferenceValue = clip;
-        }
-
-        private static EnemyPrefabCatalog BuildEnemyCatalog()
-        {
-            if (AssetDatabase.LoadAssetAtPath<EnemyPrefabCatalog>(CatalogPath) != null)
-                AssetDatabase.DeleteAsset(CatalogPath);
-
-            EnemyPrefabCatalog catalog = ScriptableObject.CreateInstance<EnemyPrefabCatalog>();
-            catalog.normalPrefabs = LoadEnemyRange(1, 80);
-            catalog.elitePrefabs = LoadEnemyRange(81, 90);
-            catalog.bossPrefabs = LoadEnemyRange(91, 100);
-            AssetDatabase.CreateAsset(catalog, CatalogPath);
-            EditorUtility.SetDirty(catalog);
-            return catalog;
-        }
-
-        private static GameObject[] LoadEnemyRange(int start, int end)
-        {
-            List<GameObject> result = new List<GameObject>();
-            for (int i = start; i <= end; i++)
-            {
-                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                    "Assets/Art/Enemy/Prefabs/Character (" + i + ").prefab");
-                if (prefab != null) result.Add(prefab);
-            }
-            return result.ToArray();
         }
 
         private static RuntimeAnimatorController BuildLoadAnimation()
@@ -372,17 +344,9 @@ namespace DevouringBeast.EditorTools
             EditorSceneManager.SaveScene(scene, MenuScenePath);
         }
 
-        private static void ConfigureGameScene(EnemyPrefabCatalog catalog)
+        private static void ConfigureGameScene()
         {
             Scene scene = EditorSceneManager.OpenScene(GameScenePath, OpenSceneMode.Single);
-            WaveManager waveManager = UnityEngine.Object.FindObjectOfType<WaveManager>(true);
-            if (waveManager != null)
-            {
-                SerializedObject serialized = new SerializedObject(waveManager);
-                serialized.FindProperty("prefabCatalog").objectReferenceValue = catalog;
-                serialized.ApplyModifiedPropertiesWithoutUndo();
-                EditorUtility.SetDirty(waveManager);
-            }
             EditorSceneManager.SaveScene(scene, GameScenePath);
         }
 

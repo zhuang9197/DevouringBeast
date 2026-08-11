@@ -48,8 +48,9 @@ namespace DevouringBeast
         private static readonly int ParamIsAttacking = Animator.StringToHash("IsAttacking");
         private static readonly int AttackState = Animator.StringToHash("Base Layer.attack");
 
-        private float MoveSpeed => (_enemy.Data != null ? _enemy.Data.moveSpeed : 3f) * _statusSpeedMultiplier *
-            (Time.time <= _suctionBoostUntil ? _suctionSpeedMultiplier : 1f);
+        private float MoveSpeed => MovementSpeedSystem.EnemyToWorld(
+            (_enemy.Data != null ? _enemy.Data.moveSpeed : 1f) * _statusSpeedMultiplier *
+            (Time.time <= _suctionBoostUntil ? _suctionSpeedMultiplier : 1f));
         public bool IsStatusStunned => _statusStunned;
 
         public void SetStatusModifiers(float speedMultiplier, bool stunned)

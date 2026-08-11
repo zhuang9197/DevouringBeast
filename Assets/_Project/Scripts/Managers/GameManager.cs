@@ -10,6 +10,7 @@ namespace DevouringBeast
     public class GameManager : MonoBehaviour
     {
         private static GameManager _instance;
+        public static GameManager Existing => _instance;
         public static GameManager Instance
         {
             get
@@ -28,6 +29,7 @@ namespace DevouringBeast
         }
 
         [field: SerializeField] public GameState CurrentState { get; private set; } = GameState.Menu;
+        public bool IsTestMode { get; private set; }
 
         /// <summary>状态变更事件</summary>
         public event Action<GameState, GameState> OnStateChanged; // (from, to)
@@ -75,6 +77,8 @@ private void OnDestroy()
         private void ApplySceneState(Scene scene)
         {
             GameState target = scene.name == SceneNames.Game ? GameState.Playing : GameState.Menu;
+            if (scene.name == SceneNames.Game && !IsTestMode) SaveGameService.BeginRunSession();
+            else if (scene.name != SceneNames.Game) SaveGameService.EndRunSession();
             if (CurrentState == target) return;
 
             GameState previous = CurrentState;
@@ -123,7 +127,17 @@ private void OnDestroy()
 
         #region 便捷方法
 
-        public void StartGame() => ChangeState(GameState.Playing);
+        public void StartGame()
+        {
+            IsTestMode = false;
+            ChangeState(GameState.Playing);
+        }
+
+        public void StartTestGame()
+        {
+            IsTestMode = true;
+            ChangeState(GameState.Playing);
+        }
         public void PauseGame()
         {
             if (!IsPlaying) return;
@@ -169,11 +183,23 @@ private void OnDestroy()
             GameOverUI.Show();
         }
 
+        public void CompleteRun(CompletedRunData history)
+        {
+            if (IsGameOver) return;
+            ChangeState(GameState.GameOver);
+            Time.timeScale = 0f;
+            AudioManager.Instance.SetSfxSuppressed(false);
+            VictoryUI.Show(history);
+        }
+
         public void RestartGame()
         {
             Time.timeScale = 1f;
             AudioManager.Instance.SetSfxSuppressed(false);
-            SaveGameService.ResetActiveRun();
+            // Return scene-owned drops to their persistent pools before Unity destroys the scene.
+            BloodDrop.ReleaseFloorDrops();
+            EnemyRewardChest.ReleaseFloorChests();
+            if (!IsTestMode) SaveGameService.ResetActiveRun();
             AudioManager.Instance.RestartCurrentBgm();
             SceneManager.LoadScene(SceneNames.Game);
         }
@@ -182,6 +208,7 @@ private void OnDestroy()
         {
             Time.timeScale = 1f;
             AudioManager.Instance.SetSfxSuppressed(false);
+            IsTestMode = false;
             SceneManager.LoadScene(SceneNames.Menu);
         }
 

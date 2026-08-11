@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de0d595d1967440449dd31fcf476964e, type: 3}
+  m_Name: Mushroom_Content
+  m_EditorClassIdentifier: 
+  archetype: 18
+  category: 0
+  prefab: {fileID: 5422484760119209675, guid: 153e09ca65a46c442855d9a34b93cf39, type: 3}
+  data: {fileID: 11400000, guid: e30d2878f44c0e447b6940ef73ff509e, type: 2}
+  atlas: {fileID: 4343727234628468602, guid: 2e71756118327664c8e9bef17f0f23bf, type: 2}

@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de0d595d1967440449dd31fcf476964e, type: 3}
+  m_Name: GreenBubble_Content
+  m_EditorClassIdentifier: 
+  archetype: 7
+  category: 1
+  prefab: {fileID: 1712338545613809078, guid: 99b375d6ffca9e7428783b914f8e4cc2, type: 3}
+  data: {fileID: 11400000, guid: 0210bad3a2985554c9344cf28a15cf32, type: 2}
+  atlas: {fileID: 4343727234628468602, guid: d14a50933d39442459abf7fc003bb64b, type: 2}

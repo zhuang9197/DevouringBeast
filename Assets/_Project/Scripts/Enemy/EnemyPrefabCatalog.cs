@@ -9,15 +9,29 @@ namespace DevouringBeast
         public GameObject[] elitePrefabs;
         public GameObject[] bossPrefabs;
 
+        public GameObject Find(EnemyArchetype archetype)
+        {
+            GameObject[] all = normalPrefabs ?? System.Array.Empty<GameObject>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i] != null && System.Enum.TryParse(all[i].name, out EnemyArchetype parsed) && parsed == archetype) return all[i];
+            }
+            all = elitePrefabs ?? System.Array.Empty<GameObject>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i] != null && System.Enum.TryParse(all[i].name, out EnemyArchetype parsed) && parsed == archetype) return all[i];
+            }
+            all = bossPrefabs ?? System.Array.Empty<GameObject>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i] != null && System.Enum.TryParse(all[i].name, out EnemyArchetype parsed) && parsed == archetype) return all[i];
+            }
+            return null;
+        }
+
         public GameObject[] GetTier(int tier)
         {
-            if (normalPrefabs == null || normalPrefabs.Length == 0) return null;
-            int start = Mathf.Clamp((tier - 1) * 10, 0, normalPrefabs.Length);
-            int count = Mathf.Min(10, normalPrefabs.Length - start);
-            if (count <= 0) return null;
-            GameObject[] result = new GameObject[count];
-            System.Array.Copy(normalPrefabs, start, result, 0, count);
-            return result;
+            return normalPrefabs;
         }
     }
 }

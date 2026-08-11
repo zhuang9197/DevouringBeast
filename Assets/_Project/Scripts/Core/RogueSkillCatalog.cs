@@ -14,7 +14,8 @@ namespace DevouringBeast
         EvolutionWing, EvolutionBigMouth, EvolutionCharged, EvolutionMoreMouth,
         EvolutionMoreMouthMore, EvolutionMoreMouthPower,
         SuperSplit, SuperSplitMore, SuperPiece,
-        FaithAngel, FaithDemon, FaithPope, FaithWitch
+        FaithAngel, FaithDemon, FaithPope, FaithWitch,
+        Chef, HotDogLover, SushiMaster
     }
 
     [Serializable]

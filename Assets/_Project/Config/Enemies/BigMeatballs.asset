@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec0ce73976fed884c97087b7cca2874a, type: 3}
+  m_Name: BigMeatballs
+  m_EditorClassIdentifier: 
+  displayName: BigMeatballs
+  archetype: 8
+  tier: 1
+  maxHealth: 120
+  attackDamage: 1
+  moveSpeed: 0.5
+  attackRange: 0.8
+  attackCooldown: 1.5
+  detectRange: 40
+  aimedProjectileSpeed: 8
+  radialProjectileSpeed: 7
+  behavior:
+    wanderIntervalRange: {x: 1.5, y: 1.5}
+    proximityRange: 0
+    specialMoveSpeed: 0.5
+    dashSpeed: 0
+    jumpSpeed: 0
+    fireballFallDuration: 0
+    dashDuration: 0.5
+    movementCycleDuration: 3
+    movementActiveDuration: 2
+    movementIdleDuration: 1
+    actionsPerSpecial: 6
+    wanderMaximumTurnAngle: 75
+    wanderTurnSpeed: 70
+    evasiveTurnSpeed: 180
+    orbitAngularSpeed: 4.5
+    orbitPursuitWeight: 0.45
+    orbitTangentWeight: 0.82
+    orbitSeparationWeight: 0.3
+    specialAttackCooldown: 1.5
+    jumpHeight: 0
+    takeoffDuration: 0
+    airborneDuration: 0
+    landingDuration: 0
+    offscreenPadding: 2
+    stateTransitionDuration: 1
+    stateHoldDuration: 5
+    dashPreparationDuration: 0.5
+    dashRecoveryDuration: 0.5
+    healthLossEffectInterval: 0.3
+    healthLossEffectMaximumTriggers: 3
+    healthLossEffectBulletCount: 4
+    healthLossEffectSummonsMeatball: 1
+    healthLossEffectMaximumScale: 1.5
+    healthLossEffectPulseDuration: 0.12
+  massValue: 50
+  aliveInhaleThreshold: 3.4028235e+38
+  deadInhaleThreshold: 10
+  animatorController: {fileID: 9100000, guid: cabbaeb082a2b3a49892b9a695b3112a, type: 2}
+  fakeDeathHoldSprite: {fileID: 0}
+  phaseTwoIdleSprite: {fileID: 0}
+  popInClip: {fileID: 0}
+  deathMode: 2
+  deathSprite: {fileID: 21300000, guid: cceeb8d95b8510642b5bae991552896c, type: 3}
+  deathAnimationDuration: 1
+  deathAnimationStartFrame: 9
+  deathFrameIndex: 19
+  deathEffect:
+    effect: 1
+    delay: 0.55
+    radius: 2
+    damage: 1
+    knockback: 1
+    summonCount: 0
+    secondaryChance: 0

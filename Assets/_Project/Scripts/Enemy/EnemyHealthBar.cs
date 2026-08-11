@@ -7,6 +7,7 @@ namespace DevouringBeast
     public sealed class EnemyHealthBar : MonoBehaviour
     {
         [SerializeField] private SpriteRenderer fillRenderer;
+        [SerializeField] private SpriteRenderer backgroundRenderer;
         [SerializeField] private GameObject container;
         [SerializeField] private Vector3 offset = new(0f, 1.2f, 0f);
         [SerializeField] private float fullWidth = 1.5f;
@@ -17,6 +18,7 @@ namespace DevouringBeast
         private float _lastHealthPercent = -1f;
         private float _lastCounterScaleX;
         private float _nextRefreshTime;
+        private bool _visualsVisible = true;
 
         public static EnemyHealthBar EnsureFor(EnemyBase enemy)
         {
@@ -76,6 +78,7 @@ namespace DevouringBeast
             healthBar.offset = barOffset;
             healthBar.fullWidth = width;
             healthBar.fillRenderer = fill;
+            healthBar.backgroundRenderer = background;
             healthBar.container = barObject;
             healthBar.Refresh(true);
             return healthBar;
@@ -103,7 +106,9 @@ namespace DevouringBeast
         {
             if (_enemy == null)
                 return;
-            if (!_enemy.IsVisible)
+            bool visible = !_enemy.IsDead && _enemy.IsVisible;
+            SetVisualsVisible(visible);
+            if (!visible)
                 return;
             if (Time.unscaledTime < _nextRefreshTime)
                 return;
@@ -118,6 +123,15 @@ namespace DevouringBeast
             }
 
             Refresh(false);
+        }
+
+        private void SetVisualsVisible(bool visible)
+        {
+            if (_visualsVisible == visible) return;
+            _visualsVisible = visible;
+            if (backgroundRenderer != null) backgroundRenderer.enabled = visible;
+            if (fillRenderer != null) fillRenderer.enabled = visible && _lastHealthPercent > 0.001f;
+            if (visible) Refresh(true);
         }
 
         private void Refresh(bool force)
@@ -152,6 +166,8 @@ namespace DevouringBeast
         {
             if (container != null)
                 container.SetActive(true);
+            _visualsVisible = true;
+            if (backgroundRenderer != null) backgroundRenderer.enabled = true;
             _lastHealthPercent = -1f;
             _nextRefreshTime = 0f;
             Refresh(true);

@@ -22,10 +22,8 @@ namespace DevouringBeast
     [RequireComponent(typeof(Rigidbody2D))]
     public class PlayerController : MonoBehaviour
     {
-        [Header("移动")]
-        [SerializeField] private float moveSpeed = 8f;
-        [Range(0f, 1f), Tooltip("嘴里有东西时的移速倍率")]
-        [SerializeField] private float fullWalkSpeedMultiplier = 0.8f;
+        private float moveSpeed;
+        private float fullWalkSpeedMultiplier;
 
         [Header("动画")]
         [SerializeField] private PlayerAnimData animData;
@@ -36,27 +34,31 @@ namespace DevouringBeast
         [Tooltip("吸入时是否有「吸时行走」技能")]
         [SerializeField] private bool hasInhaleWalkSkill = false;
         [Tooltip("吸时行走时的移速倍率（相对基础移速）")]
-        
-        [Header("音效节奏")]
-        [SerializeField, Min(0.05f)] private float runStepInterval = 0.28f;
-        [SerializeField, Min(0.05f)] private float walkStepInterval = 0.42f;
-        [SerializeField, Min(0f)] private float idleSoundDelay = 8f;
-        [SerializeField, Min(0.1f)] private float idleSoundRepeatInterval = 12f;
 
-[SerializeField] private float inhaleWalkMultiplier = 0.5f;
+        private float runStepInterval;
+        private float walkStepInterval;
+        private float idleSoundDelay;
+        private float idleSoundRepeatInterval;
+        private float inhaleWalkMultiplier;
+        private float knockbackDuration;
 
         // 缓存
         private Rigidbody2D _rb;
         private PlayerBaseAttributes _baseAttributes;
         private SwallowContainer _swallowContainer;
+        private Collider2D _movementCollider;
         private Vector2 _moveInput;
         private readonly Collider2D[] _beastOverlapBuffer = new Collider2D[64];
-        
+
         private float _footstepTimer;
         private float _idleTimer;
 
         private bool _isInhaling;
         private float _skillMoveSpeedMultiplier = 1f;
+        private float _foodMoveSpeedMultiplier = 1f;
+        private Coroutine _foodSpeedRoutine;
+        private Coroutine _knockbackRoutine;
+        private bool _isBeingKnockedBack;
         private bool _witchEnabled;
         private bool _beastForm;
         private int _witchLevel;
@@ -65,7 +67,14 @@ namespace DevouringBeast
         private bool _beastHitThisFrame;
         private float _beastHitSoundCooldown;
         private Facing _lastBeastFacing = (Facing)(-1);
-        [SerializeField, Min(1f)] private float beastRollingSpeedMultiplier = 1.4f;
+        private float beastRollingSpeedMultiplier;
+        private float beastDamageReductionBase;
+        private float beastDamageReductionPerLevel;
+        private float beastDamageReductionLimit;
+        private float beastHitRadius;
+        private float beastDamagePerSecond;
+        private float beastDamagePerLevel;
+        private float beastHitSoundInterval;
 
         // 状态
         public Facing CurrentFacing { get; private set; } = Facing.Front;
@@ -84,6 +93,7 @@ namespace DevouringBeast
             {
                 moveSpeed = value;
                 if (_baseAttributes != null) _baseAttributes.InitialMoveSpeed = value;
+                MovementSpeedSystem.SetPlayerSpeedUnit(value);
             }
         }
         public bool IsInhaling
@@ -99,7 +109,8 @@ namespace DevouringBeast
         public float SkillMoveSpeedMultiplier { get => _skillMoveSpeedMultiplier; set => _skillMoveSpeedMultiplier = Mathf.Max(0f, value); }
         public bool IsBeastForm => _beastForm;
         public float BeastDamageReduction => !_beastForm ? 0f :
-            Mathf.Min(0.9f, 0.2f + Mathf.Max(0, _witchLevel - 1) * 0.05f);
+            Mathf.Min(beastDamageReductionLimit, beastDamageReductionBase +
+                Mathf.Max(0, _witchLevel - 1) * beastDamageReductionPerLevel);
         public bool IsBeastRolling => _beastForm && _beastRolling;
         public float BeastRollingSpeedMultiplier => beastRollingSpeedMultiplier;
         public float RunStepInterval
@@ -129,11 +140,35 @@ namespace DevouringBeast
 
         private void Awake()
         {
+            PlayerBalanceSettings config = GameBalance.Current?.Player;
+            if (config != null)
+            {
+                moveSpeed = config.baseMoveSpeed;
+                fullWalkSpeedMultiplier = config.fullWalkSpeedMultiplier;
+                inhaleWalkMultiplier = config.inhaleWalkSpeedMultiplier;
+                runStepInterval = config.runStepInterval;
+                walkStepInterval = config.walkStepInterval;
+                idleSoundDelay = config.idleSoundDelay;
+                idleSoundRepeatInterval = config.idleSoundRepeatInterval;
+                knockbackDuration = config.knockbackDuration;
+                beastRollingSpeedMultiplier = config.beastRollingSpeedMultiplier;
+                beastDamageReductionBase = config.beastDamageReductionBase;
+                beastDamageReductionPerLevel = config.beastDamageReductionPerLevel;
+                beastDamageReductionLimit = config.beastDamageReductionLimit;
+                beastHitRadius = config.beastHitRadius;
+                beastDamagePerSecond = config.beastDamagePerSecond;
+                beastDamagePerLevel = config.beastDamagePerLevel;
+                beastHitSoundInterval = config.beastHitSoundCooldown;
+            }
             _baseAttributes = GetComponent<PlayerBaseAttributes>();
             if (_baseAttributes == null) _baseAttributes = gameObject.AddComponent<PlayerBaseAttributes>();
-            _baseAttributes.InitialMoveSpeed = moveSpeed;
+            _baseAttributes.InitializeFromConfig();
+            moveSpeed = _baseAttributes.InitialMoveSpeed;
+            MovementSpeedSystem.SetPlayerSpeedUnit(moveSpeed);
             _rb = GetComponent<Rigidbody2D>();
             _rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+            _rb.useFullKinematicContacts = true;
+            _movementCollider = GetComponent<Collider2D>();
             _swallowContainer = GetComponent<SwallowContainer>();
             if (spriteRenderer == null)
                 spriteRenderer = GetComponentInChildren<SpriteRenderer>();
@@ -148,6 +183,7 @@ namespace DevouringBeast
         private void FixedUpdate()
         {
             if (!GameManager.Instance.IsPlaying) return;
+            if (_isBeingKnockedBack) return;
             if (_moveInput == Vector2.zero) return;
 
             float speed = CalculateMoveSpeed();
@@ -158,6 +194,7 @@ namespace DevouringBeast
             // 地图边界限制
             if (MapBounds.Instance != null)
                 targetPos = MapBounds.Instance.ClampPosition(targetPos);
+            targetPos = StatueController.ConstrainMovement(_movementCollider, _rb.position, targetPos);
 
             _rb.MovePosition(targetPos);
         }
@@ -167,19 +204,61 @@ namespace DevouringBeast
             float currentMoveSpeed = _baseAttributes != null ? _baseAttributes.MoveSpeed : moveSpeed;
             if (_beastForm)
                 return currentMoveSpeed * _skillMoveSpeedMultiplier *
-                    (_moveInput.sqrMagnitude > 0.001f ? beastRollingSpeedMultiplier : 1f);
+                    _foodMoveSpeedMultiplier * (_moveInput.sqrMagnitude > 0.001f ? beastRollingSpeedMultiplier : 1f);
             if (_isInhaling)
             {
                 // 吸入时：无技能不能动，有技能可以慢移
                 if (!hasInhaleWalkSkill) return 0f;
-                return currentMoveSpeed * inhaleWalkMultiplier * _skillMoveSpeedMultiplier;
+                return currentMoveSpeed * inhaleWalkMultiplier * _skillMoveSpeedMultiplier * _foodMoveSpeedMultiplier;
             }
 
             // 有东西时减速
             if (CurrentState == PlayerState.IdleFull || CurrentState == PlayerState.FullWalk)
-                return currentMoveSpeed * fullWalkSpeedMultiplier * _skillMoveSpeedMultiplier;
+                return currentMoveSpeed * fullWalkSpeedMultiplier * _skillMoveSpeedMultiplier * _foodMoveSpeedMultiplier;
 
-            return currentMoveSpeed * _skillMoveSpeedMultiplier;
+            return currentMoveSpeed * _skillMoveSpeedMultiplier * _foodMoveSpeedMultiplier;
+        }
+
+        public void ApplyFoodSpeedBoost(float bonusPercent, float duration)
+        {
+            if (_foodSpeedRoutine != null) StopCoroutine(_foodSpeedRoutine);
+            _foodMoveSpeedMultiplier = 1f + Mathf.Max(0f, bonusPercent);
+            _foodSpeedRoutine = StartCoroutine(FoodSpeedRoutine(Mathf.Max(0f, duration)));
+        }
+
+        public void ApplyKnockback(Vector2 direction, float distance)
+        {
+            if (_rb == null || direction.sqrMagnitude <= 0.001f || distance <= 0f) return;
+            if (_knockbackRoutine != null) return;
+            Vector2 target = _rb.position + direction.normalized * distance;
+            if (MapBounds.Instance != null) target = MapBounds.Instance.ClampPosition(target);
+            target = StatueController.ConstrainMovement(_movementCollider, _rb.position, target);
+            _knockbackRoutine = StartCoroutine(KnockbackRoutine(target, knockbackDuration));
+        }
+
+        private System.Collections.IEnumerator KnockbackRoutine(Vector2 target, float duration)
+        {
+            _isBeingKnockedBack = true;
+            Vector2 start = _rb.position;
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float eased = 1f - (1f - t) * (1f - t);
+                _rb.MovePosition(Vector2.LerpUnclamped(start, target, eased));
+                yield return new WaitForFixedUpdate();
+            }
+            _rb.position = target;
+            _isBeingKnockedBack = false;
+            _knockbackRoutine = null;
+        }
+
+        private System.Collections.IEnumerator FoodSpeedRoutine(float duration)
+        {
+            yield return new WaitForSeconds(duration);
+            _foodMoveSpeedMultiplier = 1f;
+            _foodSpeedRoutine = null;
         }
 
         public void SetWitchFormEnabled(bool enabled, int level, RogueSkillCatalog catalog)
@@ -205,7 +284,7 @@ namespace DevouringBeast
             float end = Time.time + duration;
             while (Time.time < end)
             {
-                int hitCount = Physics2D.OverlapCircleNonAlloc(transform.position, 0.8f, _beastOverlapBuffer);
+                int hitCount = Physics2D.OverlapCircleNonAlloc(transform.position, beastHitRadius, _beastOverlapBuffer);
                 _beastHitThisFrame = false;
                 for (int i = 0; i < hitCount; i++)
                 {
@@ -213,14 +292,15 @@ namespace DevouringBeast
                     EnemyBase enemy = hit.GetComponentInParent<EnemyBase>();
                     if (enemy != null && !enemy.IsDead)
                     {
-                        enemy.TakeDamage(20f * (1f + _witchLevel * 0.1f) * Time.deltaTime);
+                        enemy.TakeDamage(beastDamagePerSecond *
+                            (1f + _witchLevel * beastDamagePerLevel) * Time.deltaTime);
                         _beastHitThisFrame = true;
                     }
                 }
                 if (_beastHitThisFrame && _beastHitSoundCooldown <= 0f)
                 {
                     AudioManager.Instance.PlaySfx(AudioCue.BeastHit);
-                    _beastHitSoundCooldown = 0.25f;
+                    _beastHitSoundCooldown = beastHitSoundInterval;
                 }
                 _beastHitSoundCooldown -= Time.deltaTime;
                 yield return null;
@@ -274,7 +354,7 @@ namespace DevouringBeast
         // 状态机
         // ============================================================
 
-private void Update()
+        private void Update()
         {
             if (!GameManager.Instance.IsPlaying)
             {
@@ -286,7 +366,7 @@ private void Update()
             UpdateAudio();
         }
 
-private void UpdateAudio()
+        private void UpdateAudio()
         {
             if (_isInhaling)
             {

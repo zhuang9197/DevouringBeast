@@ -10,19 +10,18 @@ namespace DevouringBeast
     /// </summary>
     public class PlayerInhale : MonoBehaviour
     {
-        [Header("吸入参数")]
-        [SerializeField] private float inhaleAngle = 60f;
-        [SerializeField] private float inhaleRadius = 5f;
-        [SerializeField] private float maxInhaleDuration = 3f;
-        [SerializeField] private float maxSuctionForce = 100f;
-        [SerializeField] private float suctionRampTime = 1.5f;
-        [SerializeField, Min(0.05f)] private float intakeDistance = 0.65f;
-        [SerializeField, Min(0.1f)] private float minimumPullSpeed = 1f;
-        [SerializeField, Min(0.1f)] private float maximumPullSpeed = 16f;
-        [SerializeField, Min(1f)] private float corpsePullSpeedMultiplier = 2f;
-        [SerializeField, Min(0.1f)] private float corpseMaximumPullSpeed = 28f;
-        [SerializeField, Min(0f)] private float suctionMassSpeedFactor = 0.35f;
-        [SerializeField, Range(1f, 1.5f)] private float aliveEnemyMaxSpeedBoost = 1.25f;
+        private float inhaleAngle;
+        private float inhaleRadius;
+        private float maxInhaleDuration;
+        private float maxSuctionForce;
+        private float suctionRampTime;
+        private float intakeDistance;
+        private float minimumPullSpeed;
+        private float maximumPullSpeed;
+        private float corpsePullSpeedMultiplier;
+        private float corpseMaximumPullSpeed;
+        private float suctionMassSpeedFactor;
+        private float aliveEnemyMaxSpeedBoost;
 
         [Header("层级")]
         [SerializeField] private LayerMask inhaleableLayer;
@@ -48,6 +47,7 @@ namespace DevouringBeast
         private float _skillDamageMultiplier = 1f;
         private float _bonusInhaleDuration;
         private bool _damageOnlyMode;
+        private bool _externalInterruptImmune;
 
         // 属性
         public bool IsInhaling => _isInhaling;
@@ -72,17 +72,35 @@ namespace DevouringBeast
         public float SkillDamageMultiplier { get => _skillDamageMultiplier; set => _skillDamageMultiplier = Mathf.Max(0f, value); }
         public float BonusInhaleDuration { get => _bonusInhaleDuration; set => _bonusInhaleDuration = Mathf.Max(0f, value); }
         public bool DamageOnlyMode { get => _damageOnlyMode; set => _damageOnlyMode = value; }
+        public bool ExternalInterruptImmune { get => _externalInterruptImmune; set => _externalInterruptImmune = value; }
 
         public event Action<float> OnProgressChanged;
         public event Action<bool> OnSuctionMaxedChanged; // true=达到最大, false=未达到
 
         private void Awake()
         {
+            InhaleBalanceSettings config = GameBalance.Current?.Inhale;
+            if (config != null)
+            {
+                inhaleAngle = config.angle;
+                inhaleRadius = config.radius;
+                maxInhaleDuration = config.maximumDuration;
+                maxSuctionForce = config.maximumSuctionForce;
+                suctionRampTime = config.suctionRampTime;
+                intakeDistance = config.intakeDistance;
+                minimumPullSpeed = config.minimumPullSpeed;
+                maximumPullSpeed = config.maximumPullSpeed;
+                corpsePullSpeedMultiplier = config.corpsePullSpeedMultiplier;
+                corpseMaximumPullSpeed = config.corpseMaximumPullSpeed;
+                suctionMassSpeedFactor = config.suctionMassSpeedFactor;
+                aliveEnemyMaxSpeedBoost = config.aliveEnemyMaximumSpeedBoost;
+            }
             _playerController = GetComponent<PlayerController>();
             _container = GetComponent<SwallowContainer>();
             _baseAttributes = GetComponent<PlayerBaseAttributes>();
             if (_baseAttributes == null) _baseAttributes = gameObject.AddComponent<PlayerBaseAttributes>();
-            _baseAttributes.InitialSuction = maxSuctionForce;
+            _baseAttributes.InitializeFromConfig();
+            maxSuctionForce = _baseAttributes.InitialSuction;
             if (_container == null) _container = gameObject.AddComponent<SwallowContainer>();
         }
 
@@ -146,10 +164,23 @@ namespace DevouringBeast
             if (!_isInhaling) return;
 
             _isInhaling = false;
+            _inhaleTimer = 0f;
+            _currentSuctionForce = 0f;
+            _suctionMaxed = false;
+            _detectedItems.Clear();
             _playerController.IsInhaling = false;
+            _playerController.SetSuctionMaxed(false);
             AudioManager.Instance.StopLoop(AudioCue.Suck);
             onInhaleStop?.RaiseEvent();
+            OnSuctionMaxedChanged?.Invoke(false);
             OnProgressChanged?.Invoke(0f);
+        }
+
+        public bool TryInterruptInhale()
+        {
+            if (_externalInterruptImmune) return false;
+            StopInhale();
+            return true;
         }
 
         /// <summary>
@@ -158,14 +189,18 @@ namespace DevouringBeast
         private void DetectItems()
         {
             _detectedItems.Clear();
+            // Living enemies remain on their combat layer. Scan all nearby colliders, then
+            // restrict non-living objects to the configured inhaleable layers.
             int hitCount = Physics2D.OverlapCircleNonAlloc(
-                transform.position, inhaleRadius, _overlapBuffer, inhaleableLayer);
+                transform.position, inhaleRadius, _overlapBuffer);
             for (int i = 0; i < hitCount; i++)
             {
                 Collider2D hit = _overlapBuffer[i];
                 if (hit == null) continue;
                 var item = hit.GetComponentInParent<InhaleableItem>();
                 if (item == null || _detectedItems.Contains(item)) continue;
+                int itemLayerMask = 1 << item.gameObject.layer;
+                if (!item.IsAlive && (inhaleableLayer.value & itemLayerMask) == 0) continue;
 
                 // 角度过滤：只检测前方锥形范围
                 Vector2 dirToTarget = (item.transform.position - transform.position).normalized;
@@ -207,7 +242,7 @@ namespace DevouringBeast
                 {
                     if (_damageOnlyMode) continue;
                     bool isCorpse = item.GetComponent<EnemyBase>() != null;
-                    bool canMove = isCorpse || _currentSuctionForce > item.Mass;
+                    bool canMove = item.IgnoreSuctionThreshold || isCorpse || _currentSuctionForce > item.Mass;
                     if (!canMove) continue;
                     float distance = Vector2.Distance(item.transform.position, transform.position);
                     if (distance <= intakeDistance)
@@ -232,11 +267,13 @@ namespace DevouringBeast
         private void PullItem(InhaleableItem item)
         {
             bool isCorpse = item.GetComponent<EnemyBase>() != null;
-            float forceAdvantage = isCorpse
+            float forceAdvantage = item.IgnoreSuctionThreshold
+                ? Mathf.Max(1f, _currentSuctionForce)
+                : isCorpse
                 ? Mathf.Max(1f, _currentSuctionForce)
                 : Mathf.Max(0f, _currentSuctionForce - item.Mass);
             float pullStrength = minimumPullSpeed + forceAdvantage * suctionMassSpeedFactor;
-            pullStrength = isCorpse
+            pullStrength = isCorpse || item.IgnoreSuctionThreshold
                 ? Mathf.Clamp(pullStrength * corpsePullSpeedMultiplier, minimumPullSpeed, corpseMaximumPullSpeed)
                 : Mathf.Clamp(pullStrength, minimumPullSpeed, maximumPullSpeed);
             item.transform.position = Vector2.MoveTowards(

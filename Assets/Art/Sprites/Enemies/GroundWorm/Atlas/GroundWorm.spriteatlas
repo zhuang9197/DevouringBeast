@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: GroundWorm
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 0
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings: []
+    packingSettings:
+      serializedVersion: 2
+      padding: 4
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 0
+      enableTightPacking: 0
+      enableAlphaDilation: 1
+    secondaryTextureSettings: {}
+    variantMultiplier: 1
+    packables:
+    - {fileID: 2800000, guid: fbea547ecc25af545a98e73c940d787d, type: 3}
+    - {fileID: 2800000, guid: 2c0e952046e31dc479754b674c8ec072, type: 3}
+    - {fileID: 2800000, guid: 81ef0c7b9d042d0439e4855a331dacd5, type: 3}
+    - {fileID: 2800000, guid: d141682052eaa294d8edd47e38668e15, type: 3}
+    - {fileID: 2800000, guid: 7fc1eac5456b01f4989e994c31b7eb9c, type: 3}
+    - {fileID: 2800000, guid: 3b8356bf3ee96f54296892dfea1c3c12, type: 3}
+    - {fileID: 2800000, guid: 1c393687dae66ca4a99db1c91ecd3a42, type: 3}
+    - {fileID: 2800000, guid: 0074a3d3c8045c249b2575ded3e27e18, type: 3}
+    - {fileID: 2800000, guid: 9fbc76e3af4401f44b500ff15b2fe850, type: 3}
+    bindAsDefault: 0
+    isAtlasV2: 0
+    cachedData: {fileID: 0}
+    packedSpriteRenderDataKeys:
+    - 2c0e952046e31dc479754b674c8ec072: 21300000
+    - d141682052eaa294d8edd47e38668e15: 21300000
+    - 0074a3d3c8045c249b2575ded3e27e18: 21300000
+    - 9fbc76e3af4401f44b500ff15b2fe850: 21300000
+    - 7fc1eac5456b01f4989e994c31b7eb9c: 21300000
+    - 1c393687dae66ca4a99db1c91ecd3a42: 21300000
+    - 81ef0c7b9d042d0439e4855a331dacd5: 21300000
+    - fbea547ecc25af545a98e73c940d787d: 21300000
+    - 3b8356bf3ee96f54296892dfea1c3c12: 21300000
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: 2c0e952046e31dc479754b674c8ec072, type: 3}
+  - {fileID: 21300000, guid: d141682052eaa294d8edd47e38668e15, type: 3}
+  - {fileID: 21300000, guid: 0074a3d3c8045c249b2575ded3e27e18, type: 3}
+  - {fileID: 21300000, guid: 9fbc76e3af4401f44b500ff15b2fe850, type: 3}
+  - {fileID: 21300000, guid: 7fc1eac5456b01f4989e994c31b7eb9c, type: 3}
+  - {fileID: 21300000, guid: 1c393687dae66ca4a99db1c91ecd3a42, type: 3}
+  - {fileID: 21300000, guid: 81ef0c7b9d042d0439e4855a331dacd5, type: 3}
+  - {fileID: 21300000, guid: fbea547ecc25af545a98e73c940d787d, type: 3}
+  - {fileID: 21300000, guid: 3b8356bf3ee96f54296892dfea1c3c12, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - 002
+  - 004
+  - 008
+  - 009
+  - 005
+  - 007
+  - 003
+  - 001
+  - 006
+  m_RenderDataMap: {}
+  m_Tag: GroundWorm
+  m_IsVariant: 0

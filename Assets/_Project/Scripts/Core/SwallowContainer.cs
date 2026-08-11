@@ -64,8 +64,12 @@ namespace DevouringBeast
             foreach (var item in Items)
             {
                 if (item == null) continue;
-                CurrentMass += item.Mass;
-                consumedMass += item.Mass;
+                FoodItem food = item.GetComponent<FoodItem>();
+                float reward = food != null
+                    ? food.Consume(_playerHealth, GetComponent<PlayerController>(), RogueSkillManager.Active)
+                    : item.Mass;
+                CurrentMass += reward;
+                consumedMass += reward;
                 item.ReleaseFromMouth();
             }
             Items.Clear();
@@ -115,6 +119,15 @@ namespace DevouringBeast
         private void NotifyProgress() => OnProgressChanged?.Invoke(CurrentMass, RequiredMass, CurrentLevel);
 
         public bool CanLevelUp => CurrentMass >= RequiredMass;
+
+        public void ResetForTesting()
+        {
+            Items.Clear();
+            CurrentLevel = 1;
+            CurrentMass = 0f;
+            RequiredMass = GetRequiredMassForLevel(CurrentLevel);
+            NotifyProgress();
+        }
 
     }
 }

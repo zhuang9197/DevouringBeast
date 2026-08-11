@@ -1,12 +1,11 @@
 using System;
-using System.Collections;
 using UnityEngine;
 
 namespace DevouringBeast
 {
     /// <summary>
     /// EnemyBase — 敌人基类
-    /// 处理血量、双值吸入阈值、死亡行为（旋转倒地+闪烁消失）
+    /// 处理血量、吸入属性和数据驱动的死亡奖励表现。
     /// </summary>
     [RequireComponent(typeof(InhaleableItem))]
     public class EnemyBase : MonoBehaviour
@@ -28,13 +27,17 @@ namespace DevouringBeast
         protected float _maxHealth;
         private Quaternion _initialSpriteRotation;
         private EnemyData _runtimeData;
+        private int _livingLayer;
 
         public bool IsDead => _isDead;
         public EnemyData Data => data;
+        public EnemyData TemplateData => data;
+        public bool IsInvulnerable { get; set; }
         public float HealthPercent => _maxHealth > 0 ? _currentHealth / _maxHealth : 0f;
         public float CurrentHealth => _currentHealth;
         public float MaxHealth => _maxHealth;
-        public bool IsVisible => spriteRenderer != null && spriteRenderer.isVisible;
+        public bool IsVisible => spriteRenderer != null && spriteRenderer.enabled &&
+            spriteRenderer.gameObject.activeInHierarchy;
         public float MassValue => data != null ? Mathf.Max(0f, data.massValue) : 5f;
 
         public event Action<EnemyBase> OnDeath;
@@ -43,6 +46,7 @@ namespace DevouringBeast
         protected virtual void Awake()
         {
             _item = GetComponent<InhaleableItem>();
+            _livingLayer = gameObject.layer;
             if (spriteRenderer == null)
                 spriteRenderer = GetComponentInChildren<SpriteRenderer>();
             if (animator == null)
@@ -54,10 +58,25 @@ namespace DevouringBeast
         {
             if (_runtimeData == null)
             {
-                _runtimeData = ScriptableObject.CreateInstance<EnemyData>();
+                _runtimeData = data != null ? data.ApplyScaling(1f, 1f, 1f) : ScriptableObject.CreateInstance<EnemyData>();
                 _runtimeData.hideFlags = HideFlags.DontSave;
             }
             return _runtimeData;
+        }
+
+        public EnemyData CreateScaledRuntimeData(float healthMultiplier, float speedMultiplier)
+        {
+            return CreateScaledRuntimeData(data, healthMultiplier, speedMultiplier);
+        }
+
+        public EnemyData CreateScaledRuntimeData(EnemyData source, float healthMultiplier, float speedMultiplier)
+        {
+            EnemyData runtime = source != null
+                ? source.ApplyScaling(Mathf.Max(0.01f, healthMultiplier), 1f, Mathf.Max(0.01f, speedMultiplier))
+                : GetOrCreateRuntimeData();
+            runtime.hideFlags = HideFlags.DontSave;
+            _runtimeData = runtime;
+            return runtime;
         }
 
         /// <summary>
@@ -68,8 +87,10 @@ namespace DevouringBeast
             StopAllCoroutines();
             data = enemyData;
             _isDead = false;
+            IsInvulnerable = false;
             _maxHealth = data.maxHealth;
             _currentHealth = _maxHealth;
+            gameObject.layer = _livingLayer;
 
             // 配置 InhaleableItem
             if (_item != null)
@@ -97,6 +118,8 @@ namespace DevouringBeast
             }
             EnemyAI ai = GetComponent<EnemyAI>();
             if (ai != null) ai.ResetForReuse();
+            EnemyActor actor = GetComponent<EnemyActor>();
+            if (actor != null) actor.ResetForReuse();
 
             EnemyHealthBar.EnsureFor(this).ResetForReuse();
             EnemyStatusEffects.EnsureFor(this).ResetForReuse();
@@ -121,7 +144,10 @@ namespace DevouringBeast
 
         public virtual void TakeDamage(float damage)
         {
-            if (_isDead) return;
+            if (_isDead || IsInvulnerable) return;
+
+            EnemyActor actor = GetComponent<EnemyActor>();
+            if (actor != null && actor.TryHandleDamage(ref damage)) return;
 
             _currentHealth -= damage;
             if (_currentHealth <= 0f)
@@ -138,6 +164,18 @@ namespace DevouringBeast
         {
             if (_isDead) return;
             _currentHealth = Mathf.Min(_maxHealth, _currentHealth + amount);
+        }
+
+        public void ReplaceHealth(float current, float maximum)
+        {
+            _maxHealth = Mathf.Max(1f, maximum);
+            _currentHealth = Mathf.Clamp(current, 0f, _maxHealth);
+        }
+
+        public bool TryReflectEnergyBall()
+        {
+            EnemyActor actor = GetComponent<EnemyActor>();
+            return actor != null && actor.TryReflectEnergyBall();
         }
 
         public void EmpowerForCrisis(WaveConfig config, int floor)
@@ -175,20 +213,9 @@ _isDead = true;
                 _item.Mass = MassValue;
             }
 
-            // 停止 AI 和动画
+            // Stop AI and let the archetype actor own the death presentation.
             var ai = GetComponent<EnemyAI>();
             if (ai != null) ai.enabled = false;
-
-            if (animator != null)
-            {
-                animator.enabled = false;
-            }
-
-            // 旋转 180° 倒地
-            if (spriteRenderer != null)
-            {
-                spriteRenderer.transform.localRotation = Quaternion.Euler(0, 0, 180);
-            }
 
             OnDeath?.Invoke(this);
             OnAnyEnemyDeath?.Invoke(this);
@@ -205,7 +232,15 @@ _isDead = true;
             else if (UnityEngine.Random.value < dropChance)
                 BloodDrop.Spawn(transform.position, UnityEngine.Random.value < 0.2f);
 
-            // 启动尸体消失协程
+            EnemyActor actor = GetComponent<EnemyActor>();
+            if (actor != null)
+            {
+                actor.PlayDeathPresentation();
+                return;
+            }
+
+            if (animator != null) animator.enabled = false;
+            if (spriteRenderer != null) spriteRenderer.sprite = data != null ? data.deathSprite : spriteRenderer.sprite;
             if (directHeal)
             {
                 EnemyPoolMember immediatePool = GetComponent<EnemyPoolMember>();
@@ -213,7 +248,26 @@ _isDead = true;
                 else Destroy(gameObject);
                 return;
             }
-            StartCoroutine(CorpseDecayRoutine());
+            MakeCorpseInhaleable();
+        }
+
+        public void MakeCorpseInhaleable()
+        {
+            if (_item != null) _item.IsAlive = false;
+            int inhaleableLayer = LayerMask.NameToLayer("inhaleableLayer");
+            if (inhaleableLayer >= 0) gameObject.layer = inhaleableLayer;
+            Rigidbody2D body = GetComponent<Rigidbody2D>();
+            if (body != null)
+            {
+                body.bodyType = RigidbodyType2D.Dynamic;
+                body.gravityScale = 0f;
+                body.drag = 6f;
+                body.angularDrag = 6f;
+                body.constraints = RigidbodyConstraints2D.FreezeRotation;
+                body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+                body.velocity = Vector2.zero;
+                body.angularVelocity = 0f;
+            }
         }
 
         private static bool IsFaithNoInhaleActive()
@@ -227,28 +281,6 @@ _isDead = true;
             return RogueSkillManager.Active != null
                 ? RogueSkillManager.Active.GetComponent<PlayerHealth>()
                 : null;
-        }
-
-        private IEnumerator CorpseDecayRoutine()
-        {
-            // 停留（减去闪烁时间）
-            yield return new WaitForSeconds(corpseDuration - corpseFlickerStart);
-
-            // 闪烁
-            float flickerEnd = Time.time + corpseFlickerStart;
-            bool visible = true;
-            while (Time.time < flickerEnd)
-            {
-                visible = !visible;
-                if (spriteRenderer != null)
-                    spriteRenderer.enabled = visible;
-                yield return new WaitForSeconds(flickerInterval);
-            }
-
-            // 消失
-            EnemyPoolMember poolMember = GetComponent<EnemyPoolMember>();
-            if (poolMember != null) poolMember.Release();
-            else Destroy(gameObject);
         }
 
         private void OnDestroy()

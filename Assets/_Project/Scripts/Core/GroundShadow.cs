@@ -16,6 +16,7 @@ namespace DevouringBeast
 
         private Transform _visual;
         private Coroutine _landingRoutine;
+        private Coroutine _takeoffRoutine;
 
         public static GroundShadow Ensure(GameObject owner)
         {
@@ -41,8 +42,30 @@ namespace DevouringBeast
         public void BeginLanding(float duration)
         {
             if (_visual == null) return;
+            if (_takeoffRoutine != null)
+            {
+                StopCoroutine(_takeoffRoutine);
+                _takeoffRoutine = null;
+            }
             if (_landingRoutine != null) StopCoroutine(_landingRoutine);
             _landingRoutine = StartCoroutine(LandingRoutine(Mathf.Max(0.01f, duration)));
+        }
+
+        public void BeginTakeoff(float duration)
+        {
+            if (_visual == null) return;
+            if (_landingRoutine != null)
+            {
+                StopCoroutine(_landingRoutine);
+                _landingRoutine = null;
+            }
+            if (_takeoffRoutine != null) StopCoroutine(_takeoffRoutine);
+            _takeoffRoutine = StartCoroutine(TakeoffRoutine(Mathf.Max(0.01f, duration)));
+        }
+
+        public void SetVisible(bool visible)
+        {
+            if (_visual != null) _visual.gameObject.SetActive(visible);
         }
 
         private IEnumerator LandingRoutine(float duration)
@@ -59,6 +82,22 @@ namespace DevouringBeast
             }
             _visual.localScale = target;
             _landingRoutine = null;
+        }
+
+        private IEnumerator TakeoffRoutine(float duration)
+        {
+            Vector3 start = _visual.localScale;
+            Vector3 target = new(0.08f, 0.03f, 1f);
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
+                _visual.localScale = Vector3.LerpUnclamped(start, target, t);
+                yield return null;
+            }
+            _visual.localScale = target;
+            _takeoffRoutine = null;
         }
 
         private static Sprite GetShadowSprite()

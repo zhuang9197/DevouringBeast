@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Fly
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 0
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings: []
+    packingSettings:
+      serializedVersion: 2
+      padding: 4
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 0
+      enableTightPacking: 0
+      enableAlphaDilation: 1
+    secondaryTextureSettings: {}
+    variantMultiplier: 1
+    packables:
+    - {fileID: 2800000, guid: af218a6c0213b294f8fe57aa3fe32e13, type: 3}
+    - {fileID: 2800000, guid: 9d5fa9132259d7c44a455d6bdbf72ced, type: 3}
+    - {fileID: 2800000, guid: 0a2e036d856c6504ba341753b72602d8, type: 3}
+    - {fileID: 2800000, guid: e2f6b2c1c6bb278409bf7d3a06623c2c, type: 3}
+    - {fileID: 2800000, guid: 256182c2c3c29104799c1a54b0862d87, type: 3}
+    - {fileID: 2800000, guid: 1cbc46aefc632534aad84e9f3dddb753, type: 3}
+    - {fileID: 2800000, guid: aff337c58647a8c43852e91e11a198fa, type: 3}
+    - {fileID: 2800000, guid: 75c68cce1d9d15e4597b9602cff5e40b, type: 3}
+    bindAsDefault: 0
+    isAtlasV2: 0
+    cachedData: {fileID: 0}
+    packedSpriteRenderDataKeys:
+    - e2f6b2c1c6bb278409bf7d3a06623c2c: 21300000
+    - 256182c2c3c29104799c1a54b0862d87: 21300000
+    - 9d5fa9132259d7c44a455d6bdbf72ced: 21300000
+    - aff337c58647a8c43852e91e11a198fa: 21300000
+    - af218a6c0213b294f8fe57aa3fe32e13: 21300000
+    - 0a2e036d856c6504ba341753b72602d8: 21300000
+    - 1cbc46aefc632534aad84e9f3dddb753: 21300000
+    - 75c68cce1d9d15e4597b9602cff5e40b: 21300000
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: e2f6b2c1c6bb278409bf7d3a06623c2c, type: 3}
+  - {fileID: 21300000, guid: 256182c2c3c29104799c1a54b0862d87, type: 3}
+  - {fileID: 21300000, guid: 9d5fa9132259d7c44a455d6bdbf72ced, type: 3}
+  - {fileID: 21300000, guid: aff337c58647a8c43852e91e11a198fa, type: 3}
+  - {fileID: 21300000, guid: af218a6c0213b294f8fe57aa3fe32e13, type: 3}
+  - {fileID: 21300000, guid: 0a2e036d856c6504ba341753b72602d8, type: 3}
+  - {fileID: 21300000, guid: 1cbc46aefc632534aad84e9f3dddb753, type: 3}
+  - {fileID: 21300000, guid: 75c68cce1d9d15e4597b9602cff5e40b, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - 004
+  - 005
+  - 002
+  - 007
+  - 001
+  - 003
+  - 006
+  - 008
+  m_RenderDataMap: {}
+  m_Tag: Fly
+  m_IsVariant: 0
