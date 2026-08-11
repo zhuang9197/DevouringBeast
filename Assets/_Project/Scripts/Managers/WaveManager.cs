@@ -37,8 +37,8 @@ namespace DevouringBeast
         private readonly List<GameObject[]> _tierPrefabs = new();
         private readonly Dictionary<EnemyArchetype, EnemyContentDefinition> _contentByArchetype = new();
         private readonly Dictionary<GameObject, EnemyData> _dataByPrefab = new();
-        private readonly Dictionary<string, SpriteAtlas> _loadedAtlases = new();
-        private readonly Dictionary<string, List<Action<SpriteAtlas>>> _pendingAtlasRequests = new();
+        private static readonly Dictionary<string, SpriteAtlas> LoadedAtlases = new();
+        private static readonly Dictionary<string, List<Action<SpriteAtlas>>> PendingAtlasRequests = new();
         private readonly List<AsyncOperationHandle<EnemyContentDefinition>> _contentHandles = new();
         private readonly Dictionary<GameObject, Queue<EnemyPoolMember>> _enemyPools = new();
         private readonly Dictionary<GameObject, Vector3> _enemySpawnScales = new();
@@ -126,6 +126,14 @@ namespace DevouringBeast
         private void Awake()
         {
             Instance = this;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void InitializeAtlasResolver()
+        {
+            LoadedAtlases.Clear();
+            PendingAtlasRequests.Clear();
+            SpriteAtlasManager.atlasRequested -= OnAtlasRequested;
             SpriteAtlasManager.atlasRequested += OnAtlasRequested;
         }
 
@@ -612,38 +620,38 @@ namespace DevouringBeast
             return prefab != null && _dataByPrefab.TryGetValue(prefab, out EnemyData data) ? data : null;
         }
 
-        private void OnAtlasRequested(string tag, Action<SpriteAtlas> register)
+        private static void OnAtlasRequested(string tag, Action<SpriteAtlas> register)
         {
             if (register == null || string.IsNullOrEmpty(tag)) return;
-            if (_loadedAtlases.TryGetValue(tag, out SpriteAtlas atlas) && atlas != null)
+            if (LoadedAtlases.TryGetValue(tag, out SpriteAtlas atlas) && atlas != null)
             {
                 register(atlas);
                 return;
             }
 
-            if (!_pendingAtlasRequests.TryGetValue(tag, out List<Action<SpriteAtlas>> requests))
+            if (!PendingAtlasRequests.TryGetValue(tag, out List<Action<SpriteAtlas>> requests))
             {
                 requests = new List<Action<SpriteAtlas>>();
-                _pendingAtlasRequests.Add(tag, requests);
+                PendingAtlasRequests.Add(tag, requests);
             }
             requests.Add(register);
         }
 
-        private void RegisterLoadedAtlas(SpriteAtlas atlas)
+        private static void RegisterLoadedAtlas(SpriteAtlas atlas)
         {
             if (atlas == null) return;
             string tag = string.IsNullOrEmpty(atlas.tag) ? atlas.name : atlas.tag;
-            _loadedAtlases[tag] = atlas;
-            _loadedAtlases[atlas.name] = atlas;
+            LoadedAtlases[tag] = atlas;
+            LoadedAtlases[atlas.name] = atlas;
             FulfillAtlasRequests(tag, atlas);
             if (!string.Equals(tag, atlas.name, StringComparison.Ordinal))
                 FulfillAtlasRequests(atlas.name, atlas);
         }
 
-        private void FulfillAtlasRequests(string tag, SpriteAtlas atlas)
+        private static void FulfillAtlasRequests(string tag, SpriteAtlas atlas)
         {
-            if (!_pendingAtlasRequests.TryGetValue(tag, out List<Action<SpriteAtlas>> requests)) return;
-            _pendingAtlasRequests.Remove(tag);
+            if (!PendingAtlasRequests.TryGetValue(tag, out List<Action<SpriteAtlas>> requests)) return;
+            PendingAtlasRequests.Remove(tag);
             foreach (Action<SpriteAtlas> register in requests) register?.Invoke(atlas);
         }
 
@@ -710,9 +718,8 @@ namespace DevouringBeast
 
         private void OnDestroy()
         {
-            SpriteAtlasManager.atlasRequested -= OnAtlasRequested;
-            _pendingAtlasRequests.Clear();
-            _loadedAtlases.Clear();
+            PendingAtlasRequests.Clear();
+            LoadedAtlases.Clear();
             foreach (AsyncOperationHandle<EnemyContentDefinition> handle in _contentHandles)
                 if (handle.IsValid()) Addressables.Release(handle);
             _contentHandles.Clear();

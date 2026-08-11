@@ -234,6 +234,14 @@ namespace DevouringBeast.Editor
             textureSettings.readable = false;
             textureSettings.sRGB = true;
             SpriteAtlasExtensions.SetTextureSettings(atlas, textureSettings);
+            SpriteAtlasExtensions.SetPlatformSettings(atlas, new TextureImporterPlatformSettings
+            {
+                name = "Android",
+                overridden = true,
+                maxTextureSize = 2048,
+                format = TextureImporterFormat.ETC2_RGBA8,
+                compressionQuality = 50
+            });
             SpriteAtlasExtensions.SetIncludeInBuild(atlas, false);
             EditorUtility.SetDirty(atlas);
             return atlas;

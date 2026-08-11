@@ -14,6 +14,7 @@ namespace DevouringBeast
         private RectTransform _rect;
         private Image _image;
         private Vector2 _startScreenPosition;
+        private int _activeTouchId = -1;
         private bool _tracking;
         private bool _visible;
 
@@ -40,14 +41,35 @@ namespace DevouringBeast
         private void Update()
         {
             if (!GameManager.Instance.IsPlaying) { Cancel(); return; }
-            bool handledTouch = false;
-            if (Touchscreen.current != null)
+            Touchscreen touchscreen = Touchscreen.current;
+            if (touchscreen != null)
             {
-                var touch=Touchscreen.current.primaryTouch;
-                if (touch.press.wasPressedThisFrame) { Begin(touch.position.ReadValue()); handledTouch=true; }
-                if (_tracking && touch.press.isPressed) { Move(touch.position.ReadValue()); handledTouch=true; }
-                if (_tracking && touch.press.wasReleasedThisFrame) { Cancel(); handledTouch=true; }
-                if (handledTouch) return;
+                if (!_tracking)
+                {
+                    foreach (var touch in touchscreen.touches)
+                    {
+                        if (!touch.press.wasPressedThisFrame) continue;
+                        Begin(touch.position.ReadValue(), touch.touchId.ReadValue());
+                        if (_tracking) break;
+                    }
+                }
+                else
+                {
+                    bool foundTrackedTouch = false;
+                    foreach (var touch in touchscreen.touches)
+                    {
+                        if (touch.touchId.ReadValue() != _activeTouchId) continue;
+                        foundTrackedTouch = true;
+                        if (touch.press.isPressed) Move(touch.position.ReadValue());
+                        else Cancel();
+                        break;
+                    }
+
+                    // Android can cancel a touch when it leaves the game view or loses focus.
+                    // In that case no PointerUp/wasReleasedThisFrame event is guaranteed.
+                    if (!foundTrackedTouch) Cancel();
+                }
+                return;
             }
 #if UNITY_EDITOR || UNITY_STANDALONE
             if (Mouse.current != null)
@@ -59,10 +81,11 @@ namespace DevouringBeast
 #endif
         }
 
-        private void Begin(Vector2 screenPosition)
+        private void Begin(Vector2 screenPosition, int touchId = -1)
         {
             if (screenPosition.x > Screen.width * 0.5f) return;
-            _tracking=true; _visible=false; Input=Vector2.zero; _startScreenPosition=screenPosition;
+            _tracking=true; _activeTouchId=touchId; _visible=false; Input=Vector2.zero;
+            _startScreenPosition=screenPosition;
         }
 
         private void Move(Vector2 screenPosition)
@@ -85,7 +108,8 @@ namespace DevouringBeast
 
         private void Cancel()
         {
-            _tracking=false; Input=Vector2.zero; SetVisible(false); _rect.localRotation=Quaternion.identity;
+            _tracking=false; _activeTouchId=-1; Input=Vector2.zero; SetVisible(false);
+            if (_rect != null) _rect.localRotation=Quaternion.identity;
         }
 
         private void SetVisible(bool value)
@@ -94,7 +118,11 @@ namespace DevouringBeast
             if (_image != null) _image.enabled=value;
         }
 
-        public void OnPointerDown(PointerEventData eventData) => Begin(eventData.position);
+        private void OnDisable() => Cancel();
+        private void OnApplicationFocus(bool hasFocus) { if (!hasFocus) Cancel(); }
+        private void OnApplicationPause(bool paused) { if (paused) Cancel(); }
+
+        public void OnPointerDown(PointerEventData eventData) => Begin(eventData.position, eventData.pointerId);
         public void OnDrag(PointerEventData eventData) { if (_tracking) Move(eventData.position); }
         public void OnPointerUp(PointerEventData eventData) => Cancel();
     }
