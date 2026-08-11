@@ -14,8 +14,9 @@ namespace DevouringBeast
 
         private RectTransform _rect;
         private Image _image;
+        private readonly Vector3[] _worldCorners = new Vector3[4];
         private Vector2 _startScreenPosition;
-        private int _activeTouchId = -1;
+        private EnhancedTouch.Finger _activeFinger;
         private bool _ownsEnhancedTouch;
         private bool _tracking;
         private bool _visible;
@@ -51,7 +52,7 @@ namespace DevouringBeast
                     foreach (EnhancedTouch.Touch touch in touches)
                     {
                         if (touch.phase != UnityEngine.InputSystem.TouchPhase.Began) continue;
-                        Begin(touch.screenPosition, touch.touchId);
+                        Begin(touch.screenPosition, touch.finger);
                         if (_tracking) break;
                     }
                 }
@@ -60,7 +61,7 @@ namespace DevouringBeast
                     bool foundTrackedTouch = false;
                     foreach (EnhancedTouch.Touch touch in touches)
                     {
-                        if (touch.touchId != _activeTouchId) continue;
+                        if (touch.finger != _activeFinger) continue;
                         foundTrackedTouch = true;
                         if (touch.phase == UnityEngine.InputSystem.TouchPhase.Ended ||
                             touch.phase == UnityEngine.InputSystem.TouchPhase.Canceled)
@@ -70,9 +71,7 @@ namespace DevouringBeast
                         break;
                     }
 
-                    // Android can cancel a touch when it leaves the game view or loses focus.
-                    // In that case no PointerUp/wasReleasedThisFrame event is guaranteed.
-                    if (!foundTrackedTouch) Cancel();
+                    if (_activeFinger == null || !_activeFinger.isActive || !foundTrackedTouch) Cancel();
                 }
                 return;
             }
@@ -86,22 +85,21 @@ namespace DevouringBeast
 #endif
         }
 
-        private void Begin(Vector2 screenPosition, int touchId = -1)
+        private void Begin(Vector2 screenPosition, EnhancedTouch.Finger finger = null)
         {
             if (screenPosition.x > Screen.width * 0.5f) return;
-            if (!IsInsideGameplayViewport(screenPosition)) return;
-            _tracking=true; _activeTouchId=touchId; _visible=false; Input=Vector2.zero;
+            _tracking=true; _activeFinger=finger; _visible=false; Input=Vector2.zero;
             _startScreenPosition=screenPosition;
         }
 
         private void Move(Vector2 screenPosition)
         {
-            if (!IsInsideGameplayViewport(screenPosition)) { Cancel(); return; }
             Vector2 delta=screenPosition-_startScreenPosition;
             if (!_visible && delta.magnitude < activationDragDistance) return;
             if (!_visible)
             {
-                _rect.position=_startScreenPosition;
+                // Keep the visual on-screen without changing the real touch origin used for movement.
+                _rect.position=ClampVisualPosition(_startScreenPosition);
                 SetVisible(true);
             }
             float magnitude=Mathf.Min(delta.magnitude,maxRadius);
@@ -113,15 +111,25 @@ namespace DevouringBeast
             }
         }
 
-        private static bool IsInsideGameplayViewport(Vector2 screenPosition)
+        private Vector2 ClampVisualPosition(Vector2 screenPosition)
         {
-            Camera gameplayCamera = Camera.main;
-            return gameplayCamera == null || gameplayCamera.pixelRect.Contains(screenPosition);
+            _rect.GetWorldCorners(_worldCorners);
+            float visualRadius = Vector2.Distance(_worldCorners[0], _worldCorners[2]) * 0.5f;
+            Rect safeArea = Screen.safeArea;
+
+            return new Vector2(
+                ClampAxis(screenPosition.x, safeArea.xMin + visualRadius, safeArea.xMax - visualRadius),
+                ClampAxis(screenPosition.y, safeArea.yMin + visualRadius, safeArea.yMax - visualRadius));
+        }
+
+        private static float ClampAxis(float value, float min, float max)
+        {
+            return min <= max ? Mathf.Clamp(value, min, max) : (min + max) * 0.5f;
         }
 
         private void Cancel()
         {
-            _tracking=false; _activeTouchId=-1; Input=Vector2.zero; SetVisible(false);
+            _tracking=false; _activeFinger=null; Input=Vector2.zero; SetVisible(false);
             if (_rect != null) _rect.localRotation=Quaternion.identity;
         }
 
@@ -133,22 +141,32 @@ namespace DevouringBeast
 
         private void OnEnable()
         {
-            if (EnhancedTouch.EnhancedTouchSupport.enabled) return;
-            EnhancedTouch.EnhancedTouchSupport.Enable();
-            _ownsEnhancedTouch = true;
+            if (!EnhancedTouch.EnhancedTouchSupport.enabled)
+            {
+                EnhancedTouch.EnhancedTouchSupport.Enable();
+                _ownsEnhancedTouch = true;
+            }
+            EnhancedTouch.Touch.onFingerUp += HandleFingerUp;
         }
 
         private void OnDisable()
         {
+            EnhancedTouch.Touch.onFingerUp -= HandleFingerUp;
             Cancel();
             if (!_ownsEnhancedTouch) return;
             EnhancedTouch.EnhancedTouchSupport.Disable();
             _ownsEnhancedTouch = false;
         }
+
+        private void HandleFingerUp(EnhancedTouch.Finger finger)
+        {
+            if (finger == _activeFinger) Cancel();
+        }
+
         private void OnApplicationFocus(bool hasFocus) { if (!hasFocus) Cancel(); }
         private void OnApplicationPause(bool paused) { if (paused) Cancel(); }
 
-        public void OnPointerDown(PointerEventData eventData) => Begin(eventData.position, eventData.pointerId);
+        public void OnPointerDown(PointerEventData eventData) => Begin(eventData.position);
         public void OnDrag(PointerEventData eventData) { if (_tracking) Move(eventData.position); }
         public void OnPointerUp(PointerEventData eventData) => Cancel();
     }
