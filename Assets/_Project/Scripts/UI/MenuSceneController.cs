@@ -58,12 +58,13 @@ namespace DevouringBeast
             if (canvas == null) return;
             GameObject buttonObject = new("TestRoomButton", typeof(RectTransform), typeof(Image),
                 typeof(Button), typeof(UIButtonAudio));
-            buttonObject.transform.SetParent(canvas.transform, false);
+            Transform menu = canvas.transform.Find("Menu");
+            buttonObject.transform.SetParent(menu != null ? menu : canvas.transform, false);
             RectTransform rect = buttonObject.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = new Vector2(1f, 0f);
-            rect.pivot = new Vector2(1f, 0f);
-            rect.anchoredPosition = new Vector2(-24f, 24f);
-            rect.sizeDelta = new Vector2(160f, 46f);
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(0f, -250f);
+            rect.sizeDelta = new Vector2(300f, 64f);
             Image image = buttonObject.GetComponent<Image>();
             image.color = new Color(0.14f, 0.16f, 0.2f, 0.96f);
             Text label = new GameObject("Label", typeof(RectTransform), typeof(Text)).GetComponent<Text>();
@@ -72,7 +73,7 @@ namespace DevouringBeast
             label.rectTransform.anchorMax = Vector2.one;
             label.rectTransform.offsetMin = label.rectTransform.offsetMax = Vector2.zero;
             label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            label.fontSize = 18;
+            label.fontSize = 22;
             label.fontStyle = FontStyle.Bold;
             label.alignment = TextAnchor.MiddleCenter;
             label.color = Color.white;
