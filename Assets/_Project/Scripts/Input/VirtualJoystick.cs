@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using EnhancedTouch = UnityEngine.InputSystem.EnhancedTouch;
 
 namespace DevouringBeast
 {
@@ -15,6 +16,7 @@ namespace DevouringBeast
         private Image _image;
         private Vector2 _startScreenPosition;
         private int _activeTouchId = -1;
+        private bool _ownsEnhancedTouch;
         private bool _tracking;
         private bool _visible;
 
@@ -41,27 +43,30 @@ namespace DevouringBeast
         private void Update()
         {
             if (!GameManager.Instance.IsPlaying) { Cancel(); return; }
-            Touchscreen touchscreen = Touchscreen.current;
-            if (touchscreen != null)
+            if (Touchscreen.current != null)
             {
+                var touches = EnhancedTouch.Touch.activeTouches;
                 if (!_tracking)
                 {
-                    foreach (var touch in touchscreen.touches)
+                    foreach (EnhancedTouch.Touch touch in touches)
                     {
-                        if (!touch.press.wasPressedThisFrame) continue;
-                        Begin(touch.position.ReadValue(), touch.touchId.ReadValue());
+                        if (touch.phase != UnityEngine.InputSystem.TouchPhase.Began) continue;
+                        Begin(touch.screenPosition, touch.touchId);
                         if (_tracking) break;
                     }
                 }
                 else
                 {
                     bool foundTrackedTouch = false;
-                    foreach (var touch in touchscreen.touches)
+                    foreach (EnhancedTouch.Touch touch in touches)
                     {
-                        if (touch.touchId.ReadValue() != _activeTouchId) continue;
+                        if (touch.touchId != _activeTouchId) continue;
                         foundTrackedTouch = true;
-                        if (touch.press.isPressed) Move(touch.position.ReadValue());
-                        else Cancel();
+                        if (touch.phase == UnityEngine.InputSystem.TouchPhase.Ended ||
+                            touch.phase == UnityEngine.InputSystem.TouchPhase.Canceled)
+                            Cancel();
+                        else
+                            Move(touch.screenPosition);
                         break;
                     }
 
@@ -84,12 +89,14 @@ namespace DevouringBeast
         private void Begin(Vector2 screenPosition, int touchId = -1)
         {
             if (screenPosition.x > Screen.width * 0.5f) return;
+            if (!IsInsideGameplayViewport(screenPosition)) return;
             _tracking=true; _activeTouchId=touchId; _visible=false; Input=Vector2.zero;
             _startScreenPosition=screenPosition;
         }
 
         private void Move(Vector2 screenPosition)
         {
+            if (!IsInsideGameplayViewport(screenPosition)) { Cancel(); return; }
             Vector2 delta=screenPosition-_startScreenPosition;
             if (!_visible && delta.magnitude < activationDragDistance) return;
             if (!_visible)
@@ -106,6 +113,12 @@ namespace DevouringBeast
             }
         }
 
+        private static bool IsInsideGameplayViewport(Vector2 screenPosition)
+        {
+            Camera gameplayCamera = Camera.main;
+            return gameplayCamera == null || gameplayCamera.pixelRect.Contains(screenPosition);
+        }
+
         private void Cancel()
         {
             _tracking=false; _activeTouchId=-1; Input=Vector2.zero; SetVisible(false);
@@ -118,7 +131,20 @@ namespace DevouringBeast
             if (_image != null) _image.enabled=value;
         }
 
-        private void OnDisable() => Cancel();
+        private void OnEnable()
+        {
+            if (EnhancedTouch.EnhancedTouchSupport.enabled) return;
+            EnhancedTouch.EnhancedTouchSupport.Enable();
+            _ownsEnhancedTouch = true;
+        }
+
+        private void OnDisable()
+        {
+            Cancel();
+            if (!_ownsEnhancedTouch) return;
+            EnhancedTouch.EnhancedTouchSupport.Disable();
+            _ownsEnhancedTouch = false;
+        }
         private void OnApplicationFocus(bool hasFocus) { if (!hasFocus) Cancel(); }
         private void OnApplicationPause(bool paused) { if (paused) Cancel(); }
 

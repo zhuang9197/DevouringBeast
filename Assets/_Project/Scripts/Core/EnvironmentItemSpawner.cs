@@ -122,8 +122,10 @@ namespace DevouringBeast
         {
             _currentRoom = room;
             _hasCurrentRoom = true;
+            bool isNewRoom = false;
             if (!_rooms.TryGetValue(room, out RoomFoodState state))
             {
+                isNewRoom = true;
                 state = new RoomFoodState
                 {
                     Center = center,
@@ -139,7 +141,7 @@ namespace DevouringBeast
                 state.Size = size;
                 state.Cleared = cleared;
             }
-            state.NextRefreshTime = _testMode ? Time.time : Time.time + GetRefreshSeconds(state);
+            state.NextRefreshTime = _testMode || isNewRoom ? Time.time : Time.time + GetRefreshSeconds(state);
             NotifyCurrentRoom(state);
         }
 
