@@ -35,6 +35,7 @@ namespace DevouringBeast
         private PlayerController _playerController;
         private SwallowContainer _container;
         private PlayerBaseAttributes _baseAttributes;
+        private Collider2D[] _playerColliders;
 
         // 状态
         private bool _isInhaling;
@@ -96,6 +97,7 @@ namespace DevouringBeast
                 aliveEnemyMaxSpeedBoost = config.aliveEnemyMaximumSpeedBoost;
             }
             _playerController = GetComponent<PlayerController>();
+            _playerColliders = GetComponentsInChildren<Collider2D>(true);
             _container = GetComponent<SwallowContainer>();
             _baseAttributes = GetComponent<PlayerBaseAttributes>();
             if (_baseAttributes == null) _baseAttributes = gameObject.AddComponent<PlayerBaseAttributes>();
@@ -244,6 +246,7 @@ namespace DevouringBeast
                     bool isCorpse = item.GetComponent<EnemyBase>() != null;
                     bool canMove = item.IgnoreSuctionThreshold || isCorpse || _currentSuctionForce > item.Mass;
                     if (!canMove) continue;
+                    item.PrepareForSuction(_playerColliders);
                     float distance = Vector2.Distance(item.transform.position, transform.position);
                     if (distance <= intakeDistance)
                     {
@@ -276,11 +279,20 @@ namespace DevouringBeast
             pullStrength = isCorpse || item.IgnoreSuctionThreshold
                 ? Mathf.Clamp(pullStrength * corpsePullSpeedMultiplier, minimumPullSpeed, corpseMaximumPullSpeed)
                 : Mathf.Clamp(pullStrength, minimumPullSpeed, maximumPullSpeed);
-            item.transform.position = Vector2.MoveTowards(
+            Vector2 nextPosition = Vector2.MoveTowards(
                 item.transform.position,
                 transform.position,
-                pullStrength * Time.deltaTime
-            );
+                pullStrength * Time.deltaTime);
+            Rigidbody2D body = item.GetComponent<Rigidbody2D>();
+            if (body != null)
+            {
+                body.position = nextPosition;
+                body.velocity = Vector2.zero;
+            }
+            else
+            {
+                item.transform.position = nextPosition;
+            }
         }
 
 #if UNITY_EDITOR

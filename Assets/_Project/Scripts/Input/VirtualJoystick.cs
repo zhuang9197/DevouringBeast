@@ -117,9 +117,27 @@ namespace DevouringBeast
             float visualRadius = Vector2.Distance(_worldCorners[0], _worldCorners[2]) * 0.5f;
             Rect safeArea = Screen.safeArea;
 
+            // The gameplay camera is letterboxed to the fixed 16:9 room. Screen-space
+            // overlay pixels outside its pixelRect are not cleared by the camera, so a
+            // joystick rendered there can leave a stale image after it is hidden. Keep
+            // the visual inside the area that is actually redrawn while still accepting
+            // touch input from the whole left half of the physical screen.
+            Camera gameplayCamera = Camera.main;
+            if (gameplayCamera != null && gameplayCamera.rect != new Rect(0f, 0f, 1f, 1f))
+                safeArea = Intersect(safeArea, gameplayCamera.pixelRect);
+
             return new Vector2(
                 ClampAxis(screenPosition.x, safeArea.xMin + visualRadius, safeArea.xMax - visualRadius),
                 ClampAxis(screenPosition.y, safeArea.yMin + visualRadius, safeArea.yMax - visualRadius));
+        }
+
+        private static Rect Intersect(Rect first, Rect second)
+        {
+            float xMin = Mathf.Max(first.xMin, second.xMin);
+            float yMin = Mathf.Max(first.yMin, second.yMin);
+            float xMax = Mathf.Min(first.xMax, second.xMax);
+            float yMax = Mathf.Min(first.yMax, second.yMax);
+            return Rect.MinMaxRect(xMin, yMin, Mathf.Max(xMin, xMax), Mathf.Max(yMin, yMax));
         }
 
         private static float ClampAxis(float value, float min, float max)

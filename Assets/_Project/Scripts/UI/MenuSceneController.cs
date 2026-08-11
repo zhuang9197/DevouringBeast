@@ -26,6 +26,7 @@ namespace DevouringBeast
         private bool _confirmDelete;
         private readonly List<Selectable> _blockedMenuSelectables = new();
         private float _ignoreInputUntil;
+        private ControlLayoutEditor _controlLayoutEditor;
 
         private void Start()
         {
@@ -47,6 +48,7 @@ namespace DevouringBeast
                 sfxSlider.onValueChanged.AddListener(AudioManager.Instance.SetSfxVolume);
             }
             ConfigureOptionsPanel();
+            ConfigureControlLayoutEditor();
             ConfigureSaveListScrolling();
             BuildTestButton();
         }
@@ -225,6 +227,7 @@ namespace DevouringBeast
 
         private void HideAllPanels()
         {
+            _controlLayoutEditor?.CloseEditor();
             RestoreUnderlyingMenuInput();
             if (saveListPanel != null) saveListPanel.SetActive(false);
             if (actionPanel != null) actionPanel.SetActive(false);
@@ -252,6 +255,15 @@ namespace DevouringBeast
             if (group == null) group = optionsPanel.AddComponent<CanvasGroup>();
             group.interactable = true;
             group.blocksRaycasts = true;
+        }
+
+        private void ConfigureControlLayoutEditor()
+        {
+            if (optionsPanel == null) return;
+            _controlLayoutEditor = optionsPanel.GetComponent<ControlLayoutEditor>();
+            if (_controlLayoutEditor == null)
+                _controlLayoutEditor = optionsPanel.AddComponent<ControlLayoutEditor>();
+            _controlLayoutEditor.Initialize();
         }
 
         private void ConfigureSaveListScrolling()

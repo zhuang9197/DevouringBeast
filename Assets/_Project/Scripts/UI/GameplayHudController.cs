@@ -190,6 +190,7 @@ namespace DevouringBeast
             GameObject swallow = GameObject.Find("Btn_Swallow");
             if (primary != null)
             {
+                ControlLayoutSettings.Apply(primary.GetComponent<RectTransform>(), GameplayControlButton.Primary);
                 _primaryImage=primary.GetComponent<Image>(); _primaryButton=primary.GetComponent<Button>(); HideLegacyLabels(primary);
                 ConfigureButtonVisual(_primaryImage, _primaryButton);
                 GameplayActionButton action=primary.GetComponent<GameplayActionButton>();
@@ -197,6 +198,7 @@ namespace DevouringBeast
             }
             if (swallow != null)
             {
+                ControlLayoutSettings.Apply(swallow.GetComponent<RectTransform>(), GameplayControlButton.Swallow);
                 _swallowImage=swallow.GetComponent<Image>(); _swallowButton=swallow.GetComponent<Button>(); HideLegacyLabels(swallow);
                 ConfigureButtonVisual(_swallowImage, _swallowButton);
                 GameplayActionButton action=swallow.GetComponent<GameplayActionButton>();

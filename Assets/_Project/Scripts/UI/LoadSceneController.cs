@@ -29,7 +29,7 @@ namespace DevouringBeast
             yield return null;
             while (Time.unscaledTime < endTime) yield return null;
 
-            //if (loadingAnimator != null) loadingAnimator.enabled = false;
+            if (loadingAnimator != null) loadingAnimator.enabled = false;
             //if (loadingImage != null) loadingImage.enabled = false;
             //if (doneObject != null) doneObject.SetActive(true);
             _ready = true;

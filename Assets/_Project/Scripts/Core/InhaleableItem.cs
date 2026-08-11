@@ -29,10 +29,65 @@ namespace DevouringBeast
         public bool IsBeingInhaled { get; private set; }
         public bool IsStoredInMouth { get; private set; }
         private Vector3 _restingScale;
+        private Collider2D[] _colliders;
+        private Collider2D[] _ignoredPlayerColliders;
+        private bool _suctionCollisionIgnored;
+        private int _lastSuctionFrame = -1;
 
         private void Awake()
         {
             _restingScale = transform.localScale;
+            _colliders = GetComponentsInChildren<Collider2D>(true);
+        }
+
+        /// <summary>
+        /// Temporarily removes only player-vs-item collision while suction is actively
+        /// pulling this item. Pushable physics remains enabled at all other times.
+        /// </summary>
+        public void PrepareForSuction(Collider2D[] playerColliders)
+        {
+            _lastSuctionFrame = Time.frameCount;
+            if (_suctionCollisionIgnored || playerColliders == null || playerColliders.Length == 0)
+                return;
+
+            if (_colliders == null || _colliders.Length == 0)
+                _colliders = GetComponentsInChildren<Collider2D>(true);
+            _ignoredPlayerColliders = playerColliders;
+            foreach (Collider2D itemCollider in _colliders)
+            {
+                if (itemCollider == null) continue;
+                foreach (Collider2D playerCollider in playerColliders)
+                {
+                    if (playerCollider != null)
+                        Physics2D.IgnoreCollision(itemCollider, playerCollider, true);
+                }
+            }
+            _suctionCollisionIgnored = true;
+        }
+
+        private void LateUpdate()
+        {
+            if (_suctionCollisionIgnored && _lastSuctionFrame != Time.frameCount)
+                RestoreSuctionCollision();
+        }
+
+        private void RestoreSuctionCollision()
+        {
+            if (!_suctionCollisionIgnored) return;
+            if (_colliders == null || _colliders.Length == 0)
+                _colliders = GetComponentsInChildren<Collider2D>(true);
+            if (_ignoredPlayerColliders != null)
+            {
+                foreach (Collider2D itemCollider in _colliders)
+                {
+                    if (itemCollider == null) continue;
+                    foreach (Collider2D playerCollider in _ignoredPlayerColliders)
+                        if (playerCollider != null) Physics2D.IgnoreCollision(itemCollider, playerCollider, false);
+                }
+            }
+            _ignoredPlayerColliders = null;
+            _suctionCollisionIgnored = false;
+            _lastSuctionFrame = -1;
         }
 
         public void SetRestingScale(Vector3 scale)
@@ -59,7 +114,8 @@ namespace DevouringBeast
             var ai = GetComponent<EnemyAI>();
             if (ai != null) ai.enabled = false;
 
-            var col = GetComponent<Collider2D>();
+            RestoreSuctionCollision();
+            Collider2D col = GetComponent<Collider2D>();
             if (col != null) col.enabled = false;
             Rigidbody2D body = GetComponent<Rigidbody2D>();
             if (body != null) body.simulated = false;
@@ -125,6 +181,7 @@ namespace DevouringBeast
         public void ResetForReuse()
         {
             StopAllCoroutines();
+            RestoreSuctionCollision();
             transform.localScale = _restingScale;
             IsBeingInhaled = false;
             IsStoredInMouth = false;
@@ -138,5 +195,7 @@ namespace DevouringBeast
                 body.angularVelocity = 0f;
             }
         }
+
+        private void OnDisable() => RestoreSuctionCollision();
     }
 }
