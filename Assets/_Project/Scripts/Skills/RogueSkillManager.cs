@@ -26,10 +26,12 @@ namespace DevouringBeast
         private float _witchProgress;
         private int _angelStatueUsesThisRun;
         private float _popeProgress;
+        private int _popeFollowersSummoned;
         private readonly System.Collections.Generic.HashSet<EnemyArchetype> _faithKills = new();
         private readonly System.Collections.Generic.HashSet<int> _demonKingDeaths = new();
         [SerializeField, Min(1)] private int witchSwallowsRequired = 3;
-        [SerializeField, Min(1f)] private float popeFollowerMassRequired = 30f;
+        [SerializeField, Min(1f)] private float popeFollowerInitialProgress = 30f;
+        [SerializeField, Min(0f)] private float popeFollowerProgressIncrease = 10f;
         private const float FaithKillMassMultiplier = 2f;
         private const float BaseBeastFormDuration = 8f;
 
@@ -41,7 +43,9 @@ namespace DevouringBeast
         public event Action<RogueSkillId, int> OnSkillLevelChanged;
         public event Action<float, bool> OnWitchProgressChanged;
         public float WitchProgressNormalized => Mathf.Clamp01(_witchProgress / Mathf.Max(1f, witchSwallowsRequired));
-        public float PopeProgressNormalized => Mathf.Clamp01(_popeProgress / Mathf.Max(1f, popeFollowerMassRequired));
+        public float PopeProgressRequired => Mathf.Max(1f,
+            popeFollowerInitialProgress + _popeFollowersSummoned * popeFollowerProgressIncrease);
+        public float PopeProgressNormalized => Mathf.Clamp01(_popeProgress / PopeProgressRequired);
         public float PopeProgress => _popeProgress;
         public float WitchProgress => _witchProgress;
 
@@ -55,6 +59,12 @@ namespace DevouringBeast
             _spit = GetComponent<PlayerSpit>();
             _inhale = GetComponent<PlayerInhale>();
             _baseAttributes = GetComponent<PlayerBaseAttributes>();
+            SpitBalanceSettings balance = GameBalance.Current?.Spit;
+            if (balance != null)
+            {
+                popeFollowerInitialProgress = Mathf.Max(1f, balance.popeFollowerInitialProgress);
+                popeFollowerProgressIncrease = Mathf.Max(0f, balance.popeFollowerProgressIncrease);
+            }
         }
 
         private void Start()
@@ -406,6 +416,7 @@ namespace DevouringBeast
             _witchProgress = 0;
             _angelStatueUsesThisRun = 0;
             _popeProgress = 0f;
+            _popeFollowersSummoned = 0;
             _faithKills.Clear();
             if (_choiceOpen)
             {
@@ -425,12 +436,13 @@ namespace DevouringBeast
             if (Has(RogueSkillId.FaithPope))
             {
                 _popeProgress += Mathf.Max(0f, consumedMass);
-                while (_popeProgress >= popeFollowerMassRequired)
+                while (_popeProgress >= PopeProgressRequired)
                 {
-                    _popeProgress -= popeFollowerMassRequired;
+                    _popeProgress -= PopeProgressRequired;
                     BelieverFollower.SpawnFollower(_controller != null ? _controller.transform : transform, false);
+                    _popeFollowersSummoned++;
                 }
-                _popeProgress = Mathf.Clamp(_popeProgress, 0f, popeFollowerMassRequired);
+                _popeProgress = Mathf.Clamp(_popeProgress, 0f, PopeProgressRequired);
                 for (int i = 0; i < GetLevel(RogueSkillId.PopeBaptism); i++) BelieverFollower.BaptizeNext();
             }
             if (!Has(RogueSkillId.FaithWitch)) return;
@@ -467,7 +479,7 @@ namespace DevouringBeast
                 }
                 if (_faith == RogueSkillId.FaithDemon && Has(RogueSkillId.DemonKing) && _spit != null &&
                     enemy != null && enemy.IsDead && _demonKingDeaths.Add(enemy.GetInstanceID()))
-                    _spit.FireFollowerBall(_controller != null ? _controller.transform.position : transform.position,
+                    _spit.FireDemonKingBall(_controller != null ? _controller.transform.position : transform.position,
                         _controller != null ? _controller.FacingDirection : Vector2.right,
                         1f + GetLevel(RogueSkillId.DemonKing) * 0.1f);
             }

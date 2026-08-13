@@ -78,6 +78,8 @@
 | `spreadAngle` | 多发能量球之间的散射角。 |
 | `angelShotCooldown` | 天使自动射击间隔。 |
 | `popeDamageMultiplier` | 教皇教化球伤害倍率。 |
+| `popeFollowerInitialProgress` | 教皇召唤第一名信徒所需的吞噬进度。 |
+| `popeFollowerProgressIncrease` | 每召唤一名信徒后，下一名信徒所需进度的增加值。 |
 | `chargeBonusPerLevel` | 蓄力技能每级增加的伤害比例。 |
 | `multipleMouthPerBallMultiplier` | 多嘴模式每颗球的基础伤害倍率。 |
 | `multipleMouthPowerPerLevel` | 多嘴强化每级增加的单球伤害比例。 |

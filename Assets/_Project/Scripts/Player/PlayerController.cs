@@ -303,47 +303,17 @@ namespace DevouringBeast
             _beastSpeedBoost = 0f;
             _beastSpeedBoostEnd = 0f;
             _beastRolling = false;
-            SetBeastRollingCollision(false);
+            // 已有移动输入时立即切成触发器，避免变身首帧被实体碰撞挡住而漏掉首次伤害。
+            SetBeastRollingCollision(_moveInput.sqrMagnitude > 0.001f);
             _beastHitThisFrame = false;
             _beastHitSoundCooldown = 0f;
             _lastBeastFacing = (Facing)(-1);
             _beastEndTime = Time.time + duration;
+            // 立即结算一次固定帧伤害，确保开始变身时已经重叠的敌人不会漏掉第一次碰撞。
+            ProcessBeastHits(Time.fixedDeltaTime);
             while (Time.time < _beastEndTime)
             {
-                int hitCount = Physics2D.OverlapCircleNonAlloc(transform.position, beastHitRadius, _beastOverlapBuffer);
-                _beastHitThisFrame = false;
-                _beastSpeedContactsThisFrame.Clear();
-                for (int i = 0; i < hitCount; i++)
-                {
-                    Collider2D hit = _beastOverlapBuffer[i];
-                    EnemyBase enemy = hit.GetComponentInParent<EnemyBase>();
-                    if (enemy != null && !enemy.IsDead)
-                    {
-                        enemy.TakeDamage(beastDamagePerSecond *
-                            (1f + _witchLevel * beastDamagePerLevel) * Time.deltaTime);
-                        RogueSkillManager manager = RogueSkillManager.Active;
-                        if (manager != null && manager.Has(RogueSkillId.WitchClaw))
-                            EnemyStatusEffects.EnsureFor(enemy).ApplyPoison(3f + manager.GetLevel(RogueSkillId.WitchClaw) * 2f, 0.5f);
-                        int enemyId = enemy.GetInstanceID();
-                        if (manager != null && manager.Has(RogueSkillId.WitchDeterrence))
-                        {
-                            _beastSpeedContactsThisFrame.Add(enemyId);
-                            if (!_beastSpeedHitEnemies.Contains(enemyId))
-                            {
-                                _beastSpeedHitEnemies.Add(enemyId);
-                                ApplyBeastSpeedBoost(0.1f + Mathf.Max(0, manager.GetLevel(RogueSkillId.WitchDeterrence) - 1) * 0.1f, 3f);
-                            }
-                        }
-                        _beastHitThisFrame = true;
-                    }
-                }
-                _beastSpeedHitEnemies.RemoveWhere(id => !_beastSpeedContactsThisFrame.Contains(id));
-                if (_beastHitThisFrame && _beastHitSoundCooldown <= 0f)
-                {
-                    AudioManager.Instance.PlaySfx(AudioCue.BeastHit);
-                    _beastHitSoundCooldown = beastHitSoundInterval;
-                }
-                _beastHitSoundCooldown -= Time.deltaTime;
+                ProcessBeastHits(Time.deltaTime);
                 yield return null;
             }
             AudioManager.Existing?.StopLoop(AudioCue.Roll);
@@ -355,6 +325,44 @@ namespace DevouringBeast
             SetBeastRollingCollision(false);
             _lastBeastFacing = (Facing)(-1);
             _lastAppliedState = (PlayerState)(-1);
+        }
+
+        private void ProcessBeastHits(float damageDeltaTime)
+        {
+            int hitCount = Physics2D.OverlapCircleNonAlloc(transform.position, beastHitRadius, _beastOverlapBuffer);
+            _beastHitThisFrame = false;
+            _beastSpeedContactsThisFrame.Clear();
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider2D hit = _beastOverlapBuffer[i];
+                EnemyBase enemy = hit.GetComponentInParent<EnemyBase>();
+                if (enemy != null && !enemy.IsDead)
+                {
+                    enemy.TakeDamage(beastDamagePerSecond *
+                        (1f + _witchLevel * beastDamagePerLevel) * damageDeltaTime);
+                    RogueSkillManager manager = RogueSkillManager.Active;
+                    if (manager != null && manager.Has(RogueSkillId.WitchClaw))
+                        EnemyStatusEffects.EnsureFor(enemy).ApplyPoison(3f + manager.GetLevel(RogueSkillId.WitchClaw) * 2f, 0.5f);
+                    int enemyId = enemy.GetInstanceID();
+                    if (manager != null && manager.Has(RogueSkillId.WitchDeterrence))
+                    {
+                        _beastSpeedContactsThisFrame.Add(enemyId);
+                        if (!_beastSpeedHitEnemies.Contains(enemyId))
+                        {
+                            _beastSpeedHitEnemies.Add(enemyId);
+                            ApplyBeastSpeedBoost(0.1f + Mathf.Max(0, manager.GetLevel(RogueSkillId.WitchDeterrence) - 1) * 0.1f, 3f);
+                        }
+                    }
+                    _beastHitThisFrame = true;
+                }
+            }
+            _beastSpeedHitEnemies.RemoveWhere(id => !_beastSpeedContactsThisFrame.Contains(id));
+            if (_beastHitThisFrame && _beastHitSoundCooldown <= 0f)
+            {
+                AudioManager.Instance.PlaySfx(AudioCue.BeastHit);
+                _beastHitSoundCooldown = beastHitSoundInterval;
+            }
+            _beastHitSoundCooldown -= damageDeltaTime;
         }
 
         // ============================================================

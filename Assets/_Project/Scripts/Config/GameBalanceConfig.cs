@@ -85,6 +85,8 @@ namespace DevouringBeast
         [Min(0f)] public float spreadAngle;
         [Min(0f)] public float angelShotCooldown;
         [Min(0f)] public float popeDamageMultiplier;
+        [Min(1f)] public float popeFollowerInitialProgress = 30f;
+        [Min(0f)] public float popeFollowerProgressIncrease = 10f;
         [Min(0f)] public float chargeBonusPerLevel;
         [Range(0f, 1f)] public float multipleMouthPerBallMultiplier;
         [Min(0f)] public float multipleMouthPowerPerLevel;

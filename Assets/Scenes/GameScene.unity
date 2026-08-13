@@ -1832,7 +1832,8 @@ MonoBehaviour:
   catalog: {fileID: 11400000, guid: 6fa1f4894ec832c4ea560c0a3a658349, type: 2}
   onLevelUp: {fileID: 11400000, guid: c007379fdd363764e86fca5c0f90421e, type: 2}
   witchSwallowsRequired: 3
-  popeFollowerMassRequired: 30
+  popeFollowerInitialProgress: 30
+  popeFollowerProgressIncrease: 10
 --- !u!114 &1772682457
 MonoBehaviour:
   m_ObjectHideFlags: 0

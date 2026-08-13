@@ -250,6 +250,16 @@ public void Spit()
         {
             if (!EnsurePool()) return;
             float damage = (_baseAttributes != null ? _baseAttributes.EnergyBallBaseDamage : baseDamage) * Mathf.Max(0f, damageMultiplier);
+            // 信徒能量球只保留普通直接伤害，不继承玩家的分裂、穿透、火、毒等肉鸽效果。
+            EnergyBallShotSnapshot snapshot = new(damage, spitSpeed, maxFlyDistance, null);
+            EnergyBall ball = _energyBallPool.Get(position, Quaternion.identity);
+            ball.Initialize(direction, snapshot, transform, ReleaseEnergyBall, null);
+        }
+
+        public void FireDemonKingBall(Vector3 position, Vector2 direction, float damageMultiplier)
+        {
+            if (!EnsurePool()) return;
+            float damage = (_baseAttributes != null ? _baseAttributes.EnergyBallBaseDamage : baseDamage) * Mathf.Max(0f, damageMultiplier);
             EnergyBallShotSnapshot snapshot = _skillManager != null
                 ? _skillManager.CreateEnergyBallSnapshot(damage, spitSpeed, maxFlyDistance, 1f, false)
                 : new EnergyBallShotSnapshot(damage, spitSpeed, maxFlyDistance, null);

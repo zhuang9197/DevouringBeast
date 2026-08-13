@@ -67,14 +67,27 @@ namespace DevouringBeast
         private void Update()
         {
             if (_player == null) { Destroy(gameObject); return; }
+            if (GameManager.Existing != null && !GameManager.Existing.IsPlaying) return;
             PlayerController controller = _player.GetComponent<PlayerController>();
             Vector2 facing = controller != null ? controller.FacingDirection : Vector2.down;
             EnemyBase target = FindFrontEnemy(facing);
-            Vector2 desired = _baptized && target != null
-                ? (Vector2)target.transform.position
-                : (Vector2)_player.position - facing * (1.25f + Active.IndexOf(this) * 0.25f);
+            Vector2 desired;
+            if (_baptized && target != null)
+            {
+                desired = target.transform.position;
+            }
+            else
+            {
+                int index = GetFormationIndex(this);
+                int count = GetFormationCount();
+                float centeredIndex = index - (count - 1) * 0.5f;
+                Vector2 formationOffset = Mathf.Abs(facing.y) > 0.5f
+                    ? Vector2.right * (centeredIndex * 0.7f)
+                    : -facing * (index * 0.4f);
+                desired = (Vector2)_player.position - facing * 1.25f + formationOffset;
+            }
+            desired += Vector2.up * (Mathf.Sin(Time.time * 2.2f + _phase) * 0.08f);
             transform.position = Vector2.Lerp(transform.position, desired, 1f - Mathf.Exp(-8f * Time.deltaTime));
-            transform.position += Vector3.up * (Mathf.Sin(Time.time * 2.2f + _phase) * 0.08f);
             if (target != null && Time.time >= _nextAttack)
             {
                 _spit?.FireFollowerBall(transform.position, (target.transform.position - transform.position).normalized,
@@ -103,6 +116,26 @@ namespace DevouringBeast
                 if (dot > bestDot) { bestDot = dot; best = enemy; }
             }
             return best;
+        }
+
+        private static int GetFormationCount()
+        {
+            int count = 0;
+            foreach (BelieverFollower follower in Active)
+                if (follower != null && !follower._baptized) count++;
+            return Mathf.Max(1, count);
+        }
+
+        private static int GetFormationIndex(BelieverFollower target)
+        {
+            int index = 0;
+            foreach (BelieverFollower follower in Active)
+            {
+                if (follower == null || follower._baptized) continue;
+                if (follower == target) return index;
+                index++;
+            }
+            return 0;
         }
 
         private void OnDestroy() => Active.Remove(this);

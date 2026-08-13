@@ -59,6 +59,8 @@ MonoBehaviour:
     spreadAngle: 10
     angelShotCooldown: 0.5
     popeDamageMultiplier: 0.5
+    popeFollowerInitialProgress: 30
+    popeFollowerProgressIncrease: 10
     chargeBonusPerLevel: 0.1
     multipleMouthPerBallMultiplier: 0.6
     multipleMouthPowerPerLevel: 0.1
