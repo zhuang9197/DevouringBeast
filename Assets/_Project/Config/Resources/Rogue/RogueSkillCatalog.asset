@@ -269,7 +269,7 @@ MonoBehaviour:
   - id: 24
     school: 5
     displayName: "\u6559\u7687"
-    description: "\u541E\u566C\u53D8\u4E3A\u6559\u5316\uFF0C\u540C\u65F6\u5410\u51FA\u9644\u5E26\u8089\u9E3D\u6548\u679C\u4E14\u5F3A\u5316\u7684\u80FD\u91CF\u7403\u3002"
+    description: "\u541E\u566C\u79EF\u7D2F\u4FE1\u5F92\u53EC\u5524\u8FDB\u5EA6\uFF0C\u8FDB\u5EA6\u6EE1\u540E\u53EC\u5524\u4E00\u540D\u8DDF\u968F\u73A9\u5BB6\u7684\u4FE1\u5F92\uFF1B\u4FE1\u5F92\u4F1A\u6309\u73A9\u5BB6\u65B9\u5411\u653B\u51FB\u654C\u4EBA\u3002"
     iconName: faith_pope
     maxLevel: 0
     prerequisites: 
@@ -514,6 +514,12 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 3a9678438bc481040852ae9cbc6006d2, type: 3}
   - {fileID: 21300000, guid: cb45ed5092da164419fa0a639f2818ab, type: 3}
   - {fileID: 21300000, guid: 953448b0440f4324695b32d03c67e8ce, type: 3}
+  believerFront: {fileID: 21300000, guid: 4d6f6f78ff9bd5445820fed6e9fc6ae2, type: 3}
+  believerSide: {fileID: 21300000, guid: 141eb8a06d547a1478c2668b89eaf746, type: 3}
+  believerBack: {fileID: 21300000, guid: 721db10c9630338468c9666e3955dd03, type: 3}
+  darkBelieverFront: {fileID: 21300000, guid: ebe2067cd281d32419f664dcb2895092, type: 3}
+  darkBelieverSide: {fileID: 21300000, guid: b09beb5bbb9f8b047973277096c442e8, type: 3}
+  darkBelieverBack: {fileID: 21300000, guid: 3f785af8edca84148a3ed33d03a4df93, type: 3}
   progressBar: {fileID: 660413493, guid: 80347a96a3162e8488b88dbbbea46db7, type: 3}
   progressFill: {fileID: 1411078167, guid: 80347a96a3162e8488b88dbbbea46db7, type: 3}
   joystick: {fileID: -1080228524, guid: 80347a96a3162e8488b88dbbbea46db7, type: 3}

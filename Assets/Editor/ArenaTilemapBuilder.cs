@@ -26,7 +26,9 @@ public static class ArenaTilemapBuilder
         "new_map4_1",
         "new_map4_2",
         "new_map4_3",
-        "new_map4_4"
+        "new_map4_4",
+        "entrance",
+        "boss_entrance"
     };
 
     static ArenaTilemapBuilder()
@@ -37,6 +39,8 @@ public static class ArenaTilemapBuilder
     [MenuItem("Tools/DevouringBeast/Rebuild Room Tilemap and Clean Scene")]
     public static void Rebuild()
     {
+        EnsureSplitSpritesImported();
+        AssetDatabase.Refresh();
         var sprites = AssetDatabase.FindAssets("t:Sprite", new[] { SourcePath })
             .Select(AssetDatabase.GUIDToAssetPath)
             .Select(path => AssetDatabase.LoadAssetAtPath<Sprite>(path))
@@ -79,7 +83,24 @@ public static class ArenaTilemapBuilder
         CleanGameScene();
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log("[ArenaTilemapBuilder] Built corner/open-door/wall and continuous floor-strip tiles from new_map.png.");
+        Debug.Log("[ArenaTilemapBuilder] Built room and entrance tiles from split new_map sprites.");
+    }
+
+    private static void EnsureSplitSpritesImported()
+    {
+        foreach (string path in Directory.GetFiles(SourcePath, "*.png", SearchOption.AllDirectories))
+        {
+            string assetPath = path.Replace('\\', '/');
+            TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+            if (importer == null) continue;
+            bool changed = importer.textureType != TextureImporterType.Sprite ||
+                importer.spriteImportMode != SpriteImportMode.Single;
+            if (!changed) continue;
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.mipmapEnabled = false;
+            importer.SaveAndReimport();
+        }
     }
 
     private static void CleanGameScene()

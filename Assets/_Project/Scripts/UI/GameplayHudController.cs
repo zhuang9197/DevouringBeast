@@ -20,14 +20,16 @@ namespace DevouringBeast
         private bool _displayHasItems;
         private bool _primaryHoldVisualActive;
         private bool _swallowHoldVisualActive;
-        private bool _lastSwallowInteractable, _lastPrimaryInteractable, _lastWitchActive;
+        private bool _lastSwallowInteractable, _lastPrimaryInteractable, _lastWitchActive, _lastPopeActive;
         private int _lastLevel = int.MinValue, _lastMass = int.MinValue, _lastRequiredMass = int.MinValue;
         private int _lastRemainingFood = int.MinValue;
-        private float _lastProgress = -1f, _lastWitchProgress = -1f;
+        private float _lastProgress = -1f, _lastWitchProgress = -1f, _lastPopeProgress = -1f;
         private GameObject _witchPanel;
         private GameObject _returnConfirmation;
         private Image _witchFill;
         private Text _witchText;
+        private GameObject _popePanel;
+        private Image _popeFill;
 
         public static GameplayHudController EnsureFor(GameObject player)
         {
@@ -50,6 +52,7 @@ namespace DevouringBeast
             BindButtons();
             BuildLevelProgress();
             BuildWitchProgress();
+            BuildPopeProgress();
             BuildFoodCounter();
             BuildReturnToMenuButton();
             Refresh(true);
@@ -181,6 +184,31 @@ namespace DevouringBeast
             _witchPanel.SetActive(false);
         }
 
+        private void BuildPopeProgress()
+        {
+            Canvas canvas = FindGameplayCanvas();
+            if (canvas == null || GameObject.Find("PopeProgressPanel") != null) return;
+            _popePanel = new GameObject("PopeProgressPanel", typeof(RectTransform));
+            _popePanel.transform.SetParent(canvas.transform, false);
+            RectTransform rect = _popePanel.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.anchoredPosition = new Vector2(0f, 72f);
+            rect.sizeDelta = new Vector2(260f, 42f);
+            GameObject bg = CreateImage("ProgressBar", _popePanel.transform, _catalog?.progressBar);
+            Stretch(bg.GetComponent<RectTransform>());
+            GameObject fill = CreateImage("ProgressFill", bg.transform, _catalog?.progressFill);
+            SetRect(fill.GetComponent<RectTransform>(), new Vector2(0.035f, 0.25f), new Vector2(0.965f, 0.75f));
+            _popeFill = fill.GetComponent<Image>();
+            _popeFill.type = Image.Type.Filled;
+            _popeFill.fillMethod = Image.FillMethod.Horizontal;
+            _popeFill.fillOrigin = 0;
+            Text label = CreateText("Label", _popePanel.transform, 16, TextAnchor.MiddleCenter);
+            Stretch(label.rectTransform);
+            label.text = "信徒召唤";
+            _popePanel.SetActive(false);
+        }
+
         private void Update() => Refresh(false);
 
         private void BindButtons()
@@ -260,6 +288,7 @@ namespace DevouringBeast
             if (force || !primaryHeld) _displayHasItems=hasItems;
             bool angel=_skills != null && _skills.Has(RogueSkillId.FaithAngel);
             bool witch=_skills != null && _skills.Has(RogueSkillId.FaithWitch);
+            bool pope=_skills != null && _skills.Has(RogueSkillId.FaithPope);
             if (force || _displayHasItems!=_lastHasItems || angel!=_lastAngel)
             {
                 if (_primaryImage != null)
@@ -307,6 +336,14 @@ namespace DevouringBeast
                 if (force || !Mathf.Approximately(witchProgress,_lastWitchProgress))
                     _witchFill.fillAmount=witchProgress;
                 _lastWitchProgress=witchProgress;
+            }
+            if (_popePanel != null && (force || pope != _lastPopeActive)) _popePanel.SetActive(pope);
+            _lastPopeActive = pope;
+            if (_popeFill != null && _skills != null)
+            {
+                float progress = _skills.PopeProgressNormalized;
+                if (force || !Mathf.Approximately(progress, _lastPopeProgress)) _popeFill.fillAmount = progress;
+                _lastPopeProgress = progress;
             }
             RefreshHoldVisuals(inhaling);
         }

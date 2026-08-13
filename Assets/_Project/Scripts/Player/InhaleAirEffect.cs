@@ -9,6 +9,7 @@ namespace DevouringBeast
         private PlayerController _controller;
         private ParticleSystem _particles;
         private ParticleSystem.MainModule _main;
+        private Material _particleMaterial;
         private float _emissionAccumulator;
         private const float ParticlesPerSecond = 42f;
         private const float InwardSpeed = 12f;
@@ -50,6 +51,14 @@ namespace DevouringBeast
             colorOverLifetime.color = alphaGradient;
             ParticleSystemRenderer renderer = _particles.GetComponent<ParticleSystemRenderer>();
             renderer.renderMode = ParticleSystemRenderMode.Stretch;
+            Shader particleShader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default") ?? Shader.Find("Sprites/Default");
+            if (particleShader != null)
+            {
+                _particleMaterial = new Material(particleShader);
+                renderer.material = _particleMaterial;
+                if (_particleMaterial.HasProperty("_Color")) _particleMaterial.SetColor("_Color", Color.white);
+                if (_particleMaterial.HasProperty("_BaseColor")) _particleMaterial.SetColor("_BaseColor", Color.white);
+            }
             renderer.velocityScale = 0.16f;
             renderer.lengthScale = 0.8f;
             renderer.sortingOrder = 95;
@@ -92,6 +101,11 @@ namespace DevouringBeast
                 };
                 _particles.Emit(emit, 1);
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (_particleMaterial != null) Destroy(_particleMaterial);
         }
     }
 }

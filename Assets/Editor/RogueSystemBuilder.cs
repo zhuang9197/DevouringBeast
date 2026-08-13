@@ -113,7 +113,7 @@ namespace DevouringBeast.Editor
             D(RogueSkillId.SuperPiece,RogueSchool.Superpower,"穿透","可穿透敌人；每次穿透伤害降低 20%，最多降低 60%。升级降低衰减。","super_piece",4),
             D(RogueSkillId.FaithAngel,RogueSchool.Faith,"天使","无消耗连续吐出；击杀升级不受种类池限制；排除吸入类技能。","faith_angel",0,false,true),
             D(RogueSkillId.FaithDemon,RogueSchool.Faith,"恶魔","吸力伤害大幅提高但不能吸入物体；击杀升级不受种类池限制；排除吐出类技能。","faith_demon",0,false,true),
-            D(RogueSkillId.FaithPope,RogueSchool.Faith,"教皇","吞噬变为教化，同时吐出附带肉鸽效果且强化的能量球。","faith_pope",0,false,true),
+            D(RogueSkillId.FaithPope,RogueSchool.Faith,"教皇","吞噬积累信徒召唤进度，进度满后召唤一名跟随玩家的信徒；信徒会按玩家方向攻击敌人。","faith_pope",0,false,true),
             D(RogueSkillId.FaithWitch,RogueSchool.Faith,"女巫","吞噬累积通灵进度，叠满后变身野兽吞吞滚动攻击；变身减伤 20%，升级提升减伤与滚动伤害。","faith_witch",0,false,true),
             D(RogueSkillId.Chef,RogueSchool.Normal,"厨师","所有食物在吞噬时提供的质量提升 5 点；每级额外提升 1 点。","chef",5),
             D(RogueSkillId.HotDogLover,RogueSchool.Normal,"热狗爱好者","解锁热狗。热狗提供 15 点质量（受厨师增益），并进入兴奋 5 秒，移动速度提升 30%；每级额外提升 5%。","hot_dog_lover",5),

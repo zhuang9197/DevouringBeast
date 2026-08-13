@@ -50,6 +50,8 @@ namespace DevouringBeast
         private bool _movementColliderInitialTrigger;
         private Vector2 _moveInput;
         private readonly Collider2D[] _beastOverlapBuffer = new Collider2D[64];
+        private readonly System.Collections.Generic.HashSet<int> _beastSpeedHitEnemies = new();
+        private readonly System.Collections.Generic.HashSet<int> _beastSpeedContactsThisFrame = new();
 
         private float _footstepTimer;
         private float _idleTimer;
@@ -120,7 +122,7 @@ namespace DevouringBeast
         public void ExtendBeastForm(float seconds) { if (_beastForm) _beastEndTime += Mathf.Max(0f, seconds); }
         public void ApplyBeastSpeedBoost(float amount, float duration)
         {
-            _beastSpeedBoost += Mathf.Max(0f, amount);
+            _beastSpeedBoost = Mathf.Clamp(_beastSpeedBoost + Mathf.Max(0f, amount), 0f, 0.35f);
             _beastSpeedBoostEnd = Mathf.Max(_beastSpeedBoostEnd, Time.time + Mathf.Max(0f, duration));
         }
         public float RunStepInterval
@@ -298,6 +300,8 @@ namespace DevouringBeast
         private System.Collections.IEnumerator BeastRoutine(float duration)
         {
             _beastForm = true;
+            _beastSpeedBoost = 0f;
+            _beastSpeedBoostEnd = 0f;
             _beastRolling = false;
             SetBeastRollingCollision(false);
             _beastHitThisFrame = false;
@@ -308,6 +312,7 @@ namespace DevouringBeast
             {
                 int hitCount = Physics2D.OverlapCircleNonAlloc(transform.position, beastHitRadius, _beastOverlapBuffer);
                 _beastHitThisFrame = false;
+                _beastSpeedContactsThisFrame.Clear();
                 for (int i = 0; i < hitCount; i++)
                 {
                     Collider2D hit = _beastOverlapBuffer[i];
@@ -319,11 +324,20 @@ namespace DevouringBeast
                         RogueSkillManager manager = RogueSkillManager.Active;
                         if (manager != null && manager.Has(RogueSkillId.WitchClaw))
                             EnemyStatusEffects.EnsureFor(enemy).ApplyPoison(3f + manager.GetLevel(RogueSkillId.WitchClaw) * 2f, 0.5f);
+                        int enemyId = enemy.GetInstanceID();
                         if (manager != null && manager.Has(RogueSkillId.WitchDeterrence))
-                            ApplyBeastSpeedBoost(0.2f + manager.GetLevel(RogueSkillId.WitchDeterrence) * 0.1f, 3f);
+                        {
+                            _beastSpeedContactsThisFrame.Add(enemyId);
+                            if (!_beastSpeedHitEnemies.Contains(enemyId))
+                            {
+                                _beastSpeedHitEnemies.Add(enemyId);
+                                ApplyBeastSpeedBoost(0.1f + Mathf.Max(0, manager.GetLevel(RogueSkillId.WitchDeterrence) - 1) * 0.1f, 3f);
+                            }
+                        }
                         _beastHitThisFrame = true;
                     }
                 }
+                _beastSpeedHitEnemies.RemoveWhere(id => !_beastSpeedContactsThisFrame.Contains(id));
                 if (_beastHitThisFrame && _beastHitSoundCooldown <= 0f)
                 {
                     AudioManager.Instance.PlaySfx(AudioCue.BeastHit);
@@ -334,6 +348,9 @@ namespace DevouringBeast
             }
             AudioManager.Existing?.StopLoop(AudioCue.Roll);
             _beastForm = false;
+            _beastSpeedBoost = 0f;
+            _beastSpeedBoostEnd = 0f;
+            _beastSpeedHitEnemies.Clear();
             _beastRolling = false;
             SetBeastRollingCollision(false);
             _lastBeastFacing = (Facing)(-1);
