@@ -12,13 +12,17 @@ namespace DevouringBeast.EditorTools
     /// </summary>
     public static class PlayerAnimDataBuilder
     {
-        private const string ASSET_PATH = "Assets/_Project/Settings/PlayerAnimData.asset";
+        private const string ASSET_PATH = "Assets/_Project/Config/Animation/PlayerAnimData.asset";
 
         [MenuItem("DevouringBeast/Build Player Anim Data")]
         public static void Build()
         {
-            var data = ScriptableObject.CreateInstance<PlayerAnimData>();
-            bool ok = true;
+            var data = AssetDatabase.LoadAssetAtPath<PlayerAnimData>(ASSET_PATH);
+            if (data == null)
+            {
+                data = ScriptableObject.CreateInstance<PlayerAnimData>();
+                AssetDatabase.CreateAsset(data, ASSET_PATH);
+            }
 
             // 静态精灵
             data.idleFront = LoadSprite("Assets/Art/Sprites/Player/front.png");
@@ -43,14 +47,6 @@ namespace DevouringBeast.EditorTools
             data.frontSuckWindupEnd = 14;
             data.backSuckWindupEnd = 10;
             data.sideSuckWindupEnd = 12;
-
-            // 删除旧资产
-            if (File.Exists(ASSET_PATH))
-            {
-                AssetDatabase.DeleteAsset(ASSET_PATH);
-            }
-
-            AssetDatabase.CreateAsset(data, ASSET_PATH);
 
             // 保存所有子精灵引用到 SO
             MarkSprites(data);

@@ -36,10 +36,25 @@ SpriteAtlas:
     bindAsDefault: 1
     isAtlasV2: 0
     cachedData: {fileID: 0}
-    packedSpriteRenderDataKeys: []
+    packedSpriteRenderDataKeys:
+    - dc169dc07d32f2e478367aded88488b0: 21300000
+    - dfd5375190629264ca698fe596901739: 21300000
+    - f300b74271d9dc74eb17efe472fd3cee: 21300000
+    - 0bf1a994e60d20e4a81d607f9c5103b7: 21300000
+    - 01b86fdfc229f524f856fa4c40586586: 21300000
   m_MasterAtlas: {fileID: 0}
-  m_PackedSprites: []
-  m_PackedSpriteNamesToIndex: []
+  m_PackedSprites:
+  - {fileID: 21300000, guid: dc169dc07d32f2e478367aded88488b0, type: 3}
+  - {fileID: 21300000, guid: dfd5375190629264ca698fe596901739, type: 3}
+  - {fileID: 21300000, guid: f300b74271d9dc74eb17efe472fd3cee, type: 3}
+  - {fileID: 21300000, guid: 0bf1a994e60d20e4a81d607f9c5103b7, type: 3}
+  - {fileID: 21300000, guid: 01b86fdfc229f524f856fa4c40586586, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - burn
+  - poisoning
+  - dizziness
+  - slowdown
+  - erosion
   m_RenderDataMap: {}
   m_Tag: Status
   m_IsVariant: 0

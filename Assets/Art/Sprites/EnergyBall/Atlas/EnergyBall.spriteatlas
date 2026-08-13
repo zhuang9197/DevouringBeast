@@ -36,10 +36,28 @@ SpriteAtlas:
     bindAsDefault: 1
     isAtlasV2: 0
     cachedData: {fileID: 0}
-    packedSpriteRenderDataKeys: []
+    packedSpriteRenderDataKeys:
+    - 09448428fc8f962468609eebf5544aa1: 21300000
+    - 87346f4a0f25c2448897224d4994f01c: 21300000
+    - 3b86a17c409f07f4892f2db5bc75638b: 21300000
+    - 4813e57cd220aa343a2ed85f37f335ff: 21300000
+    - 8c9f0e7ca8d235a47b52a84a05dc7bc2: 21300000
+    - c2ce68ec841451b43a8f4fbfee110460: 21300000
   m_MasterAtlas: {fileID: 0}
-  m_PackedSprites: []
-  m_PackedSpriteNamesToIndex: []
+  m_PackedSprites:
+  - {fileID: 21300000, guid: 09448428fc8f962468609eebf5544aa1, type: 3}
+  - {fileID: 21300000, guid: 87346f4a0f25c2448897224d4994f01c, type: 3}
+  - {fileID: 21300000, guid: 3b86a17c409f07f4892f2db5bc75638b, type: 3}
+  - {fileID: 21300000, guid: 4813e57cd220aa343a2ed85f37f335ff, type: 3}
+  - {fileID: 21300000, guid: 8c9f0e7ca8d235a47b52a84a05dc7bc2, type: 3}
+  - {fileID: 21300000, guid: c2ce68ec841451b43a8f4fbfee110460, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - bullet
+  - star
+  - glow
+  - ring
+  - trail
+  - fireball
   m_RenderDataMap: {}
   m_Tag: EnergyBall
   m_IsVariant: 0

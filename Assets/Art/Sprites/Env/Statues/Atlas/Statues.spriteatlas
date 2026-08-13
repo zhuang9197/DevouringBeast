@@ -36,10 +36,28 @@ SpriteAtlas:
     bindAsDefault: 1
     isAtlasV2: 0
     cachedData: {fileID: 0}
-    packedSpriteRenderDataKeys: []
+    packedSpriteRenderDataKeys:
+    - 15b6b3a05cc8da8438d33f3fc14035d3: 21300000
+    - 627f3eb0c5983484c975f4670923aa6c: 21300000
+    - 93be489446b20c640b7960c72b4c9c65: 21300000
+    - 412e35e781a8b3f4d817399d5c8465b2: 21300000
+    - 4d281f0812edd3742b67e8dc2d27fb36: 21300000
+    - 8392f19e5f6c5734a95f65b40c6e0155: 21300000
   m_MasterAtlas: {fileID: 0}
-  m_PackedSprites: []
-  m_PackedSpriteNamesToIndex: []
+  m_PackedSprites:
+  - {fileID: 21300000, guid: 15b6b3a05cc8da8438d33f3fc14035d3, type: 3}
+  - {fileID: 21300000, guid: 627f3eb0c5983484c975f4670923aa6c, type: 3}
+  - {fileID: 21300000, guid: 93be489446b20c640b7960c72b4c9c65, type: 3}
+  - {fileID: 21300000, guid: 412e35e781a8b3f4d817399d5c8465b2, type: 3}
+  - {fileID: 21300000, guid: 4d281f0812edd3742b67e8dc2d27fb36, type: 3}
+  - {fileID: 21300000, guid: 8392f19e5f6c5734a95f65b40c6e0155, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - demon_statue_destory
+  - pope_statue
+  - pope_statue_destory
+  - angel_statue
+  - demon_statue
+  - angel_statue_destory
   m_RenderDataMap: {}
   m_Tag: Statues
   m_IsVariant: 0

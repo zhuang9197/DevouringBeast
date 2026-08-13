@@ -36,10 +36,28 @@ SpriteAtlas:
     bindAsDefault: 1
     isAtlasV2: 0
     cachedData: {fileID: 0}
-    packedSpriteRenderDataKeys: []
+    packedSpriteRenderDataKeys:
+    - 141eb8a06d547a1478c2668b89eaf746: 21300000
+    - 4d6f6f78ff9bd5445820fed6e9fc6ae2: 21300000
+    - 3f785af8edca84148a3ed33d03a4df93: 21300000
+    - b09beb5bbb9f8b047973277096c442e8: 21300000
+    - 721db10c9630338468c9666e3955dd03: 21300000
+    - ebe2067cd281d32419f664dcb2895092: 21300000
   m_MasterAtlas: {fileID: 0}
-  m_PackedSprites: []
-  m_PackedSpriteNamesToIndex: []
+  m_PackedSprites:
+  - {fileID: 21300000, guid: 141eb8a06d547a1478c2668b89eaf746, type: 3}
+  - {fileID: 21300000, guid: 4d6f6f78ff9bd5445820fed6e9fc6ae2, type: 3}
+  - {fileID: 21300000, guid: 3f785af8edca84148a3ed33d03a4df93, type: 3}
+  - {fileID: 21300000, guid: b09beb5bbb9f8b047973277096c442e8, type: 3}
+  - {fileID: 21300000, guid: 721db10c9630338468c9666e3955dd03, type: 3}
+  - {fileID: 21300000, guid: ebe2067cd281d32419f664dcb2895092, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - believer_side
+  - believer_front
+  - dark_believer_back
+  - dark_believer_side
+  - believer_back
+  - dark_believer_front
   m_RenderDataMap: {}
   m_Tag: Believers
   m_IsVariant: 0

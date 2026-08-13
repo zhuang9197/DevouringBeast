@@ -12,6 +12,12 @@ namespace DevouringBeast
 
         public static bool IsUnlocked(RogueSkillId id)
         {
+            if (GameManager.Existing != null && GameManager.Existing.IsTestMode)
+            {
+                if (id == RogueSkillId.FaithDemon || id == RogueSkillId.FaithAngel ||
+                    id == RogueSkillId.FaithPope || id == RogueSkillId.FaithWitch)
+                    return true;
+            }
             return id switch
             {
                 RogueSkillId.FaithDemon => PlayerPrefs.GetInt(DemonKey, 0) != 0,
