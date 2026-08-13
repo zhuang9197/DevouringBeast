@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -28,15 +29,15 @@ namespace DevouringBeast.EditorTools
             data.fullSide = LoadSprite("Assets/Art/Sprites/Player/full_side.png");
 
             // 动画帧
-            data.frontRun = LoadSortedSprites("Assets/Art/Sprites/Player/Atlas/front_run.png");
-            data.frontFullWalk = LoadSortedSprites("Assets/Art/Sprites/Player/Atlas/front_full_walk.png");
-            data.frontSuck = LoadSortedSprites("Assets/Art/Sprites/Player/Atlas/front_suck.png");
-            data.backRun = LoadSortedSprites("Assets/Art/Sprites/Player/Atlas/back_run.png");
-            data.backFullWalk = LoadSortedSprites("Assets/Art/Sprites/Player/Atlas/back_full_walk.png");
-            data.backSuck = LoadSortedSprites("Assets/Art/Sprites/Player/Atlas/back_suck.png");
-            data.sideRun = LoadSortedSprites("Assets/Art/Sprites/Player/Atlas/side_run.png");
-            data.sideFullWalk = LoadSortedSprites("Assets/Art/Sprites/Player/Atlas/side_full_walk.png");
-            data.sideSuck = LoadSortedSprites("Assets/Art/Sprites/Player/Atlas/side_suck.png");
+            data.frontRun = LoadSortedSprites("Assets/Art/Sprites/Player/Textures/front_run");
+            data.frontFullWalk = LoadSortedSprites("Assets/Art/Sprites/Player/Textures/front_full_walk");
+            data.frontSuck = LoadSortedSprites("Assets/Art/Sprites/Player/Textures/front_suck");
+            data.backRun = LoadSortedSprites("Assets/Art/Sprites/Player/Textures/back_run");
+            data.backFullWalk = LoadSortedSprites("Assets/Art/Sprites/Player/Textures/back_full_walk");
+            data.backSuck = LoadSortedSprites("Assets/Art/Sprites/Player/Textures/back_suck");
+            data.sideRun = LoadSortedSprites("Assets/Art/Sprites/Player/Textures/side_run");
+            data.sideFullWalk = LoadSortedSprites("Assets/Art/Sprites/Player/Textures/side_full_walk");
+            data.sideSuck = LoadSortedSprites("Assets/Art/Sprites/Player/Textures/side_suck");
 
             // Suck 分帧点
             data.frontSuckWindupEnd = 14;
@@ -70,7 +71,10 @@ namespace DevouringBeast.EditorTools
 
         private static Sprite[] LoadSortedSprites(string path)
         {
-            var allObjs = AssetDatabase.LoadAllAssetsAtPath(path);
+            var allObjs = AssetDatabase.FindAssets("t:Sprite", new[] { path })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Select(assetPath => AssetDatabase.LoadAssetAtPath<Sprite>(assetPath))
+                .Where(sprite => sprite != null).Cast<Object>();
             var list = new List<Sprite>();
             foreach (var o in allObjs)
             {

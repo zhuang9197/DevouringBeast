@@ -141,6 +141,7 @@ namespace DevouringBeast
             SpiderOvary ovary = other.GetComponentInParent<SpiderOvary>();
             if (ovary != null)
             {
+                AudioManager.Instance.PlaySfx(AudioCue.Hit);
                 ovary.TakeDamage(_snapshot != null ? _snapshot.Damage : 0f);
                 Release();
                 return;
@@ -182,6 +183,7 @@ namespace DevouringBeast
                 SpiderOvary ovary = collider.GetComponentInParent<SpiderOvary>();
                 if (ovary != null)
                 {
+                    AudioManager.Instance.PlaySfx(AudioCue.Hit);
                     ovary.TakeDamage(_snapshot != null ? _snapshot.Damage : 0f);
                     Release();
                     continue;

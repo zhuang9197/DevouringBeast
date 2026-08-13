@@ -47,6 +47,7 @@ namespace DevouringBeast
         private PlayerBaseAttributes _baseAttributes;
         private SwallowContainer _swallowContainer;
         private Collider2D _movementCollider;
+        private bool _movementColliderInitialTrigger;
         private Vector2 _moveInput;
         private readonly Collider2D[] _beastOverlapBuffer = new Collider2D[64];
 
@@ -75,6 +76,9 @@ namespace DevouringBeast
         private float beastDamagePerSecond;
         private float beastDamagePerLevel;
         private float beastHitSoundInterval;
+        private float _beastEndTime;
+        private float _beastSpeedBoost;
+        private float _beastSpeedBoostEnd;
 
         // 状态
         public Facing CurrentFacing { get; private set; } = Facing.Front;
@@ -113,6 +117,12 @@ namespace DevouringBeast
                 Mathf.Max(0, _witchLevel - 1) * beastDamageReductionPerLevel);
         public bool IsBeastRolling => _beastForm && _beastRolling;
         public float BeastRollingSpeedMultiplier => beastRollingSpeedMultiplier;
+        public void ExtendBeastForm(float seconds) { if (_beastForm) _beastEndTime += Mathf.Max(0f, seconds); }
+        public void ApplyBeastSpeedBoost(float amount, float duration)
+        {
+            _beastSpeedBoost += Mathf.Max(0f, amount);
+            _beastSpeedBoostEnd = Mathf.Max(_beastSpeedBoostEnd, Time.time + Mathf.Max(0f, duration));
+        }
         public float RunStepInterval
         {
             get => runStepInterval;
@@ -169,11 +179,21 @@ namespace DevouringBeast
             _rb.interpolation = RigidbodyInterpolation2D.Interpolate;
             _rb.useFullKinematicContacts = true;
             _movementCollider = GetComponent<Collider2D>();
+            if (_movementCollider != null)
+                _movementColliderInitialTrigger = _movementCollider.isTrigger;
             _swallowContainer = GetComponent<SwallowContainer>();
             if (spriteRenderer == null)
                 spriteRenderer = GetComponentInChildren<SpriteRenderer>();
             if (frameAnimator == null)
                 frameAnimator = GetComponentInChildren<FrameAnimator>();
+            ResizeMovementCollider(config);
+        }
+
+        private System.Collections.IEnumerator Start()
+        {
+            // FrameAnimator applies the first visible sprite after Awake.
+            yield return null;
+            ResizeMovementCollider(GameBalance.Current?.Player);
         }
 
         // ============================================================
@@ -204,7 +224,8 @@ namespace DevouringBeast
             float currentMoveSpeed = _baseAttributes != null ? _baseAttributes.MoveSpeed : moveSpeed;
             if (_beastForm)
                 return currentMoveSpeed * _skillMoveSpeedMultiplier *
-                    _foodMoveSpeedMultiplier * (_moveInput.sqrMagnitude > 0.001f ? beastRollingSpeedMultiplier : 1f);
+                    _foodMoveSpeedMultiplier * (1f + (Time.time < _beastSpeedBoostEnd ? _beastSpeedBoost : 0f)) *
+                    (_moveInput.sqrMagnitude > 0.001f ? beastRollingSpeedMultiplier : 1f);
             if (_isInhaling)
             {
                 // 吸入时：无技能不能动，有技能可以慢移
@@ -278,11 +299,12 @@ namespace DevouringBeast
         {
             _beastForm = true;
             _beastRolling = false;
+            SetBeastRollingCollision(false);
             _beastHitThisFrame = false;
             _beastHitSoundCooldown = 0f;
             _lastBeastFacing = (Facing)(-1);
-            float end = Time.time + duration;
-            while (Time.time < end)
+            _beastEndTime = Time.time + duration;
+            while (Time.time < _beastEndTime)
             {
                 int hitCount = Physics2D.OverlapCircleNonAlloc(transform.position, beastHitRadius, _beastOverlapBuffer);
                 _beastHitThisFrame = false;
@@ -294,6 +316,11 @@ namespace DevouringBeast
                     {
                         enemy.TakeDamage(beastDamagePerSecond *
                             (1f + _witchLevel * beastDamagePerLevel) * Time.deltaTime);
+                        RogueSkillManager manager = RogueSkillManager.Active;
+                        if (manager != null && manager.Has(RogueSkillId.WitchClaw))
+                            EnemyStatusEffects.EnsureFor(enemy).ApplyPoison(3f + manager.GetLevel(RogueSkillId.WitchClaw) * 2f, 0.5f);
+                        if (manager != null && manager.Has(RogueSkillId.WitchDeterrence))
+                            ApplyBeastSpeedBoost(0.2f + manager.GetLevel(RogueSkillId.WitchDeterrence) * 0.1f, 3f);
                         _beastHitThisFrame = true;
                     }
                 }
@@ -308,6 +335,7 @@ namespace DevouringBeast
             AudioManager.Existing?.StopLoop(AudioCue.Roll);
             _beastForm = false;
             _beastRolling = false;
+            SetBeastRollingCollision(false);
             _lastBeastFacing = (Facing)(-1);
             _lastAppliedState = (PlayerState)(-1);
         }
@@ -476,6 +504,7 @@ namespace DevouringBeast
                     };
                     frameAnimator.Stop(idle);
                     _beastRolling = false;
+                    SetBeastRollingCollision(false);
                     AudioManager.Existing?.StopLoop(AudioCue.Roll);
                     _lastBeastFacing = CurrentFacing;
                     return;
@@ -486,6 +515,7 @@ namespace DevouringBeast
                 {
                     frameAnimator.PlayThenLoop(frames, 0, introEnd, loopStart, loopEnd);
                     _beastRolling = true;
+                    SetBeastRollingCollision(true);
                     AudioManager.Instance.PlayLoop(AudioCue.Roll);
                 }
                 else if (_lastBeastFacing != CurrentFacing)
@@ -545,6 +575,31 @@ namespace DevouringBeast
                     }
                     break;
             }
+        }
+
+        private void SetBeastRollingCollision(bool rolling)
+        {
+            if (_movementCollider != null)
+                _movementCollider.isTrigger = rolling || _movementColliderInitialTrigger;
+        }
+
+        private void ResizeMovementCollider(PlayerBalanceSettings config)
+        {
+            if (_movementCollider is not CircleCollider2D circle || config == null) return;
+            circle.radius = Mathf.Max(circle.radius, config.minimumColliderRadius);
+            if (spriteRenderer == null || spriteRenderer.sprite == null) return;
+
+            Vector2 visualSize = spriteRenderer.bounds.size;
+            float rootScale = Mathf.Max(0.0001f,
+                Mathf.Max(Mathf.Abs(transform.lossyScale.x), Mathf.Abs(transform.lossyScale.y)));
+            float visualRadius = Mathf.Min(visualSize.x, visualSize.y) * 0.5f *
+                config.visualColliderRadiusScale / rootScale;
+            circle.radius = Mathf.Max(circle.radius, visualRadius);
+        }
+
+        private void OnDisable()
+        {
+            SetBeastRollingCollision(false);
         }
 
         private static void GetBeastAnimationRange(Facing facing, Sprite[] frames,

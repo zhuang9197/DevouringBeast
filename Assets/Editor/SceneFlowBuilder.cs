@@ -102,6 +102,11 @@ namespace DevouringBeast.EditorTools
             SetClip(serialized, "beastHit", "Assets/Audio/SFX/Env/hit.wav");
             SetClip(serialized, "bossDie", "Assets/Audio/SFX/Enemy/boss_die.wav");
             SetClip(serialized, "enemyDie", "Assets/Audio/SFX/Enemy/enemy_die.wav");
+            SetClip(serialized, "rebound", "Assets/Audio/SFX/Enemy/rebound.wav");
+            SetClip(serialized, "meatMountainLand", "Assets/Audio/SFX/Enemy/bong.wav");
+            SetClip(serialized, "babyCry", "Assets/Audio/SFX/Enemy/baby_cry.wav");
+            SetClip(serialized, "satanLaugh", "Assets/Audio/SFX/Enemy/satan_laugh.wav");
+            SetClip(serialized, "dash", "Assets/Audio/SFX/Enemy/sou.wav");
             SetClip(serialized, "hit", "Assets/Audio/SFX/Env/hit.wav");
             SetClip(serialized, "bomb", "Assets/Audio/SFX/Env/bomb.wav");
             SetClip(serialized, "levelUp", "Assets/Audio/SFX/Env/level_up.wav");

@@ -31,17 +31,24 @@ namespace DevouringBeast.Editor
             catalog.slowdownIcon = LoadSprite("Assets/Art/Sprites/Rogue/status/slowdown.png");
             catalog.dizzinessIcon = LoadSprite("Assets/Art/Sprites/Rogue/status/dizziness.png");
             catalog.erosionIcon = LoadSprite("Assets/Art/Sprites/Rogue/status/erosion.png");
-            catalog.skillIcons = AssetDatabase.LoadAllAssetsAtPath("Assets/Art/Sprites/Rogue/Skills/skills.png")
-                .OfType<Sprite>().OrderBy(sprite => sprite.name).ToList();
-            AddIcon(catalog.skillIcons, "Assets/Art/Sprites/Rogue/Skills/chef.png");
-            AddIcon(catalog.skillIcons, "Assets/Art/Sprites/Rogue/Skills/hot_dog_lover.png");
-            AddIcon(catalog.skillIcons, "Assets/Art/Sprites/Rogue/Skills/sushi_master.png");
+            catalog.skillIcons = AssetDatabase.FindAssets("t:Sprite", new[] { "Assets/Art/Sprites/Rogue/Skills/Textures" })
+                .Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.LoadAssetAtPath<Sprite>)
+                .Where(sprite => sprite != null).OrderBy(sprite => sprite.name).ToList();
+            AddIcon(catalog.skillIcons, "Assets/Art/Sprites/Rogue/Skills/Textures/chef.png");
+            AddIcon(catalog.skillIcons, "Assets/Art/Sprites/Rogue/Skills/Textures/hot_dog_lover.png");
+            AddIcon(catalog.skillIcons, "Assets/Art/Sprites/Rogue/Skills/Textures/sushi_master.png");
             catalog.beastFront = LoadSprite("Assets/Art/Sprites/Player/beast_front.png");
             catalog.beastBack = LoadSprite("Assets/Art/Sprites/Player/beast_back.png");
             catalog.beastSide = LoadSprite("Assets/Art/Sprites/Player/beast_side.png");
-            catalog.beastFrontRoll = LoadSprites("Assets/Art/Sprites/Player/Atlas/beast_front_roll.png");
-            catalog.beastBackRoll = LoadSprites("Assets/Art/Sprites/Player/Atlas/beast_back_roll.png");
-            catalog.beastSideRoll = LoadSprites("Assets/Art/Sprites/Player/Atlas/beast_side_roll.png");
+            catalog.beastFrontRoll = LoadSprites("Assets/Art/Sprites/Player/Textures/beast_front_roll");
+            catalog.beastBackRoll = LoadSprites("Assets/Art/Sprites/Player/Textures/beast_back_roll");
+            catalog.beastSideRoll = LoadSprites("Assets/Art/Sprites/Player/Textures/beast_side_roll");
+            catalog.believerFront = LoadSprite("Assets/Art/Sprites/Summon/Players/Textures/believer_front.png");
+            catalog.believerSide = LoadSprite("Assets/Art/Sprites/Summon/Players/Textures/believer_side.png");
+            catalog.believerBack = LoadSprite("Assets/Art/Sprites/Summon/Players/Textures/believer_back.png");
+            catalog.darkBelieverFront = LoadSprite("Assets/Art/Sprites/Summon/Players/Textures/dark_believer_front.png");
+            catalog.darkBelieverSide = LoadSprite("Assets/Art/Sprites/Summon/Players/Textures/dark_believer_side.png");
+            catalog.darkBelieverBack = LoadSprite("Assets/Art/Sprites/Summon/Players/Textures/dark_believer_back.png");
             catalog.progressBar = LoadSubSprite("Assets/Art/Sprites/UI/UI_Fixed.png", "progress_bar");
             catalog.progressFill = LoadSubSprite("Assets/Art/Sprites/UI/UI_Fixed.png", "progress_fill");
             catalog.joystick = LoadSubSprite("Assets/Art/Sprites/UI/UI_Fixed.png", "joystick");
@@ -111,6 +118,15 @@ namespace DevouringBeast.Editor
             D(RogueSkillId.Chef,RogueSchool.Normal,"厨师","所有食物在吞噬时提供的质量提升 5 点；每级额外提升 1 点。","chef",5),
             D(RogueSkillId.HotDogLover,RogueSchool.Normal,"热狗爱好者","解锁热狗。热狗提供 15 点质量（受厨师增益），并进入兴奋 5 秒，移动速度提升 30%；每级额外提升 5%。","hot_dog_lover",5),
             D(RogueSkillId.SushiMaster,RogueSchool.Normal,"寿司大师","解锁寿司。寿司提供 15 点质量（受厨师增益），有 50% 概率回复半点生命、10% 概率提升半点生命上限；每级概率分别提升 5% 和 3%。","sushi_master",5)
+            ,D(RogueSkillId.DemonFear,RogueSchool.Faith,"恐惧","吸力造成伤害时，减少目标 20% 移动速度；每级提升 20%，最大 100%。","demon_fear",5,false,false,RogueSkillId.FaithDemon)
+            ,D(RogueSkillId.DemonContempt,RogueSchool.Faith,"蔑视","拥有 60 度的额外吸力范围；每级提升 60 度。","demon_contempt",5,false,false,RogueSkillId.FaithDemon)
+            ,D(RogueSkillId.DemonKing,RogueSchool.Faith,"魔王","消灭敌人时发射一次完整效果能量球；每级提升发射能量球增幅。","demon_king",5,false,false,RogueSkillId.FaithDemon)
+            ,D(RogueSkillId.PopeBelief,RogueSchool.Faith,"信仰","增加信徒攻击速度，缩短攻击间隔 0.1 秒。","pope_belief",5,false,false,RogueSkillId.FaithPope)
+            ,D(RogueSkillId.PopePray,RogueSchool.Faith,"祈祷","增加信徒能量球威力 10%。","pope_pray",5,false,false,RogueSkillId.FaithPope)
+            ,D(RogueSkillId.PopeBaptism,RogueSchool.Faith,"洗礼","升级一个信徒，使其主动追寻攻击敌人。","pope_baptism",5,false,false,RogueSkillId.FaithPope)
+            ,D(RogueSkillId.WitchClaw,RogueSchool.Faith,"利爪","野兽吞吞滚动造成流血伤害。","witch_claw1",5,false,false,RogueSkillId.FaithWitch)
+            ,D(RogueSkillId.WitchDeterrence,RogueSchool.Faith,"威慑","野兽滚动撞击敌人时增加速度。","witch_deterrence",5,false,false,RogueSkillId.FaithWitch)
+            ,D(RogueSkillId.WitchRoar,RogueSchool.Faith,"咆哮","击杀时增加野兽进度值。","witch_roar",5,false,false,RogueSkillId.FaithWitch)
         };
 
         private static void AddIcon(List<Sprite> icons, string path)
@@ -130,8 +146,9 @@ namespace DevouringBeast.Editor
         private static Sprite LoadSprite(string path) => AssetDatabase.LoadAssetAtPath<Sprite>(path);
         private static Sprite LoadSubSprite(string path, string name) => AssetDatabase.LoadAllAssetsAtPath(path)
             .OfType<Sprite>().FirstOrDefault(sprite => sprite.name == name);
-        private static Sprite[] LoadSprites(string path) => AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>()
-            .OrderBy(sprite => NaturalIndex(sprite.name)).ToArray();
+        private static Sprite[] LoadSprites(string path) => AssetDatabase.FindAssets("t:Sprite", new[] { path })
+            .Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.LoadAssetAtPath<Sprite>)
+            .Where(sprite => sprite != null).OrderBy(sprite => NaturalIndex(sprite.name)).ToArray();
         private static int NaturalIndex(string name)
         {
             string digits = new(name.Reverse().TakeWhile(char.IsDigit).Reverse().ToArray());

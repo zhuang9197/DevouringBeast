@@ -81,7 +81,12 @@ namespace DevouringBeast
 
         private void OnEnable() => ActiveActors.Add(this);
 
-        private void OnDisable() => ActiveActors.Remove(this);
+        private void OnDisable()
+        {
+            ActiveActors.Remove(this);
+            if (Archetype == EnemyArchetype.Baby)
+                AudioManager.Existing?.StopIntervalLoop(AudioCue.BabyCry);
+        }
 
         public void SetSpawnPosition(Vector2 position)
         {
@@ -139,6 +144,7 @@ namespace DevouringBeast
                 spriteRenderer.transform.localPosition = _visualRestingPosition;
                 spriteRenderer.transform.localScale = _visualRestingScale;
             }
+            ResizeColliderToVisual();
             GetComponent<GroundShadow>()?.SetVisible(true);
             ConfigureWhiteVariants();
             FindPlayer();
@@ -204,7 +210,9 @@ namespace DevouringBeast
 
             if (type == EnemyArchetype.Bat)
                 _moveDirection = GetBatCirclingDirection(toPlayer);
-            else if (type == EnemyArchetype.Fly || type == EnemyArchetype.Mushroom)
+            else if (type == EnemyArchetype.Fly)
+                _moveDirection = GetFlyCirclingDirection();
+            else if (type == EnemyArchetype.Mushroom)
                 Wander(NextWanderInterval());
             else if (type == EnemyArchetype.BloodBag)
                 UpdateBloodBagMovement(toPlayer);
@@ -253,6 +261,26 @@ namespace DevouringBeast
                 tangent * Behavior.orbitTangentWeight +
                 CalculateSeparation() * Behavior.orbitSeparationWeight;
             return Vector2.ClampMagnitude(velocity, 1f);
+        }
+
+        private Vector2 GetFlyCirclingDirection()
+        {
+            float radius = Mathf.Max(0.5f, Behavior != null ? Behavior.proximityRange : 0f);
+            Vector2 offset = _body.position - _spawnPoint;
+            float distance = offset.magnitude;
+            Vector2 radial = distance > 0.05f
+                ? offset / distance
+                : new Vector2(Mathf.Cos(_steeringPhase), Mathf.Sin(_steeringPhase));
+            Vector2 tangent = new Vector2(-radial.y, radial.x) * _steeringSide;
+            float radialCorrection = Mathf.Clamp((radius - distance) / radius, -1f, 1f);
+            float tangentWeight = Mathf.Max(0.2f, Behavior != null ? Behavior.orbitTangentWeight : 1f);
+            float correctionWeight = Mathf.Max(0.75f,
+                Behavior != null ? Behavior.orbitAngularSpeed * 0.25f : 1f);
+            Vector2 velocity = tangent * tangentWeight + radial * (radialCorrection * correctionWeight);
+            if (_commonBalance != null)
+                velocity += CalculateSeparation() * Mathf.Max(0f,
+                    Behavior != null ? Behavior.orbitSeparationWeight : 0f);
+            return velocity.sqrMagnitude > 0.001f ? velocity.normalized : tangent;
         }
 
         private Vector2 ApplyChaseSteering(Vector2 baseDirection)
@@ -372,6 +400,7 @@ namespace DevouringBeast
             _busy = true;
             bool scream = (_actionIndex++ & 1) == 0;
             PlayState(scream ? "SkillA" : "SkillB");
+            AudioManager.Instance.PlayIntervalLoop(AudioCue.BabyCry, 0.3f);
             if (scream)
             {
                 yield return new WaitForSeconds(0.5f);
@@ -392,6 +421,7 @@ namespace DevouringBeast
                     yield return new WaitForSeconds(1f);
                 }
             }
+            AudioManager.Existing?.StopIntervalLoop(AudioCue.BabyCry);
             _busy = false;
             ResetAttackTimer();
         }
@@ -417,6 +447,8 @@ namespace DevouringBeast
             _busy = true;
             PlayState("SkillA");
             bool invulnerableInAir = Archetype == EnemyArchetype.Satan;
+            if (Archetype == EnemyArchetype.Satan)
+                AudioManager.Instance.PlaySfx(AudioCue.SatanLaugh);
             if (invulnerableInAir) _enemy.IsInvulnerable = true;
             yield return MoveVisualHeight(0f, Behavior.jumpHeight, Behavior.takeoffDuration, true);
             float airborneStarted = Time.time;
@@ -460,9 +492,11 @@ namespace DevouringBeast
                 yield return MoveVisualHeight(relocatedHeight, 0f, Behavior.landingDuration, false);
                 if (_collider != null) _collider.enabled = true;
                 Physics2D.SyncTransforms();
-                yield return new WaitForFixedUpdate();
                 _enemy.IsInvulnerable = false;
-                DamagePlayerOnContact(4, true);
+                AudioManager.Instance.PlaySfx(AudioCue.MeatMountainLand);
+                SpawnMeatMountainLandingVfx();
+                Camera.main?.GetComponent<CameraFollow>()?.Shake(0.5f, 0.22f);
+                DamagePlayerInRadius(2f, 4, true);
                 ShootRadial(16, 1f);
             }
             else
@@ -604,6 +638,7 @@ namespace DevouringBeast
         private IEnumerator DashRoutineInternal(float speedRatio, float duration, string state)
         {
             PlayState(state);
+            AudioManager.Instance.PlaySfx(AudioCue.Dash);
             Vector2 direction = _player != null ? ((Vector2)_player.position - _body.position).normalized : Vector2.right;
             _moveDirection = direction;
             UpdateFacingAndAnimation();
@@ -633,6 +668,7 @@ namespace DevouringBeast
             PlayState("PhaseTwoDashPrepare");
             yield return new WaitForSeconds(Mathf.Max(0f, Behavior.dashPreparationDuration));
 
+            AudioManager.Instance.PlaySfx(AudioCue.Dash);
             PlayState("PhaseTwoDashLoop");
             float speed = MovementSpeedSystem.EnemyToWorld(GetDashSpeed());
             float end = Time.time + Mathf.Max(0f, Behavior.dashDuration);
@@ -866,20 +902,35 @@ namespace DevouringBeast
             int count = Mathf.Clamp(_dashCount++, 3, 7);
             for (int i = 0; i < count; i++)
             {
-                Vector2 direction = _player != null
-                    ? ((Vector2)_player.position - _body.position).normalized
-                    : Vector2.right;
-                _moveDirection = direction;
-                UpdateFacingAndAnimation();
                 PlayState("GloomyDashPrepare");
                 yield return new WaitForSeconds(Mathf.Max(0f, Behavior.dashPreparationDuration));
+                Vector2 target = _player != null ? (Vector2)_player.position : _body.position + Vector2.right;
+                if (MapBounds.Instance != null) target = MapBounds.Instance.ClampPosition(target);
+                Vector2 direction = target - _body.position;
+                _moveDirection = direction.sqrMagnitude > 0.001f ? direction.normalized : Vector2.zero;
+                UpdateFacingAndAnimation();
+                AudioManager.Instance.PlaySfx(AudioCue.Dash);
                 PlayState("GloomyDashLoop");
-                yield return MoveDashInDirection(direction, GetDashSpeed(), Behavior.dashDuration);
+                yield return MoveDashToTarget(target, GetDashSpeed());
                 yield return new WaitForSeconds(Mathf.Max(0f, Behavior.dashRecoveryDuration));
             }
             PlayState("Idle");
             yield return new WaitForSeconds(5f);
             _busy = false;
+        }
+
+        private IEnumerator MoveDashToTarget(Vector2 target, float speedRatio)
+        {
+            float speed = Mathf.Max(0.01f, MovementSpeedSystem.EnemyToWorld(speedRatio));
+            while ((_body.position - target).sqrMagnitude > 0.0025f)
+            {
+                Vector2 delta = target - _body.position;
+                _moveDirection = delta.normalized;
+                _body.MovePosition(Vector2.MoveTowards(_body.position, target, speed * Time.deltaTime));
+                yield return null;
+            }
+            _body.position = target;
+            _moveDirection = Vector2.zero;
         }
 
         private IEnumerator MoveDashInDirection(Vector2 direction, float speedRatio, float duration)
@@ -902,13 +953,18 @@ namespace DevouringBeast
             bool reflects = Archetype == EnemyArchetype.GreenBubble || HasVariant(WhiteEnemyVariant.Pink);
             if (!reflects || Random.value >= 0.5f) return false;
             PlayState("SkillA");
-            _playerHealth?.TakeDamage(2);
+            AudioManager.Instance.PlaySfx(AudioCue.Rebound);
+            if (_player != null)
+                SpawnProjectile(transform.position, (Vector2)_player.position - _body.position,
+                    GetAimedProjectileSpeed(), 2f, false);
             return true;
         }
 
         public void PlayDeathPresentation()
         {
             StopAllCoroutines();
+            if (Archetype == EnemyArchetype.Baby)
+                AudioManager.Existing?.StopIntervalLoop(AudioCue.BabyCry);
             _massGrowthRoutine = null;
             SetVisualHeight(0f);
             SetMassGrowthVisual(0f);
@@ -921,6 +977,15 @@ namespace DevouringBeast
             EnemyData data = _enemy.Data;
             EnemyDeathMode mode = data != null ? data.deathMode : EnemyDeathMode.DropChest;
             float animationDuration = data != null ? data.deathAnimationDuration : 1f;
+            if (mode == EnemyDeathMode.StaticDeathSprite)
+            {
+                if (animator != null) animator.enabled = false;
+                if (spriteRenderer != null)
+                {
+                    spriteRenderer.enabled = true;
+                    if (data != null && data.deathSprite != null) spriteRenderer.sprite = data.deathSprite;
+                }
+            }
             if (mode == EnemyDeathMode.DeathAnimationKeepLastFrame || mode == EnemyDeathMode.DeathAnimationDropChest)
             {
                 PlayState("Death");
@@ -1019,6 +1084,44 @@ namespace DevouringBeast
             renderer.sortingOrder = 12;
             particles.Play();
             Destroy(effect, 0.6f);
+        }
+
+        private void SpawnMeatMountainLandingVfx()
+        {
+            GameObject effect = new("MeatMountainLandingSmoke", typeof(ParticleSystem));
+            effect.transform.position = transform.position;
+            ParticleSystem particles = effect.GetComponent<ParticleSystem>();
+            ParticleSystem.MainModule main = particles.main;
+            main.loop = false;
+            main.duration = 0.45f;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.35f, 0.65f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(2.5f, 4.2f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.3f, 0.65f);
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(0.72f, 0.68f, 0.62f, 0.85f), new Color(0.35f, 0.32f, 0.3f, 0.55f));
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            ParticleSystem.EmissionModule emission = particles.emission;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 36) });
+            ParticleSystem.ShapeModule shape = particles.shape;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 0.35f;
+            ParticleSystemRenderer renderer = particles.GetComponent<ParticleSystemRenderer>();
+            renderer.material = EnemyFireHazard.SharedParticleMaterial;
+            renderer.sortingOrder = 12;
+            particles.Play();
+            Destroy(effect, 0.8f);
+        }
+
+        private void ResizeColliderToVisual()
+        {
+            if (_collider is not CircleCollider2D circle || spriteRenderer == null ||
+                spriteRenderer.sprite == null || _commonBalance == null) return;
+            Vector2 visualSize = spriteRenderer.bounds.size;
+            float rootScale = Mathf.Max(0.0001f,
+                Mathf.Max(Mathf.Abs(transform.lossyScale.x), Mathf.Abs(transform.lossyScale.y)));
+            float visualRadius = Mathf.Min(visualSize.x, visualSize.y) * 0.5f *
+                _commonBalance.visualColliderRadiusScale / rootScale;
+            circle.radius = Mathf.Max(_commonBalance.minimumColliderRadius, visualRadius);
         }
 
         private void TryContactDamage()
@@ -1243,13 +1346,16 @@ namespace DevouringBeast
 
         private void UpdateFacingAndAnimation()
         {
+            float facingX = Archetype == EnemyArchetype.Bat && _player != null
+                ? _player.position.x - _body.position.x
+                : _moveDirection.x;
             if (spriteRenderer != null &&
-                Mathf.Abs(_moveDirection.x) >= _commonBalance.horizontalFacingDeadZone)
+                Mathf.Abs(facingX) >= _commonBalance.horizontalFacingDeadZone)
             {
                 bool phaseTwoFacesRight = Archetype == EnemyArchetype.LittleSatan && _phaseTwo;
                 spriteRenderer.flipX = phaseTwoFacesRight
-                    ? _moveDirection.x < 0f
-                    : _moveDirection.x > 0f;
+                    ? facingX < 0f
+                    : facingX > 0f;
             }
             if (animator != null && animator.enabled) animator.SetBool("IsMoving", _moveDirection.sqrMagnitude > 0.01f);
         }

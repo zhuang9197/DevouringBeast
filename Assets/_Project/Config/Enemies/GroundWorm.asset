@@ -22,7 +22,7 @@ MonoBehaviour:
   attackCooldown: 2
   detectRange: 40
   aimedProjectileSpeed: 8
-  radialProjectileSpeed: 7
+  radialProjectileSpeed: 10
   behavior:
     wanderIntervalRange: {x: 1.5, y: 1.5}
     proximityRange: 0

@@ -9,6 +9,8 @@ namespace DevouringBeast
     [RequireComponent(typeof(SpriteRenderer), typeof(Collider2D))]
     public sealed class StatueController : MonoBehaviour
     {
+        public static event System.Action<StatueKind, InhaleableItem> OnOfferingConsumed;
+        public static event System.Action<StatueKind> OnStatueUsed;
         private StatueKind _kind;
         private Vector2Int _room;
         private FloorMapManager _floor;
@@ -131,11 +133,13 @@ namespace DevouringBeast
                     if (RogueSkillManager.Active == null || !RogueSkillManager.Active.RequestBasicStatueChoice()) return;
                     health.TrySpendHealth(cost);
                     _usedWhileInside = true;
+                    OnStatueUsed?.Invoke(_kind);
                     break;
                 case StatueKind.Pope:
                     if (!health.TrySpendHealth(cost)) return;
                     _food?.AddFoodToCurrentRoom(_balance != null ? _balance.popeFoodPerHealth : 3);
                     _usedWhileInside = true;
+                    OnStatueUsed?.Invoke(_kind);
                     break;
                 case StatueKind.Demon:
                     int nextTouch = _touchCount + 1;
@@ -153,6 +157,7 @@ namespace DevouringBeast
                     _touchCount = nextTouch;
                     if (_touchCount >= 36) SetDestroyed();
                     _usedWhileInside = true;
+                    OnStatueUsed?.Invoke(_kind);
                     break;
             }
         }
@@ -168,6 +173,7 @@ namespace DevouringBeast
             if (item == null || item.GetComponent<FoodItem>() != null || item.IsAlive || item.IsBeingInhaled) return;
             int amount = _balance != null ? _balance.popeFoodPerOffering : 1;
             _food?.AddFoodToCurrentRoom(Mathf.Max(1, amount));
+            OnOfferingConsumed?.Invoke(_kind, item);
             item.ReleaseFromMouth();
         }
 

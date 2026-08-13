@@ -28,7 +28,7 @@ MonoBehaviour:
     proximityRange: 4
     specialMoveSpeed: 1.2
     dashSpeed: 0
-    jumpSpeed: 1.4
+    jumpSpeed: 2
     fireballFallDuration: 0
     dashDuration: 0.5
     movementCycleDuration: 3

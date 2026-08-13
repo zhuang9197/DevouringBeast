@@ -20,9 +20,10 @@ MonoBehaviour:
       1%\u3002"
     iconName: normal_fast
     maxLevel: 0
-    prerequisites:
+    prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 1
     school: 0
     displayName: "\u5927\u5587\u53ED"
@@ -30,9 +31,10 @@ MonoBehaviour:
       1%\u3002"
     iconName: normal_suction
     maxLevel: 0
-    prerequisites:
+    prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 2
     school: 0
     displayName: "\u5410\u5410\u5410"
@@ -40,9 +42,10 @@ MonoBehaviour:
       1%\u3002"
     iconName: normal_power
     maxLevel: 0
-    prerequisites:
+    prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 3
     school: 1
     displayName: "\u81F4\u547D\u6BD2\u7D20"
@@ -51,9 +54,10 @@ MonoBehaviour:
       +1\u3002"
     iconName: poison_deadly
     maxLevel: 5
-    prerequisites:
+    prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 4
     school: 1
     displayName: "\u795E\u7ECF\u6BD2\u7D20"
@@ -61,18 +65,20 @@ MonoBehaviour:
       +10%\u3002"
     iconName: poison_numb
     maxLevel: 5
-    prerequisites:
+    prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 5
     school: 1
     displayName: "\u4FB5\u8680\u6BD2\u7D20"
     description: "\u547D\u4E2D\u589E\u52A0\u4FB5\u8680\uFF1B3 \u5C42\u540E\u518D\u6B21\u547D\u4E2D\u5F15\u7206\uFF0C\u9020\u6210\u4E09\u500D\u4F24\u5BB3\u548C\u5DF2\u635F\u751F\u547D\u503C\u4F24\u5BB3\u3002"
     iconName: poison_erode
     maxLevel: 5
-    prerequisites:
+    prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 6
     school: 1
     displayName: "\u8718\u86DB\u75C5\u6BD2"
@@ -80,9 +86,10 @@ MonoBehaviour:
       +5%\u3002"
     iconName: poison_warp
     maxLevel: 5
-    prerequisites:
+    prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 7
     school: 1
     displayName: "\u539F\u5B50\u5371\u673A-\u6BD2"
@@ -92,6 +99,7 @@ MonoBehaviour:
     prerequisites: 0300000014000000
     requiresMaxPrerequisites: 1
     mythic: 1
+    appearanceProbability: 1
   - id: 8
     school: 2
     displayName: "\u708E\u7206\u7403"
@@ -99,9 +107,10 @@ MonoBehaviour:
       30% \u8303\u56F4\u7206\u70B8\u4F24\u5BB3\u3002"
     iconName: fire_pyroblast
     maxLevel: 1
-    prerequisites:
+    prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 9
     school: 2
     displayName: "\u708E\u7206\u7403-\u708E"
@@ -111,6 +120,7 @@ MonoBehaviour:
     prerequisites: 08000000
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 10
     school: 2
     displayName: "\u708E\u7206\u7403-\u7206"
@@ -120,6 +130,7 @@ MonoBehaviour:
     prerequisites: 08000000
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 11
     school: 2
     displayName: "\u71C3\u70E7\u74F6"
@@ -127,9 +138,10 @@ MonoBehaviour:
       10% \u707C\u70E7\u4F24\u5BB3\u4F46\u4E0D\u5EF6\u957F\u65F6\u95F4\u3002"
     iconName: fire_bottle
     maxLevel: 5
-    prerequisites:
+    prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 12
     school: 2
     displayName: "\u539F\u5B50\u5371\u673A-\u706B"
@@ -139,6 +151,7 @@ MonoBehaviour:
     prerequisites: 0b00000014000000
     requiresMaxPrerequisites: 1
     mythic: 1
+    appearanceProbability: 1
   - id: 13
     school: 3
     displayName: "\u7FC5\u8180"
@@ -148,6 +161,7 @@ MonoBehaviour:
     prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 14
     school: 3
     displayName: "\u5927\u5634"
@@ -158,6 +172,7 @@ MonoBehaviour:
     prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 15
     school: 3
     displayName: "\u5C16\u5634"
@@ -168,6 +183,7 @@ MonoBehaviour:
     prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 16
     school: 3
     displayName: "\u591A\u5634"
@@ -178,6 +194,7 @@ MonoBehaviour:
     prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 17
     school: 3
     displayName: "\u591A\u5634-\u591A"
@@ -187,6 +204,7 @@ MonoBehaviour:
     prerequisites: 10000000
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 18
     school: 3
     displayName: "\u591A\u5634-\u5F3A"
@@ -196,6 +214,7 @@ MonoBehaviour:
     prerequisites: 10000000
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 19
     school: 4
     displayName: "\u5206\u88C2"
@@ -205,6 +224,7 @@ MonoBehaviour:
     prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 20
     school: 4
     displayName: "\u5206\u88C2-\u88C2\u53D8"
@@ -214,6 +234,7 @@ MonoBehaviour:
     prerequisites: 13000000
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 21
     school: 4
     displayName: "\u7A7F\u900F"
@@ -224,6 +245,7 @@ MonoBehaviour:
     prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 22
     school: 5
     displayName: "\u5929\u4F7F"
@@ -233,6 +255,7 @@ MonoBehaviour:
     prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 1
+    appearanceProbability: 1
   - id: 23
     school: 5
     displayName: "\u6076\u9B54"
@@ -242,6 +265,7 @@ MonoBehaviour:
     prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 1
+    appearanceProbability: 1
   - id: 24
     school: 5
     displayName: "\u6559\u7687"
@@ -251,6 +275,7 @@ MonoBehaviour:
     prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 1
+    appearanceProbability: 1
   - id: 25
     school: 5
     displayName: "\u5973\u5DEB"
@@ -261,6 +286,7 @@ MonoBehaviour:
     prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 1
+    appearanceProbability: 1
   - id: 26
     school: 0
     displayName: "\u53A8\u5E08"
@@ -268,9 +294,10 @@ MonoBehaviour:
       5 \u70B9\uFF1B\u6BCF\u7EA7\u989D\u5916\u63D0\u5347 1 \u70B9\u3002"
     iconName: chef
     maxLevel: 5
-    prerequisites:
+    prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 27
     school: 0
     displayName: "\u70ED\u72D7\u7231\u597D\u8005"
@@ -279,9 +306,10 @@ MonoBehaviour:
       5%\u3002"
     iconName: hot_dog_lover
     maxLevel: 5
-    prerequisites:
+    prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
   - id: 28
     school: 0
     displayName: "\u5BFF\u53F8\u5927\u5E08"
@@ -290,9 +318,104 @@ MonoBehaviour:
       5% \u548C 3%\u3002"
     iconName: sushi_master
     maxLevel: 5
-    prerequisites:
+    prerequisites: 
     requiresMaxPrerequisites: 0
     mythic: 0
+    appearanceProbability: 1
+  - id: 29
+    school: 5
+    displayName: "\u6050\u60E7"
+    description: "\u5438\u529B\u9020\u6210\u4F24\u5BB3\u65F6\uFF0C\u51CF\u5C11\u76EE\u6807
+      20% \u79FB\u52A8\u901F\u5EA6\uFF1B\u6BCF\u7EA7\u63D0\u5347 20%\uFF0C\u6700\u5927
+      100%\u3002"
+    iconName: demon_fear
+    maxLevel: 5
+    prerequisites: 17000000
+    requiresMaxPrerequisites: 0
+    mythic: 0
+    appearanceProbability: 1
+  - id: 30
+    school: 5
+    displayName: "\u8511\u89C6"
+    description: "\u62E5\u6709 60 \u5EA6\u7684\u989D\u5916\u5438\u529B\u8303\u56F4\uFF1B\u6BCF\u7EA7\u63D0\u5347
+      60 \u5EA6\u3002"
+    iconName: demon_contempt
+    maxLevel: 5
+    prerequisites: 17000000
+    requiresMaxPrerequisites: 0
+    mythic: 0
+    appearanceProbability: 1
+  - id: 31
+    school: 5
+    displayName: "\u9B54\u738B"
+    description: "\u6D88\u706D\u654C\u4EBA\u65F6\u53D1\u5C04\u4E00\u6B21\u5B8C\u6574\u6548\u679C\u80FD\u91CF\u7403\uFF1B\u6BCF\u7EA7\u63D0\u5347\u53D1\u5C04\u80FD\u91CF\u7403\u589E\u5E45\u3002"
+    iconName: demon_king
+    maxLevel: 5
+    prerequisites: 17000000
+    requiresMaxPrerequisites: 0
+    mythic: 0
+    appearanceProbability: 1
+  - id: 32
+    school: 5
+    displayName: "\u4FE1\u4EF0"
+    description: "\u589E\u52A0\u4FE1\u5F92\u653B\u51FB\u901F\u5EA6\uFF0C\u7F29\u77ED\u653B\u51FB\u95F4\u9694
+      0.1 \u79D2\u3002"
+    iconName: pope_belief
+    maxLevel: 5
+    prerequisites: 18000000
+    requiresMaxPrerequisites: 0
+    mythic: 0
+    appearanceProbability: 1
+  - id: 33
+    school: 5
+    displayName: "\u7948\u7977"
+    description: "\u589E\u52A0\u4FE1\u5F92\u80FD\u91CF\u7403\u5A01\u529B 10%\u3002"
+    iconName: pope_pray
+    maxLevel: 5
+    prerequisites: 18000000
+    requiresMaxPrerequisites: 0
+    mythic: 0
+    appearanceProbability: 1
+  - id: 34
+    school: 5
+    displayName: "\u6D17\u793C"
+    description: "\u5347\u7EA7\u4E00\u4E2A\u4FE1\u5F92\uFF0C\u4F7F\u5176\u4E3B\u52A8\u8FFD\u5BFB\u653B\u51FB\u654C\u4EBA\u3002"
+    iconName: pope_baptism
+    maxLevel: 5
+    prerequisites: 18000000
+    requiresMaxPrerequisites: 0
+    mythic: 0
+    appearanceProbability: 1
+  - id: 35
+    school: 5
+    displayName: "\u5229\u722A"
+    description: "\u91CE\u517D\u541E\u541E\u6EDA\u52A8\u9020\u6210\u6D41\u8840\u4F24\u5BB3\u3002"
+    iconName: witch_claw1
+    maxLevel: 5
+    prerequisites: 19000000
+    requiresMaxPrerequisites: 0
+    mythic: 0
+    appearanceProbability: 1
+  - id: 36
+    school: 5
+    displayName: "\u5A01\u6151"
+    description: "\u91CE\u517D\u6EDA\u52A8\u649E\u51FB\u654C\u4EBA\u65F6\u589E\u52A0\u901F\u5EA6\u3002"
+    iconName: witch_deterrence
+    maxLevel: 5
+    prerequisites: 19000000
+    requiresMaxPrerequisites: 0
+    mythic: 0
+    appearanceProbability: 1
+  - id: 37
+    school: 5
+    displayName: "\u5486\u54EE"
+    description: "\u51FB\u6740\u65F6\u589E\u52A0\u91CE\u517D\u8FDB\u5EA6\u503C\u3002"
+    iconName: witch_roar
+    maxLevel: 5
+    prerequisites: 19000000
+    requiresMaxPrerequisites: 0
+    mythic: 0
+    appearanceProbability: 1
   rogueSelectionBackground: {fileID: 21300000, guid: bfb46e5f3b517df4c8acd4f7adf4b265, type: 3}
   buttonBackground: {fileID: 21300000, guid: 24e1370cee8dc5c47a883dbae8991109, type: 3}
   poisoningIcon: {fileID: 21300000, guid: dfd5375190629264ca698fe596901739, type: 3}
@@ -301,83 +424,96 @@ MonoBehaviour:
   dizzinessIcon: {fileID: 21300000, guid: f300b74271d9dc74eb17efe472fd3cee, type: 3}
   erosionIcon: {fileID: 21300000, guid: 01b86fdfc229f524f856fa4c40586586, type: 3}
   skillIcons:
-  - {fileID: -1834384168, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 1890729244, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: -36375205, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 752601275, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 418712894, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 2035992106, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: -1646373469, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 103468264, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: -148057732, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 55744089, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: -596605067, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: -1594321890, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 100373835, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 784069034, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 2007345384, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 1393786345, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 180831601, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: -198390187, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 1822292980, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: -1237827271, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 1737304741, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: -1712623927, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 203167036, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 891152605, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 1356075383, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 574212206, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: -1570154030, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: -245499389, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 1106063324, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 312752899, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: -803120186, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: -442289397, guid: aa96e5c6b0f028d4483bbba61b509bb8, type: 3}
-  - {fileID: 21300000, guid: 685cb7c8370eb424e8d318fdabb73b63, type: 3}
-  - {fileID: 21300000, guid: 39790ff8514efdb469a4db3f77981cf0, type: 3}
-  - {fileID: 21300000, guid: c934f6fd17c6a144ea902fb6a9b22bad, type: 3}
+  - {fileID: 21300000, guid: 679c6d67d5f5997479676d05fa2ea6c0, type: 3}
+  - {fileID: 21300000, guid: b49d0495359195542bab4b8e40429ad3, type: 3}
+  - {fileID: 21300000, guid: 76e8c2fca1fb5d347a7aa6895388c056, type: 3}
+  - {fileID: 21300000, guid: fae22138074dfc94398d9339aece3fd5, type: 3}
+  - {fileID: 21300000, guid: c8834462ac2221f459fa823be08a4d67, type: 3}
+  - {fileID: 21300000, guid: 020d90b496a7da44b8df0eecb125327d, type: 3}
+  - {fileID: 21300000, guid: 9eb11ed0ac4fbf94abf7f8100dbafb50, type: 3}
+  - {fileID: 21300000, guid: 2e92519e2f8d2294ea99ab09fea8b33f, type: 3}
+  - {fileID: 21300000, guid: 62f912f299e5b034d880e7335e41c5be, type: 3}
+  - {fileID: 21300000, guid: 8a3da8d8f8769c24c813070afd1129ca, type: 3}
+  - {fileID: 21300000, guid: cd2f68bd044e4074cb5b2a25f7d97775, type: 3}
+  - {fileID: 21300000, guid: 6f252308caaa1934ea59f47370de4a3d, type: 3}
+  - {fileID: 21300000, guid: 368d7f9134ce4824cb75da43414dbe97, type: 3}
+  - {fileID: 21300000, guid: c7337cbb4e93dbc4085f67bc92949336, type: 3}
+  - {fileID: 21300000, guid: 9d376393939dae444981b1ab452ad1f1, type: 3}
+  - {fileID: 21300000, guid: 28d34f942f30ef7488bc2d4dbcbaec3f, type: 3}
+  - {fileID: 21300000, guid: 34b063f52b55300448c91f71c0b6a05d, type: 3}
+  - {fileID: 21300000, guid: cc3bf48433f5b0746b4219933065fbd3, type: 3}
+  - {fileID: 21300000, guid: 73fa39cb0e60f42469b22f0649298d80, type: 3}
+  - {fileID: 21300000, guid: 2fad33be482cabd488f478fb33f262d0, type: 3}
+  - {fileID: 21300000, guid: 5aa658e2bc45d394ab9bd62cb79dbef5, type: 3}
+  - {fileID: 21300000, guid: d5cce0c8a9556914d85ffb53478265f8, type: 3}
+  - {fileID: 21300000, guid: 317f1e682c525f64280f38936a447f63, type: 3}
+  - {fileID: 21300000, guid: 98402eab69a0add408b560daab034002, type: 3}
+  - {fileID: 21300000, guid: cdf6b890b2b87824a96fee2bfef2f713, type: 3}
+  - {fileID: 21300000, guid: 0768fc6ab90debc48ae92c8a1cc9257c, type: 3}
+  - {fileID: 21300000, guid: 91fab39e8582581449f5f159f7bf1f17, type: 3}
+  - {fileID: 21300000, guid: ed3e3fe713ac2224f8cc867f4c04455a, type: 3}
+  - {fileID: 21300000, guid: 97099ed312f0ad44489091a33259260e, type: 3}
+  - {fileID: 21300000, guid: eb162a0b3e846a64fa442295f064cf08, type: 3}
+  - {fileID: 21300000, guid: 6dff8b44018f3a24897ff2044cecebd8, type: 3}
+  - {fileID: 21300000, guid: 40e40aeeee898f144a36bd6c1b39e10d, type: 3}
+  - {fileID: 21300000, guid: 3f74e7fc1a3926644bf3d5c42c777f9d, type: 3}
+  - {fileID: 21300000, guid: eab0f4b1d5344e84e9ca8f469dbba317, type: 3}
+  - {fileID: 21300000, guid: 1fdfa154d98c3f342acb1e2cb81dd6f0, type: 3}
+  - {fileID: 21300000, guid: 25b007a3c7ac3e24ebce25f69a9fef3c, type: 3}
+  - {fileID: 21300000, guid: 6e42c336ec3590b4b9c03b6af986746d, type: 3}
+  - {fileID: 21300000, guid: 51deddd167c4686428e5eae24eaa082c, type: 3}
+  - {fileID: 21300000, guid: ca7a5aa1754761c4da2773acb62eb0f0, type: 3}
+  - {fileID: 21300000, guid: f308085eafa8f4343bda289dae9cfc0d, type: 3}
+  - {fileID: 21300000, guid: 0710c49ff12358f4d99833dbff843c5c, type: 3}
+  - {fileID: 21300000, guid: f9a9f0167dd06ed46bcd000771a54254, type: 3}
+  - {fileID: 21300000, guid: 5f47599c37227104597eb7c2df9a738f, type: 3}
+  - {fileID: 21300000, guid: 131b5cb5c68f5e344b27f60af273a91a, type: 3}
+  - {fileID: 21300000, guid: 9bbdb59ca6944bb489c22394b533ab9f, type: 3}
+  - {fileID: 21300000, guid: 679c6d67d5f5997479676d05fa2ea6c0, type: 3}
+  - {fileID: 21300000, guid: d5cce0c8a9556914d85ffb53478265f8, type: 3}
+  - {fileID: 21300000, guid: 0710c49ff12358f4d99833dbff843c5c, type: 3}
   beastFront: {fileID: 21300000, guid: 84c3ecbf584a91849b370bc821d80a90, type: 3}
   beastBack: {fileID: 21300000, guid: 8d49cf0cf8f307f48bb957b3e7359c1a, type: 3}
   beastSide: {fileID: 21300000, guid: 78f8ebb79a67d9c43809366b6bccc874, type: 3}
   beastFrontRoll:
-  - {fileID: 1181365867, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
-  - {fileID: 1598568844, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
-  - {fileID: 651205277, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
-  - {fileID: -1724915046, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
-  - {fileID: -1880399125, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
-  - {fileID: 1806591254, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
-  - {fileID: 280984557, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
-  - {fileID: -1057616504, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
-  - {fileID: -2133956237, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
-  - {fileID: 659088438, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
-  - {fileID: -1203916821, guid: 43c965c9882c8574ab76bd2f15a52179, type: 3}
+  - {fileID: 21300000, guid: c2841ee06f818f249befd0429c2eaa37, type: 3}
+  - {fileID: 21300000, guid: b37594326474d024fa3b81f1917dc39f, type: 3}
+  - {fileID: 21300000, guid: 0718fe343f6de9946a2027694fe9e739, type: 3}
+  - {fileID: 21300000, guid: af6e5135d78d61d4aa7476c60c480ccc, type: 3}
+  - {fileID: 21300000, guid: 13bf9fd9056caea42af57a7439a7d6ca, type: 3}
+  - {fileID: 21300000, guid: 3348706c85d703c42b38aecc3465ba32, type: 3}
+  - {fileID: 21300000, guid: bf3d9a79d3e14a441a049cec5c239d01, type: 3}
+  - {fileID: 21300000, guid: dac8fbd1b24a7b34e8c5c989fbc063c2, type: 3}
+  - {fileID: 21300000, guid: b81f3bee9590e28478e117111cb0ae9b, type: 3}
+  - {fileID: 21300000, guid: e620eecf8372a234085cd5b90fc13edb, type: 3}
+  - {fileID: 21300000, guid: 14cd2a75084f843429421a0233671178, type: 3}
   beastBackRoll:
-  - {fileID: 464737321, guid: 719b79848e45af6439a46471866c3405, type: 3}
-  - {fileID: -805154315, guid: 719b79848e45af6439a46471866c3405, type: 3}
-  - {fileID: -151678553, guid: 719b79848e45af6439a46471866c3405, type: 3}
-  - {fileID: -95844610, guid: 719b79848e45af6439a46471866c3405, type: 3}
-  - {fileID: 267917419, guid: 719b79848e45af6439a46471866c3405, type: 3}
-  - {fileID: -286337171, guid: 719b79848e45af6439a46471866c3405, type: 3}
-  - {fileID: 931601976, guid: 719b79848e45af6439a46471866c3405, type: 3}
-  - {fileID: -1124336453, guid: 719b79848e45af6439a46471866c3405, type: 3}
-  - {fileID: 261925970, guid: 719b79848e45af6439a46471866c3405, type: 3}
-  - {fileID: -1251394395, guid: 719b79848e45af6439a46471866c3405, type: 3}
-  - {fileID: -904561616, guid: 719b79848e45af6439a46471866c3405, type: 3}
-  - {fileID: -129725460, guid: 719b79848e45af6439a46471866c3405, type: 3}
-  - {fileID: 127504435, guid: 719b79848e45af6439a46471866c3405, type: 3}
+  - {fileID: 21300000, guid: 56db3aa5f39bcfd4fba1dcc4209d778d, type: 3}
+  - {fileID: 21300000, guid: 64f5205b8476dcd4f93de6e6d856d693, type: 3}
+  - {fileID: 21300000, guid: f066014a184f8ea499e792892f91c1e1, type: 3}
+  - {fileID: 21300000, guid: 578eb3963cfc4bd48886af988f226c59, type: 3}
+  - {fileID: 21300000, guid: 6809bd073de53e04ea5e6e5dc73ac7bb, type: 3}
+  - {fileID: 21300000, guid: 323679ac2ffd3244ea257ca219ce8514, type: 3}
+  - {fileID: 21300000, guid: 85cb6d494bae65b4aac500f9548e5e2b, type: 3}
+  - {fileID: 21300000, guid: c4cf983a3b3dd0b4787e40d6c87b60a5, type: 3}
+  - {fileID: 21300000, guid: a5a72fe3b4559304aac0e91e171309ad, type: 3}
+  - {fileID: 21300000, guid: f726713ddade42e43866a26296fe684e, type: 3}
+  - {fileID: 21300000, guid: b04d08ab2e1f570419d94e0969316f5b, type: 3}
+  - {fileID: 21300000, guid: ba3400528d8d4b949b5c5be88b8f8283, type: 3}
+  - {fileID: 21300000, guid: 9ed64e49f309d304cb08c9895e61f1d0, type: 3}
   beastSideRoll:
-  - {fileID: -867113762, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
-  - {fileID: 560571115, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
-  - {fileID: 1640333022, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
-  - {fileID: 991218528, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
-  - {fileID: 1164612200, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
-  - {fileID: -1917107786, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
-  - {fileID: -389325226, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
-  - {fileID: -1208744613, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
-  - {fileID: -1580879485, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
-  - {fileID: -1172008297, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
-  - {fileID: 2049509907, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
-  - {fileID: -1702053761, guid: a86464664a36fa3489d57d22040f9a09, type: 3}
+  - {fileID: 21300000, guid: 93afa9f8449214240ace004f9221f0b0, type: 3}
+  - {fileID: 21300000, guid: e8a34331f04e136459c2b13dbdcdeb2e, type: 3}
+  - {fileID: 21300000, guid: 409048237a8d479419c5916d25169fb1, type: 3}
+  - {fileID: 21300000, guid: de5eb7c3ecf0cd543a7b87ed9f4380e8, type: 3}
+  - {fileID: 21300000, guid: 47cb23fc019b4f74790d43b9983bf8cf, type: 3}
+  - {fileID: 21300000, guid: 2b4e084d91e0613409b23aa29c662fba, type: 3}
+  - {fileID: 21300000, guid: 0e4be3eb8f50dc44ab771d4791ab26dc, type: 3}
+  - {fileID: 21300000, guid: 2df0957f5ad60b74aab6d49654f45e8d, type: 3}
+  - {fileID: 21300000, guid: d689da9176ceef34d868d95b029f7b94, type: 3}
+  - {fileID: 21300000, guid: 3a9678438bc481040852ae9cbc6006d2, type: 3}
+  - {fileID: 21300000, guid: cb45ed5092da164419fa0a639f2818ab, type: 3}
+  - {fileID: 21300000, guid: 953448b0440f4324695b32d03c67e8ce, type: 3}
   progressBar: {fileID: 660413493, guid: 80347a96a3162e8488b88dbbbea46db7, type: 3}
   progressFill: {fileID: 1411078167, guid: 80347a96a3162e8488b88dbbbea46db7, type: 3}
   joystick: {fileID: -1080228524, guid: 80347a96a3162e8488b88dbbbea46db7, type: 3}

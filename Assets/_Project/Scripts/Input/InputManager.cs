@@ -248,11 +248,9 @@ public void HandleSwallowPress()
         private void PerformSwallow()
         {
             if (swallowContainer == null || !swallowContainer.CanConsume) return;
-            float taughtMass = swallowContainer.Consume(true);
+            float consumedMass = swallowContainer.Consume(true);
             AudioManager.Instance.PlaySfx(AudioCue.Swallow);
-            if (_rogueSkills != null && _rogueSkills.Has(RogueSkillId.FaithPope))
-                playerSpit?.SpitTeachingBall(taughtMass);
-            _rogueSkills?.NotifySwallow();
+            _rogueSkills?.NotifySwallow(consumedMass);
             if (playerSpit != null && playerSpit.IsCharging) playerSpit.StopCharge();
             swallowContainer.CheckAndNotify();
         }

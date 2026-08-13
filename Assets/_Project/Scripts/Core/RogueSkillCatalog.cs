@@ -15,7 +15,10 @@ namespace DevouringBeast
         EvolutionMoreMouthMore, EvolutionMoreMouthPower,
         SuperSplit, SuperSplitMore, SuperPiece,
         FaithAngel, FaithDemon, FaithPope, FaithWitch,
-        Chef, HotDogLover, SushiMaster
+        Chef, HotDogLover, SushiMaster,
+        DemonFear, DemonContempt, DemonKing,
+        PopeBelief, PopePray, PopeBaptism,
+        WitchClaw, WitchDeterrence, WitchRoar
     }
 
     [Serializable]
@@ -30,6 +33,7 @@ namespace DevouringBeast
         public RogueSkillId[] prerequisites = Array.Empty<RogueSkillId>();
         public bool requiresMaxPrerequisites;
         public bool mythic;
+        [Range(0f, 1f)] public float appearanceProbability = 1f;
         public bool IsMaxLevel(int level) => maxLevel > 0 && level >= maxLevel;
     }
 
@@ -45,6 +49,8 @@ namespace DevouringBeast
         public Sprite[] beastFrontRoll = Array.Empty<Sprite>();
         public Sprite[] beastBackRoll = Array.Empty<Sprite>();
         public Sprite[] beastSideRoll = Array.Empty<Sprite>();
+        public Sprite believerFront, believerSide, believerBack;
+        public Sprite darkBelieverFront, darkBelieverSide, darkBelieverBack;
         [Header("Gameplay UI")]
         public Sprite progressBar, progressFill, joystick, suckButton, spitButton, swallowButton;
         public Sprite healthBar, healthFill;

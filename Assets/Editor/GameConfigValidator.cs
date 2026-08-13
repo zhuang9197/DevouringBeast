@@ -46,6 +46,8 @@ namespace DevouringBeast.Editor
         {
             if (config.Player.baseMoveSpeed <= 0f) errors.Add("Player base move speed must be positive.");
             if (config.Player.maxHealth <= 0) errors.Add("Player maximum health must be positive.");
+            if (config.Player.visualColliderRadiusScale <= 0f || config.Player.minimumColliderRadius <= 0f)
+                errors.Add("Player visual collider scale and minimum radius must be positive.");
             if (config.Inhale.radius <= 0f || config.Inhale.maximumDuration <= 0f)
                 errors.Add("Inhale radius and duration must be positive.");
             if (config.Spit.speed <= 0f || config.Spit.maximumDistance <= 0f)
@@ -59,6 +61,8 @@ namespace DevouringBeast.Editor
                 errors.Add("Enemy normalized speed limit must be positive.");
             if (config.Enemy.separationRadius <= 0f)
                 errors.Add("Enemy separation radius must be positive.");
+            if (config.Enemy.visualColliderRadiusScale <= 0f || config.Enemy.minimumColliderRadius <= 0f)
+                errors.Add("Enemy visual collider scale and minimum radius must be positive.");
             if (config.Enemy.fireballFallHeight <= 0f || config.Enemy.fireballOffscreenPadding <= 0f ||
                 config.Enemy.fireballFallDuration <= 0f || config.Enemy.fireballVisualScale <= 0f ||
                 config.Enemy.fireballParticleScale <= 0f || config.Enemy.fireballLandingMarkerScale <= 0f ||

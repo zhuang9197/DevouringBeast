@@ -15,7 +15,7 @@ MonoBehaviour:
   displayName: Gloomy
   archetype: 11
   tier: 1
-  maxHealth: 100
+  maxHealth: 200
   attackDamage: 1
   moveSpeed: 1
   attackRange: 0.8
@@ -27,7 +27,7 @@ MonoBehaviour:
     wanderIntervalRange: {x: 1.5, y: 1.5}
     proximityRange: 0
     specialMoveSpeed: 1.75
-    dashSpeed: 1.75
+    dashSpeed: 2
     jumpSpeed: 0
     fireballFallDuration: 0
     dashDuration: 0.35

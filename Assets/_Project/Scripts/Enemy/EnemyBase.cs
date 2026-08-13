@@ -201,10 +201,10 @@ namespace DevouringBeast
         protected virtual void Die()
         {
             
-            bool bossRoom = WaveManager.Instance != null && WaveManager.Instance.CurrentRoomKind == RoomKind.Boss;
-            AudioManager.Instance.PlaySfx(bossRoom ? AudioCue.BossDie : AudioCue.EnemyDie);
+            AudioManager.Instance.PlaySfx(IsBossArchetype(data != null ? data.archetype : default)
+                ? AudioCue.BossDie : AudioCue.EnemyDie);
 
-_isDead = true;
+            _isDead = true;
 
             // 更新 InhaleableItem：死后质量和阈值
             if (_item != null)
@@ -249,6 +249,13 @@ _isDead = true;
                 return;
             }
             MakeCorpseInhaleable();
+        }
+
+        private static bool IsBossArchetype(EnemyArchetype archetype)
+        {
+            return archetype == EnemyArchetype.Baby || archetype == EnemyArchetype.SkeletonMan ||
+                archetype == EnemyArchetype.LittleSatan || archetype == EnemyArchetype.Satan ||
+                archetype == EnemyArchetype.MeatMountain;
         }
 
         public void MakeCorpseInhaleable()

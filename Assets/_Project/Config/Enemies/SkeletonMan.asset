@@ -22,7 +22,7 @@ MonoBehaviour:
   attackCooldown: 3
   detectRange: 40
   aimedProjectileSpeed: 8
-  radialProjectileSpeed: 7
+  radialProjectileSpeed: 20
   behavior:
     wanderIntervalRange: {x: 1.5, y: 1.5}
     proximityRange: 0
@@ -30,7 +30,7 @@ MonoBehaviour:
     dashSpeed: 1.8
     jumpSpeed: 0
     fireballFallDuration: 0
-    dashDuration: 0.7
+    dashDuration: 2
     movementCycleDuration: 3
     movementActiveDuration: 2
     movementIdleDuration: 1

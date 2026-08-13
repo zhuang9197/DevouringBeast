@@ -63,10 +63,10 @@ namespace DevouringBeast
         /// <summary>
         /// 受到伤害
         /// </summary>
-public void TakeDamage(int damage)
+        public void TakeDamage(int damage)
         {
             _controller?.NotifyPlayerActivity();
-            if (IsTestMode || _isInvincible || IsDead) return;
+            if (IsTestMode || _isInvincible || IsDead || (_controller != null && _controller.IsBeastRolling)) return;
 
             if (_controller != null && _controller.IsBeastForm)
                 damage = Mathf.Max(1, Mathf.CeilToInt(damage * (1f - _controller.BeastDamageReduction)));

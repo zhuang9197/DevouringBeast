@@ -162,7 +162,8 @@ namespace DevouringBeast.Editor
             body.gravityScale = 0f;
             body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
             CircleCollider2D collider = root.GetComponent<CircleCollider2D>();
-            collider.radius = 0.42f;
+            collider.radius = Mathf.Max(0.5f,
+                Mathf.Min(renderer.bounds.size.x, renderer.bounds.size.y) * 0.4f);
             InhaleableItem item = root.GetComponent<InhaleableItem>();
             item.Mass = data.massValue;
             item.AliveInhaleThreshold = data.aliveInhaleThreshold;

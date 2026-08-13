@@ -18,14 +18,16 @@ MonoBehaviour:
     baseEnergyBallDamage: 25
     maxHealth: 10
     invincibleDuration: 1
-    fullWalkSpeedMultiplier: 0.8
+    visualColliderRadiusScale: 0.8
+    minimumColliderRadius: 0.55
+    fullWalkSpeedMultiplier: 0.7
     inhaleWalkSpeedMultiplier: 0.5
-    runStepInterval: 0.28
-    walkStepInterval: 0.42
-    idleSoundDelay: 8
-    idleSoundRepeatInterval: 12
-    knockbackDuration: 0.12
-    beastRollingSpeedMultiplier: 1.4
+    runStepInterval: 0.5
+    walkStepInterval: 0.45
+    idleSoundDelay: 16
+    idleSoundRepeatInterval: 20
+    knockbackDuration: 0.3
+    beastRollingSpeedMultiplier: 1.5
     beastDamageReductionBase: 0.2
     beastDamageReductionPerLevel: 0.05
     beastDamageReductionLimit: 0.9
@@ -62,7 +64,7 @@ MonoBehaviour:
     multipleMouthPowerPerLevel: 0.1
     maximumBallCount: 4
   food:
-    initialFoodPerRoom: 30
+    initialFoodPerRoom: 50
     refreshBatchSize: 10
     maxActiveFood: 20
     refreshSeconds: 10
@@ -101,8 +103,10 @@ MonoBehaviour:
     contactKnockbackDistance: 0.65
     areaKnockbackDistance: 2
     contactCooldown: 0.75
-    aimedProjectileSpeed: 8
-    radialProjectileSpeed: 7
+    visualColliderRadiusScale: 0.8
+    minimumColliderRadius: 0.5
+    aimedProjectileSpeed: 10
+    radialProjectileSpeed: 10
     summonOffsetMinimum: 0.8
     summonOffsetMaximum: 1.8
     corpseLifetime: 20

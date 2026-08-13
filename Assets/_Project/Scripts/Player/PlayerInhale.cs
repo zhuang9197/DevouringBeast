@@ -49,6 +49,8 @@ namespace DevouringBeast
         private float _bonusInhaleDuration;
         private bool _damageOnlyMode;
         private bool _externalInterruptImmune;
+        private float _skillAngleBonus;
+        private float _suctionSlowPercent;
 
         // 属性
         public bool IsInhaling => _isInhaling;
@@ -74,6 +76,10 @@ namespace DevouringBeast
         public float BonusInhaleDuration { get => _bonusInhaleDuration; set => _bonusInhaleDuration = Mathf.Max(0f, value); }
         public bool DamageOnlyMode { get => _damageOnlyMode; set => _damageOnlyMode = value; }
         public bool ExternalInterruptImmune { get => _externalInterruptImmune; set => _externalInterruptImmune = value; }
+        public float SkillAngleBonus { get => _skillAngleBonus; set => _skillAngleBonus = Mathf.Clamp(value, 0f, 300f); }
+        public float SuctionSlowPercent { get => _suctionSlowPercent; set => _suctionSlowPercent = Mathf.Clamp01(value); }
+        public float CurrentInhaleRadius => inhaleRadius * _skillSuctionMultiplier;
+        public float CurrentInhaleAngle => Mathf.Clamp(inhaleAngle + _skillAngleBonus, 0f, 360f);
 
         public event Action<float> OnProgressChanged;
         public event Action<bool> OnSuctionMaxedChanged; // true=达到最大, false=未达到
@@ -104,6 +110,7 @@ namespace DevouringBeast
             _baseAttributes.InitializeFromConfig();
             maxSuctionForce = _baseAttributes.InitialSuction;
             if (_container == null) _container = gameObject.AddComponent<SwallowContainer>();
+            if (GetComponent<InhaleAirEffect>() == null) gameObject.AddComponent<InhaleAirEffect>();
         }
 
         private void Update()
@@ -207,7 +214,7 @@ namespace DevouringBeast
                 // 角度过滤：只检测前方锥形范围
                 Vector2 dirToTarget = (item.transform.position - transform.position).normalized;
                 float angle = Vector2.Angle(_playerController.FacingDirection, dirToTarget);
-                if (angle <= inhaleAngle * 0.5f)
+                if (angle <= CurrentInhaleAngle * 0.5f)
                     _detectedItems.Add(item);
             }
         }
@@ -231,6 +238,8 @@ namespace DevouringBeast
                     {
                         float damage = _currentSuctionForce * _skillDamageMultiplier * dt;
                         enemy.TakeDamage(damage);
+                        if (_suctionSlowPercent > 0f)
+                            EnemyStatusEffects.EnsureFor(enemy).ApplySlow(_suctionSlowPercent, 0.4f);
                         EnemyAI ai = enemy.GetComponent<EnemyAI>();
                         if (ai != null)
                         {

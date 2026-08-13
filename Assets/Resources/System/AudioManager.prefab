@@ -61,6 +61,11 @@ MonoBehaviour:
   beastHit: {fileID: 8300000, guid: 0c7af16182327d64ab528b12891770b6, type: 3}
   bossDie: {fileID: 8300000, guid: b7e62b7b5898aa1478d8b3644b770261, type: 3}
   enemyDie: {fileID: 8300000, guid: 3a711ee38df16534da8d91bb1a77574f, type: 3}
+  rebound: {fileID: 8300000, guid: 8312a878998337d4b846d00ea37c2ad9, type: 3}
+  meatMountainLand: {fileID: 8300000, guid: 7e8b9fb4c78b6cf4dbb4519f2267ab79, type: 3}
+  babyCry: {fileID: 8300000, guid: 1e84be68e00217c4791c85a780662652, type: 3}
+  satanLaugh: {fileID: 8300000, guid: 0da3342d186893442a8e6a11fe576ebc, type: 3}
+  dash: {fileID: 8300000, guid: 1b358f1c0e773b045bd6ab24fd518103, type: 3}
   hit: {fileID: 8300000, guid: 0c7af16182327d64ab528b12891770b6, type: 3}
   bomb: {fileID: 8300000, guid: 22f6a346bd6157c4b91b8d99c700dd0a, type: 3}
   levelUp: {fileID: 8300000, guid: 3159f47af2f3b624ca92480044eee253, type: 3}

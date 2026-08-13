@@ -636,8 +636,9 @@ namespace DevouringBeast
             _floorExit = new GameObject("NextFloorEntrance", typeof(SpriteRenderer), typeof(CircleCollider2D), typeof(FloorExitTrigger));
             _floorExit.transform.position = center + Vector2.up * 2f;
             SpriteRenderer renderer = _floorExit.GetComponent<SpriteRenderer>();
-            renderer.sprite = GroundShadowSpriteFactory.CreatePortalSprite();
-            renderer.color = new Color(0.2f, 0.9f, 0.85f, 1f);
+            renderer.sprite = Resources.Load<Sprite>(_floor == 4 ? "Map/Tiles/boss_entrance" : "Map/Tiles/entrance");
+            if (renderer.sprite == null) renderer.sprite = GroundShadowSpriteFactory.CreatePortalSprite();
+            renderer.color = Color.white;
             renderer.sortingOrder = 8;
             CircleCollider2D collider = _floorExit.GetComponent<CircleCollider2D>();
             collider.isTrigger = true;

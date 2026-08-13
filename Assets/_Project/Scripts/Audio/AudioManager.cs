@@ -8,7 +8,8 @@ namespace DevouringBeast
     public enum AudioCue
     {
         Split, BigSplit, Charged, Hurt, Die, Idle, Run, Walk, Suck, Swallow, Roll, BeastHit,
-        BossDie, EnemyDie, Hit, Bomb, LevelUp, UiClick, RogueSelect
+        BossDie, EnemyDie, Rebound, MeatMountainLand, BabyCry, SatanLaugh, Dash,
+        Hit, Bomb, LevelUp, UiClick, RogueSelect
     }
 
     [DisallowMultipleComponent]
@@ -39,6 +40,11 @@ namespace DevouringBeast
         [Header("Enemy SFX")]
         [SerializeField] private AudioClip bossDie;
         [SerializeField] private AudioClip enemyDie;
+        [SerializeField] private AudioClip rebound;
+        [SerializeField] private AudioClip meatMountainLand;
+        [SerializeField] private AudioClip babyCry;
+        [SerializeField] private AudioClip satanLaugh;
+        [SerializeField] private AudioClip dash;
         [Header("Environment SFX")]
         [SerializeField] private AudioClip hit;
         [SerializeField] private AudioClip bomb;
@@ -56,7 +62,10 @@ namespace DevouringBeast
         private AudioSource _idleSource;
         private AudioSource _loopSource;
         private AudioSource _criticalSource;
+        private AudioSource _intervalSource;
         private AudioCue? _loopCue;
+        private AudioCue? _intervalCue;
+        private Coroutine _intervalRoutine;
         private Coroutine _bgmRoutine;
         private BgmTrack? _currentTrack;
         private bool _sfxSuppressed;
@@ -132,6 +141,9 @@ namespace DevouringBeast
             _criticalSource = gameObject.AddComponent<AudioSource>();
             _criticalSource.playOnAwake = false;
             _criticalSource.volume = SfxVolume;
+            _intervalSource = gameObject.AddComponent<AudioSource>();
+            _intervalSource.playOnAwake = false;
+            _intervalSource.volume = SfxVolume;
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -222,6 +234,42 @@ namespace DevouringBeast
             _loopSource.Play();
         }
 
+        public void PlayIntervalLoop(AudioCue cue, float gapSeconds)
+        {
+            if (_sfxSuppressed) return;
+            AudioClip clip = GetSfxClip(cue);
+            if (clip == null) return;
+            if (_intervalCue == cue && _intervalRoutine != null) return;
+            StopIntervalLoop();
+            _intervalCue = cue;
+            _intervalRoutine = StartCoroutine(IntervalLoopRoutine(clip, Mathf.Max(0f, gapSeconds)));
+        }
+
+        public void StopIntervalLoop(AudioCue cue)
+        {
+            if (_intervalCue == cue) StopIntervalLoop();
+        }
+
+        private void StopIntervalLoop()
+        {
+            if (_intervalRoutine != null) StopCoroutine(_intervalRoutine);
+            _intervalRoutine = null;
+            _intervalCue = null;
+            if (_intervalSource == null) return;
+            _intervalSource.Stop();
+            _intervalSource.clip = null;
+        }
+
+        private IEnumerator IntervalLoopRoutine(AudioClip clip, float gapSeconds)
+        {
+            while (true)
+            {
+                _intervalSource.clip = clip;
+                _intervalSource.Play();
+                yield return new WaitForSecondsRealtime(clip.length + gapSeconds);
+            }
+        }
+
         public void SetSfxSuppressed(bool suppressed)
         {
             _sfxSuppressed = suppressed;
@@ -232,6 +280,7 @@ namespace DevouringBeast
             _loopSource.Stop();
             _loopSource.clip = null;
             _loopCue = null;
+            StopIntervalLoop();
         }
 
         public void EnterGameOverAudio()
@@ -283,6 +332,7 @@ namespace DevouringBeast
             _idleSource.volume = SfxVolume;
             _loopSource.volume = SfxVolume;
             _criticalSource.volume = SfxVolume;
+            _intervalSource.volume = SfxVolume;
         }
 
         private AudioClip GetBgmClip(BgmTrack track)
@@ -313,6 +363,11 @@ namespace DevouringBeast
                 case AudioCue.BeastHit: return beastHit;
                 case AudioCue.BossDie: return bossDie;
                 case AudioCue.EnemyDie: return enemyDie;
+                case AudioCue.Rebound: return rebound;
+                case AudioCue.MeatMountainLand: return meatMountainLand;
+                case AudioCue.BabyCry: return babyCry;
+                case AudioCue.SatanLaugh: return satanLaugh;
+                case AudioCue.Dash: return dash;
                 case AudioCue.Hit: return hit;
                 case AudioCue.Bomb: return bomb;
                 case AudioCue.LevelUp: return levelUp;

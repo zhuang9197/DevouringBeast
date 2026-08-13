@@ -25,7 +25,7 @@ MonoBehaviour:
   radialProjectileSpeed: 7
   behavior:
     wanderIntervalRange: {x: 1.2, y: 1.2}
-    proximityRange: 0
+    proximityRange: 2.5
     specialMoveSpeed: 0.8
     dashSpeed: 0
     jumpSpeed: 0

@@ -32,6 +32,8 @@ namespace DevouringBeast
         [Min(0f)] public float baseEnergyBallDamage;
         [Min(1)] public int maxHealth;
         [Min(0f)] public float invincibleDuration;
+        [Range(0.1f, 1f)] public float visualColliderRadiusScale = 0.8f;
+        [Min(0.01f)] public float minimumColliderRadius = 0.55f;
 
         [Header("移动状态")]
         [Range(0f, 1f)] public float fullWalkSpeedMultiplier;
@@ -156,6 +158,8 @@ namespace DevouringBeast
         [Min(0f)] public float contactKnockbackDistance;
         [Min(0f)] public float areaKnockbackDistance;
         [Min(0f)] public float contactCooldown;
+        [Range(0.1f, 1f)] public float visualColliderRadiusScale = 0.8f;
+        [Min(0.01f)] public float minimumColliderRadius = 0.5f;
 
         [Header("投射物与召唤")]
         [Min(0f)] public float aimedProjectileSpeed;

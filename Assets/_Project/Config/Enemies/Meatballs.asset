@@ -15,14 +15,14 @@ MonoBehaviour:
   displayName: Meatballs
   archetype: 15
   tier: 1
-  maxHealth: 20
+  maxHealth: 100
   attackDamage: 1
   moveSpeed: 0.7
   attackRange: 0.7
   attackCooldown: 1.5
   detectRange: 40
   aimedProjectileSpeed: 8
-  radialProjectileSpeed: 7
+  radialProjectileSpeed: 15
   behavior:
     wanderIntervalRange: {x: 1.5, y: 1.5}
     proximityRange: 0

@@ -24,7 +24,11 @@ namespace DevouringBeast
         private bool _choiceOpen;
         private bool _choiceFromStatue;
         private int _witchProgress;
+        private int _angelStatueUsesThisRun;
+        private float _popeProgress;
+        private readonly System.Collections.Generic.HashSet<EnemyArchetype> _faithKills = new();
         [SerializeField, Min(1)] private int witchSwallowsRequired = 3;
+        [SerializeField, Min(1f)] private float popeFollowerMassRequired = 30f;
         private const float FaithKillMassMultiplier = 2f;
 
         public RogueSkillCatalog Catalog => catalog;
@@ -35,11 +39,13 @@ namespace DevouringBeast
         public event Action<RogueSkillId, int> OnSkillLevelChanged;
         public event Action<float, bool> OnWitchProgressChanged;
         public float WitchProgressNormalized => Mathf.Clamp01((float)_witchProgress / Mathf.Max(1, witchSwallowsRequired));
+        public float PopeProgressNormalized => Mathf.Clamp01(_popeProgress / Mathf.Max(1f, popeFollowerMassRequired));
 
         private void Awake()
         {
             Active = this;
             if (catalog == null) catalog = Resources.Load<RogueSkillCatalog>("Rogue/RogueSkillCatalog");
+            BelieverFollower.Configure(catalog);
             _container = GetComponent<SwallowContainer>();
             _controller = GetComponent<PlayerController>();
             _spit = GetComponent<PlayerSpit>();
@@ -51,6 +57,8 @@ namespace DevouringBeast
         {
             if (_container != null) _container.OnLevelUpCheck += CheckLevelUp;
             EnemyBase.OnAnyEnemyDeath += HandleEnemyDeath;
+            StatueController.OnStatueUsed += HandleStatueUsed;
+            StatueController.OnOfferingConsumed += HandleOfferingConsumed;
             RestoreFromActiveSave();
         }
 
@@ -59,6 +67,8 @@ namespace DevouringBeast
             if (Active == this) Active = null;
             if (_container != null) _container.OnLevelUpCheck -= CheckLevelUp;
             EnemyBase.OnAnyEnemyDeath -= HandleEnemyDeath;
+            StatueController.OnStatueUsed -= HandleStatueUsed;
+            StatueController.OnOfferingConsumed -= HandleOfferingConsumed;
             GameManager game = GameManager.Existing;
             if (_choiceOpen && game != null && game.CurrentState == GameState.RogueChoosing)
                 game.ExitRogueSelection();
@@ -85,6 +95,7 @@ namespace DevouringBeast
         {
             if (!_choiceOpen || skill == null || !_pendingChoices.Contains(skill)) return;
             AddSkill(skill.id);
+            if (skill.id == RogueSkillId.PopeBaptism) BelieverFollower.BaptizeNext();
             if (!_choiceFromStatue) _container.ResetForLevelUp();
             _pendingChoices.Clear();
             _choiceOpen = false;
@@ -117,6 +128,7 @@ namespace DevouringBeast
         {
             RogueSkillDefinition definition = catalog != null ? catalog.Get(id) : null;
             if (definition == null || amount <= 0) return;
+            if (ConflictsWithOwnedSchool(definition.school)) return;
             int current = GetLevel(id);
             int next = definition.maxLevel <= 0 ? current + amount : Mathf.Min(definition.maxLevel, current + amount);
             if (next == current) return;
@@ -182,8 +194,10 @@ namespace DevouringBeast
         private bool CanOffer(RogueSkillDefinition skill)
         {
             if (skill == null || skill.IsMaxLevel(GetLevel(skill.id))) return false;
+            if (!RogueUnlockService.IsUnlocked(skill.id)) return false;
             if (IsBasicStatueSkill(skill.id)) return false;
             if (!IsUsefulForActiveFaith(skill.id)) return false;
+            if (ConflictsWithOwnedSchool(skill.school)) return false;
             if (_faith.HasValue)
             {
                 if (_faith.Value == RogueSkillId.FaithAngel)
@@ -192,7 +206,22 @@ namespace DevouringBeast
                         return false;
                 }
                 else if (skill.school == RogueSchool.Faith && skill.id != _faith.Value)
-                    return false;
+                {
+                    bool advancedFaith = skill.id == RogueSkillId.DemonFear || skill.id == RogueSkillId.DemonContempt || skill.id == RogueSkillId.DemonKing ||
+                        skill.id == RogueSkillId.PopeBelief || skill.id == RogueSkillId.PopePray || skill.id == RogueSkillId.PopeBaptism ||
+                        skill.id == RogueSkillId.WitchClaw || skill.id == RogueSkillId.WitchDeterrence || skill.id == RogueSkillId.WitchRoar;
+                    if (!advancedFaith) return false;
+                }
+            }
+            if (skill.prerequisites == null || skill.prerequisites.Length == 0)
+            {
+                if (skill.id == RogueSkillId.DemonFear || skill.id == RogueSkillId.DemonContempt || skill.id == RogueSkillId.DemonKing)
+                    if (!Has(RogueSkillId.FaithDemon)) return false;
+                if (skill.id == RogueSkillId.PopeBelief || skill.id == RogueSkillId.PopePray || skill.id == RogueSkillId.PopeBaptism)
+                    if (!Has(RogueSkillId.FaithPope)) return false;
+                if (skill.id == RogueSkillId.WitchClaw || skill.id == RogueSkillId.WitchDeterrence || skill.id == RogueSkillId.WitchRoar)
+                    if (!Has(RogueSkillId.FaithWitch)) return false;
+                if (skill.id == RogueSkillId.PopeBaptism && !Has(RogueSkillId.FaithPope)) return false;
             }
             foreach (RogueSkillId prerequisite in skill.prerequisites ?? Array.Empty<RogueSkillId>())
             {
@@ -205,6 +234,22 @@ namespace DevouringBeast
                 }
             }
             return true;
+        }
+
+        private bool ConflictsWithOwnedSchool(RogueSchool school)
+        {
+            RogueSchool conflictingSchool = school switch
+            {
+                RogueSchool.Fire => RogueSchool.Poison,
+                RogueSchool.Poison => RogueSchool.Fire,
+                _ => school
+            };
+            if (conflictingSchool == school || catalog == null) return false;
+
+            foreach (RogueSkillDefinition owned in catalog.skills)
+                if (owned != null && owned.school == conflictingSchool && GetLevel(owned.id) > 0)
+                    return true;
+            return false;
         }
 
         private List<RogueSkillDefinition> GetBasicStatueChoices()
@@ -270,7 +315,11 @@ namespace DevouringBeast
         private List<RogueSkillDefinition> AllAvailable()
         {
             List<RogueSkillDefinition> result = new();
-            foreach (RogueSkillDefinition skill in catalog.skills) if (CanOffer(skill)) result.Add(skill);
+            foreach (RogueSkillDefinition skill in catalog.skills)
+                if (CanOffer(skill) && UnityEngine.Random.value <= Mathf.Clamp01(skill.appearanceProbability)) result.Add(skill);
+            if (result.Count == 0)
+                foreach (RogueSkillDefinition skill in catalog.skills)
+                    if (CanOffer(skill)) result.Add(skill);
             Shuffle(result);
             return result;
         }
@@ -298,6 +347,9 @@ namespace DevouringBeast
                 _inhale.SkillSuctionMultiplier = Has(RogueSkillId.FaithDemon)
                     ? 2f + 0.1f * GetLevel(RogueSkillId.FaithDemon) : 1f;
                 _inhale.SkillDamageMultiplier = _inhale.SkillSuctionMultiplier;
+                _inhale.SkillAngleBonus = GetLevel(RogueSkillId.DemonContempt) * 60f;
+                _inhale.SuctionSlowPercent = Has(RogueSkillId.DemonFear)
+                    ? Mathf.Clamp01(GetLevel(RogueSkillId.DemonFear) * 0.2f) : 0f;
                 _inhale.BonusInhaleDuration = Has(RogueSkillId.EvolutionBigMouth)
                     ? 3f + Mathf.Max(0, GetLevel(RogueSkillId.EvolutionBigMouth) - 1) * 2f : 0f;
                 _inhale.DamageOnlyMode = Has(RogueSkillId.FaithDemon) || Has(RogueSkillId.FaithAngel);
@@ -340,6 +392,9 @@ namespace DevouringBeast
             _levels.Clear();
             _faith = null;
             _witchProgress = 0;
+            _angelStatueUsesThisRun = 0;
+            _popeProgress = 0f;
+            _faithKills.Clear();
             if (_choiceOpen)
             {
                 _choiceOpen = false;
@@ -353,8 +408,18 @@ namespace DevouringBeast
             OnWitchProgressChanged?.Invoke(0f, false);
         }
 
-        public void NotifySwallow()
+        public void NotifySwallow(float consumedMass = 1f)
         {
+            if (Has(RogueSkillId.FaithPope))
+            {
+                _popeProgress += Mathf.Max(1f, consumedMass);
+                if (_popeProgress >= popeFollowerMassRequired)
+                {
+                    _popeProgress -= popeFollowerMassRequired;
+                    BelieverFollower.SpawnFollower(_controller != null ? _controller.transform : transform, false);
+                }
+                for (int i = 0; i < GetLevel(RogueSkillId.PopeBaptism); i++) BelieverFollower.BaptizeNext();
+            }
             if (!Has(RogueSkillId.FaithWitch)) return;
             _witchProgress++;
             OnWitchProgressChanged?.Invoke(WitchProgressNormalized, true);
@@ -366,11 +431,41 @@ namespace DevouringBeast
 
         private void HandleEnemyDeath(EnemyBase enemy)
         {
+            if (enemy != null && enemy.Data != null)
+            {
+                _faithKills.Add(enemy.Data.archetype);
+                if (_faithKills.Contains(EnemyArchetype.LittleSatan) && _faithKills.Contains(EnemyArchetype.Satan))
+                    RogueUnlockService.Unlock(RogueSkillId.FaithDemon);
+                if (Has(RogueSkillId.FaithPope) && enemy.Data.archetype == EnemyArchetype.SkeletonMan)
+                    RogueUnlockService.Unlock(RogueSkillId.FaithWitch);
+                if (Has(RogueSkillId.DemonKing) && _spit != null)
+                    _spit.FireFollowerBall(_controller != null ? _controller.transform.position : transform.position,
+                        _controller != null ? _controller.FacingDirection : Vector2.right,
+                        1f + GetLevel(RogueSkillId.DemonKing) * 0.1f);
+                if (Has(RogueSkillId.WitchRoar) && _controller != null && _controller.IsBeastForm)
+                    _controller.ExtendBeastForm(5f + GetLevel(RogueSkillId.WitchRoar));
+            }
             if (!_faith.HasValue || _container == null) return;
             if (_faith.Value != RogueSkillId.FaithAngel && _faith.Value != RogueSkillId.FaithDemon) return;
             // This Faith benefit is binary: repeated Angel/Demon levels never stack the multiplier.
             float progress = (enemy != null ? enemy.MassValue : 5f) * FaithKillMassMultiplier;
             _container.AddProgress(progress);
+        }
+
+        private void HandleStatueUsed(StatueKind kind)
+        {
+            if (kind != StatueKind.Angel) return;
+            _angelStatueUsesThisRun++;
+            if (_angelStatueUsesThisRun >= 50) RogueUnlockService.Unlock(RogueSkillId.FaithAngel);
+        }
+
+        private void HandleOfferingConsumed(StatueKind kind, InhaleableItem item)
+        {
+            if (kind != StatueKind.Pope || item == null) return;
+            EnemyBase enemy = item.GetComponent<EnemyBase>();
+            if (enemy != null && enemy.Data != null &&
+                (enemy.Data.archetype == EnemyArchetype.LittleSatan || enemy.Data.archetype == EnemyArchetype.Satan))
+                RogueUnlockService.Unlock(RogueSkillId.FaithPope);
         }
     }
 }

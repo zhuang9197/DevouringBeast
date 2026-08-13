@@ -17,7 +17,7 @@ MonoBehaviour:
   tier: 1
   maxHealth: 80
   attackDamage: 1
-  moveSpeed: 0.85
+  moveSpeed: 0
   attackRange: 0.8
   attackCooldown: 1.5
   detectRange: 40

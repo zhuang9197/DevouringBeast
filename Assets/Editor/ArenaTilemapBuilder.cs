@@ -11,7 +11,7 @@ using UnityEngine.Tilemaps;
 [InitializeOnLoad]
 public static class ArenaTilemapBuilder
 {
-    private const string SourcePath = "Assets/Art/Tilesets/new_map.png";
+    private const string SourcePath = "Assets/Art/Tilesets/new_map";
     private const string TileFolder = "Assets/Resources/Map/Tiles";
     private const string LegacyTileFolder = "Assets/_Project/Tiles/Arena";
     private const string LegacySingleTile = "Assets/Resources/Map/RoomMapTile.asset";
@@ -37,8 +37,10 @@ public static class ArenaTilemapBuilder
     [MenuItem("Tools/DevouringBeast/Rebuild Room Tilemap and Clean Scene")]
     public static void Rebuild()
     {
-        var sprites = AssetDatabase.LoadAllAssetsAtPath(SourcePath)
-            .OfType<Sprite>()
+        var sprites = AssetDatabase.FindAssets("t:Sprite", new[] { SourcePath })
+            .Select(AssetDatabase.GUIDToAssetPath)
+            .Select(path => AssetDatabase.LoadAssetAtPath<Sprite>(path))
+            .Where(sprite => sprite != null)
             .ToDictionary(sprite => sprite.name, StringComparer.Ordinal);
         string[] missing = RequiredSpriteNames.Where(name => !sprites.ContainsKey(name)).ToArray();
         if (missing.Length > 0)

@@ -246,6 +246,17 @@ public void Spit()
                 _energyBallPool.Release(ball);
         }
 
+        public void FireFollowerBall(Vector3 position, Vector2 direction, float damageMultiplier)
+        {
+            if (!EnsurePool()) return;
+            float damage = (_baseAttributes != null ? _baseAttributes.EnergyBallBaseDamage : baseDamage) * Mathf.Max(0f, damageMultiplier);
+            EnergyBallShotSnapshot snapshot = _skillManager != null
+                ? _skillManager.CreateEnergyBallSnapshot(damage, spitSpeed, maxFlyDistance, 1f, false)
+                : new EnergyBallShotSnapshot(damage, spitSpeed, maxFlyDistance, null);
+            EnergyBall ball = _energyBallPool.Get(position, Quaternion.identity);
+            ball.Initialize(direction, snapshot, transform, ReleaseEnergyBall, SpawnSplitEnergyBall);
+        }
+
         private bool EnsurePool()
         {
             if (_energyBallPool != null)
