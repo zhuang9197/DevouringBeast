@@ -74,7 +74,9 @@ namespace DevouringBeast
                 _visualRestingPosition = spriteRenderer.transform.localPosition;
                 _visualRestingScale = spriteRenderer.transform.localScale;
             }
-            _body.bodyType = RigidbodyType2D.Kinematic;
+            bool hasContactDamage = Archetype != EnemyArchetype.Mushroom &&
+                _enemy != null && _enemy.Data != null && _enemy.Data.attackDamage > 0f;
+            _body.bodyType = hasContactDamage ? RigidbodyType2D.Kinematic : RigidbodyType2D.Dynamic;
             _body.gravityScale = 0f;
             _body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
             _body.interpolation = RigidbodyInterpolation2D.Interpolate;
@@ -120,7 +122,9 @@ namespace DevouringBeast
             _skeletonHead = false;
             _redExplosionTriggered = false;
             _massGrowthRoutine = null;
-            _body.bodyType = RigidbodyType2D.Kinematic;
+            bool hasContactDamage = Archetype != EnemyArchetype.Mushroom &&
+                _enemy != null && _enemy.Data != null && _enemy.Data.attackDamage > 0f;
+            _body.bodyType = hasContactDamage ? RigidbodyType2D.Kinematic : RigidbodyType2D.Dynamic;
             _body.gravityScale = 0f;
             _body.velocity = Vector2.zero;
             _body.angularVelocity = 0f;
