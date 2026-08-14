@@ -27,7 +27,8 @@ namespace DevouringBeast
         private readonly List<Selectable> _blockedMenuSelectables = new();
         private float _ignoreInputUntil;
         private ControlLayoutEditor _controlLayoutEditor;
-        private GameObject _historyPanel;
+        private bool _historyMode;
+        private int _selectedHistoryIndex = -1;
 
         private void Start()
         {
@@ -67,7 +68,7 @@ namespace DevouringBeast
             RectTransform rect = buttonObject.GetComponent<RectTransform>();
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = new Vector2(0f, -250f);
+            rect.anchoredPosition = new Vector2(0f, -370f);
             rect.sizeDelta = new Vector2(300f, 64f);
             Image image = buttonObject.GetComponent<Image>();
             image.color = new Color(0.14f, 0.16f, 0.2f, 0.96f);
@@ -88,108 +89,38 @@ namespace DevouringBeast
         private void BuildHistoryButton()
         {
             if (GameObject.Find("RunHistoryButton") != null) return;
+            if (borderButtonPrefab == null) return;
             Canvas canvas = FindFirstObjectByType<Canvas>();
             if (canvas == null) return;
-            GameObject buttonObject = new("RunHistoryButton", typeof(RectTransform), typeof(Image),
-                typeof(Button), typeof(UIButtonAudio));
             Transform menu = canvas.transform.Find("Menu");
-            buttonObject.transform.SetParent(menu != null ? menu : canvas.transform, false);
+            GameObject buttonObject = Instantiate(borderButtonPrefab, menu != null ? menu : canvas.transform);
+            buttonObject.name = "RunHistoryButton";
             RectTransform rect = buttonObject.GetComponent<RectTransform>();
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = new Vector2(-340f, -250f);
-            rect.sizeDelta = new Vector2(300f, 64f);
-            buttonObject.GetComponent<Image>().color = new Color(0.14f, 0.16f, 0.2f, 0.96f);
-            Text label = CreateRuntimeText(buttonObject.transform, "探险历程", 22, TextAnchor.MiddleCenter);
-            Stretch(label.rectTransform);
+            rect.anchoredPosition = new Vector2(0f, -250f);
+            Text label = buttonObject.GetComponentInChildren<Text>(true);
+            if (label != null) label.text = "探险历程";
             buttonObject.GetComponent<Button>().onClick.AddListener(ShowHistory);
         }
 
         public void ShowHistory()
         {
             if (Time.unscaledTime < _ignoreInputUntil) return;
-            HideAllPanels();
-            Canvas canvas = FindFirstObjectByType<Canvas>();
-            if (canvas == null) return;
-            _historyPanel = new GameObject("RunHistoryPanel", typeof(RectTransform), typeof(Image), typeof(CanvasGroup));
-            _historyPanel.transform.SetParent(canvas.transform, false);
-            Stretch(_historyPanel.GetComponent<RectTransform>());
-            _historyPanel.GetComponent<Image>().color = new Color(0.035f, 0.045f, 0.06f, 0.97f);
-            Text title = CreateRuntimeText(_historyPanel.transform, "探险历程", 38, TextAnchor.MiddleCenter);
-            SetRect(title.rectTransform, new Vector2(0.2f, 0.86f), new Vector2(0.8f, 0.97f));
-
-            IReadOnlyList<CompletedRunData> history = SaveGameService.GetHistory();
-            int shown = Mathf.Min(8, history.Count);
-            if (shown == 0)
-            {
-                Text empty = CreateRuntimeText(_historyPanel.transform, "暂无阵亡或通关记录", 24, TextAnchor.MiddleCenter);
-                SetRect(empty.rectTransform, new Vector2(0.2f, 0.42f), new Vector2(0.8f, 0.62f));
-            }
-            for (int row = 0; row < shown; row++)
-            {
-                int historyIndex = history.Count - 1 - row;
-                CompletedRunData run = history[historyIndex];
-                float top = 0.83f - row * 0.085f;
-                float bottom = top - 0.072f;
-                Text detail = CreateRuntimeText(_historyPanel.transform, FormatHistory(run), 20, TextAnchor.MiddleLeft);
-                SetRect(detail.rectTransform, new Vector2(0.12f, bottom), new Vector2(0.80f, top));
-                Button delete = CreateRuntimeButton(_historyPanel.transform, "删除", 18,
-                    new Vector2(0.82f, bottom + 0.008f), new Vector2(0.9f, top - 0.008f));
-                delete.onClick.AddListener(() =>
-                {
-                    SaveGameService.DeleteHistory(historyIndex);
-                    if (_historyPanel != null) Destroy(_historyPanel);
-                    _historyPanel = null;
-                    ShowHistory();
-                });
-            }
-            Button close = CreateRuntimeButton(_historyPanel.transform, "返回", 22,
-                new Vector2(0.42f, 0.05f), new Vector2(0.58f, 0.12f));
-            close.onClick.AddListener(HideAllPanels);
-            BlockUnderlyingMenuInput();
+            _historyMode = true;
+            _newGameMode = false;
+            ShowSaveList("探险历程");
         }
 
         private static string FormatHistory(CompletedRunData run)
         {
+            if (run == null) return "无记录";
             string result = run.cleared ? "通关" : "阵亡";
             string cause = run.cleared ? (string.IsNullOrWhiteSpace(run.finalBoss) ? "最终 Boss" : run.finalBoss)
                 : "被 " + (string.IsNullOrWhiteSpace(run.defeatedBy) ? "未知" : run.defeatedBy) + " 击败";
             return $"{result}  第 {Mathf.Max(1, run.finalFloor)} 层 / 房间 {Mathf.Max(1, run.finalRoom)}  " +
                 $"消灭 {run.enemiesDefeated}  {cause}  {run.clearTimeSeconds:0}s";
         }
-
-        private static Text CreateRuntimeText(Transform parent, string value, int size, TextAnchor alignment)
-        {
-            Text text = new GameObject("Text", typeof(RectTransform), typeof(Text)).GetComponent<Text>();
-            text.transform.SetParent(parent, false);
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = size;
-            text.alignment = alignment;
-            text.color = Color.white;
-            text.text = value;
-            text.raycastTarget = false;
-            return text;
-        }
-
-        private static Button CreateRuntimeButton(Transform parent, string label, int size, Vector2 min, Vector2 max)
-        {
-            GameObject go = new(label, typeof(RectTransform), typeof(Image), typeof(Button), typeof(UIButtonAudio));
-            go.transform.SetParent(parent, false);
-            go.GetComponent<Image>().color = new Color(0.18f, 0.52f, 0.48f, 1f);
-            SetRect(go.GetComponent<RectTransform>(), min, max);
-            Text text = CreateRuntimeText(go.transform, label, size, TextAnchor.MiddleCenter);
-            Stretch(text.rectTransform);
-            return go.GetComponent<Button>();
-        }
-
-        private static void SetRect(RectTransform rect, Vector2 min, Vector2 max)
-        {
-            rect.anchorMin = min;
-            rect.anchorMax = max;
-            rect.offsetMin = rect.offsetMax = Vector2.zero;
-        }
-
-        private static void Stretch(RectTransform rect) => SetRect(rect, Vector2.zero, Vector2.one);
 
         public void OnTestRoom()
         {
@@ -201,6 +132,7 @@ namespace DevouringBeast
         public void OnNewGame()
         {
             if (Time.unscaledTime < _ignoreInputUntil) return;
+            _historyMode = false;
             _newGameMode = true;
             ShowSaveList("选择新游戏存档位");
         }
@@ -208,6 +140,7 @@ namespace DevouringBeast
         public void OnContinueGame()
         {
             if (Time.unscaledTime < _ignoreInputUntil) return;
+            _historyMode = false;
             _newGameMode = false;
             ShowSaveList("选择要继续的存档");
         }
@@ -236,6 +169,16 @@ namespace DevouringBeast
         public void OnDeleteSelected()
         {
             if (Time.unscaledTime < _ignoreInputUntil) return;
+            if (_historyMode)
+            {
+                IReadOnlyList<CompletedRunData> history = SaveGameService.GetHistory();
+                if (_selectedHistoryIndex < 0 || _selectedHistoryIndex >= history.Count) return;
+                _confirmDelete = true;
+                if (confirmText != null)
+                    confirmText.text = "确认删除这条探险历程记录？";
+                if (confirmPanel != null) confirmPanel.SetActive(true);
+                return;
+            }
             SaveSlotData data = SaveGameService.GetSlot(_selectedSlot);
             if (data == null) return;
             _confirmDelete = true;
@@ -246,20 +189,27 @@ namespace DevouringBeast
         public void OnConfirmYes()
         {
             if (Time.unscaledTime < _ignoreInputUntil) return;
-            if (_selectedSlot < 0) return;
             if (_confirmDelete)
             {
-                SaveGameService.DeleteSlot(_selectedSlot);
+                if (_historyMode)
+                {
+                    SaveGameService.DeleteHistory(_selectedHistoryIndex);
+                    _selectedHistoryIndex = -1;
+                }
+                else if (_selectedSlot >= 0)
+                {
+                    SaveGameService.DeleteSlot(_selectedSlot);
+                }
+                else return;
                 _confirmDelete = false;
                 if (confirmPanel != null) confirmPanel.SetActive(false);
                 if (actionPanel != null) actionPanel.SetActive(false);
                 RefreshSaveSlots();
+                return;
             }
-            else
-            {
-                SaveGameService.CreateNewGame(_selectedSlot);
-                StartGameScene();
-            }
+            if (_selectedSlot < 0) return;
+            SaveGameService.CreateNewGame(_selectedSlot);
+            StartGameScene();
         }
 
         public void OnConfirmNo()
@@ -280,6 +230,21 @@ namespace DevouringBeast
             if (saveListContent == null || borderButtonPrefab == null) return;
             for (int i = saveListContent.childCount - 1; i >= 0; i--)
                 Destroy(saveListContent.GetChild(i).gameObject);
+
+            if (_historyMode)
+            {
+                IReadOnlyList<CompletedRunData> history = SaveGameService.GetHistory();
+                for (int row = 0; row < history.Count; row++)
+                {
+                    int historyIndex = history.Count - 1 - row;
+                    GameObject buttonObject = Instantiate(borderButtonPrefab, saveListContent);
+                    buttonObject.name = "HistoryEntry_" + (row + 1);
+                    Text label = buttonObject.GetComponentInChildren<Text>(true);
+                    if (label != null) label.text = FormatHistory(history[historyIndex]);
+                    buttonObject.GetComponent<Button>().onClick.AddListener(() => OnHistorySelected(historyIndex));
+                }
+                return;
+            }
 
             SaveSlotData[] slots = SaveGameService.GetAllSlots();
             for (int i = 0; i < slots.Length; i++)
@@ -303,9 +268,29 @@ namespace DevouringBeast
             }
         }
 
+        private void OnHistorySelected(int historyIndex)
+        {
+            IReadOnlyList<CompletedRunData> history = SaveGameService.GetHistory();
+            if (historyIndex < 0 || historyIndex >= history.Count) return;
+            _selectedHistoryIndex = historyIndex;
+            _selectedSlot = -1;
+            if (selectedSaveText != null)
+            {
+                selectedSaveText.fontSize = 24;
+                selectedSaveText.text = FormatHistoryDetail(history[historyIndex]);
+            }
+            if (continueSelectedButton != null)
+            {
+                continueSelectedButton.gameObject.SetActive(false);
+                continueSelectedButton.interactable = false;
+            }
+            if (actionPanel != null) actionPanel.SetActive(true);
+        }
+
         private void OnSlotSelected(int slotIndex)
         {
             _selectedSlot = slotIndex;
+            _selectedHistoryIndex = -1;
             SaveSlotData data = SaveGameService.GetSlot(slotIndex);
             if (_newGameMode)
             {
@@ -325,9 +310,31 @@ namespace DevouringBeast
 
             if (data == null) return;
             if (selectedSaveText != null)
+            {
+                selectedSaveText.fontSize = 34;
                 selectedSaveText.text = data.displayName + "\n已完成波次：" + data.completedWave;
-            if (continueSelectedButton != null) continueSelectedButton.interactable = true;
+            }
+            if (continueSelectedButton != null)
+            {
+                continueSelectedButton.gameObject.SetActive(true);
+                continueSelectedButton.interactable = true;
+            }
             if (actionPanel != null) actionPanel.SetActive(true);
+        }
+
+        private static string FormatHistoryDetail(CompletedRunData run)
+        {
+            if (run == null) return string.Empty;
+            string outcome = run.cleared ? "已通关" : "已阵亡";
+            string cause = run.cleared
+                ? (string.IsNullOrWhiteSpace(run.finalBoss) ? "最终 Boss：未知" : "最终 Boss：" + run.finalBoss)
+                : "击败者：" + (string.IsNullOrWhiteSpace(run.defeatedBy) ? "未知" : run.defeatedBy);
+            string date = run.completedTicks > 0
+                ? new DateTime(run.completedTicks, DateTimeKind.Utc).ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                : "未知时间";
+            return $"{run.displayName}　{outcome}　{date}\n" +
+                $"第 {Mathf.Max(1, run.finalFloor)} 层 / 房间 {Mathf.Max(1, run.finalRoom)}　消灭：{run.enemiesDefeated}\n" +
+                $"{cause}　用时：{run.clearTimeSeconds:0}s";
         }
 
         private void StartGameScene()
@@ -344,8 +351,11 @@ namespace DevouringBeast
             if (actionPanel != null) actionPanel.SetActive(false);
             if (confirmPanel != null) confirmPanel.SetActive(false);
             if (optionsPanel != null) optionsPanel.SetActive(false);
-            if (_historyPanel != null) Destroy(_historyPanel);
-            _historyPanel = null;
+            if (continueSelectedButton != null)
+            {
+                continueSelectedButton.gameObject.SetActive(true);
+                continueSelectedButton.interactable = false;
+            }
         }
 
         private static void ConfigureSliderRaycasts(Slider slider)
@@ -425,9 +435,6 @@ namespace DevouringBeast
                     continue;
                 if (optionsPanel != null && selectable.transform.IsChildOf(optionsPanel.transform))
                     continue;
-                if (_historyPanel != null && selectable.transform.IsChildOf(_historyPanel.transform))
-                    continue;
-
                 selectable.interactable = false;
                 _blockedMenuSelectables.Add(selectable);
             }

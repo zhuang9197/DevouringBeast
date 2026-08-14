@@ -26,7 +26,7 @@ MonoBehaviour:
     walkStepInterval: 0.45
     idleSoundDelay: 16
     idleSoundRepeatInterval: 20
-    knockbackDuration: 0.3
+    knockbackDuration: 0.12
     witchTransformProgressRequired: 3
     witchBeastProgressMaximum: 100
     witchBeastProgressDrainPerSecond: 12.5
@@ -105,7 +105,7 @@ MonoBehaviour:
     steeringRadiusRange: {x: 0.45, y: 1.05}
     colliderContactTolerance: 0.05
     fallbackContactRadius: 0.7
-    contactKnockbackDistance: 0.65
+    contactKnockbackDistance: 1.4
     areaKnockbackDistance: 2
     contactCooldown: 0.75
     visualColliderRadiusScale: 0.8

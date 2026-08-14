@@ -253,23 +253,33 @@ namespace DevouringBeast
         public void ApplyKnockback(Vector2 direction, float distance)
         {
             if (_rb == null || direction.sqrMagnitude <= 0.001f || distance <= 0f) return;
-            if (_knockbackRoutine != null) return;
-            Vector2 target = _rb.position + direction.normalized * distance;
+            // Contact hits are allowed to refresh the impulse so a fast enemy cannot
+            // leave the player stuck in an old, nearly-finished knockback.
+            if (_knockbackRoutine != null)
+            {
+                StopCoroutine(_knockbackRoutine);
+                _knockbackRoutine = null;
+                _isBeingKnockedBack = false;
+            }
+
+            Vector2 start = _rb.position;
+            Vector2 target = start + direction.normalized * distance;
             if (MapBounds.Instance != null) target = MapBounds.Instance.ClampPosition(target);
-            target = StatueController.ConstrainMovement(_movementCollider, _rb.position, target);
-            _knockbackRoutine = StartCoroutine(KnockbackRoutine(target, knockbackDuration));
+            target = StatueController.ConstrainMovement(_movementCollider, start, target);
+            if ((target - start).sqrMagnitude <= 0.0001f) return;
+            float duration = Mathf.Max(0.06f, knockbackDuration);
+            _knockbackRoutine = StartCoroutine(KnockbackRoutine(start, target, duration));
         }
 
-        private System.Collections.IEnumerator KnockbackRoutine(Vector2 target, float duration)
+        private System.Collections.IEnumerator KnockbackRoutine(Vector2 start, Vector2 target, float duration)
         {
             _isBeingKnockedBack = true;
-            Vector2 start = _rb.position;
             float elapsed = 0f;
             while (elapsed < duration)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / duration);
-                float eased = 1f - (1f - t) * (1f - t);
+                float eased = t * t * (3f - 2f * t);
                 _rb.MovePosition(Vector2.LerpUnclamped(start, target, eased));
                 yield return new WaitForFixedUpdate();
             }
