@@ -63,6 +63,8 @@ namespace DevouringBeast
         private bool _transitioning;
         private bool _roomCombatLocked;
         private GameObject _floorExit;
+        private RunSnapshotData _restoredSnapshot;
+        private float _nextAutosaveTime;
 
         public int CurrentFloor => _floor;
         public int CurrentRoomIndex => _currentRoom;
@@ -139,11 +141,23 @@ namespace DevouringBeast
 
             SaveGameService.Initialize();
             SaveSlotData save = SaveGameService.GetActiveSlot();
-            _floor = save != null ? Mathf.Clamp(save.completedWave + 1, 1, FinalFloor) : 1;
-            BuildFloor();
+            _restoredSnapshot = save?.snapshot != null && save.snapshot.rooms != null && save.snapshot.rooms.Count > 0
+                ? save.snapshot : null;
+            _floor = _restoredSnapshot != null
+                ? Mathf.Clamp(_restoredSnapshot.floor, 1, FinalFloor)
+                : save != null ? Mathf.Clamp(save.completedWave + 1, 1, FinalFloor) : 1;
+            BuildFloor(_restoredSnapshot);
         }
 
-        private void BuildFloor()
+        private void Update()
+        {
+            if (GameManager.Existing == null || !GameManager.Existing.IsPlaying ||
+                GameManager.Existing.IsTestMode || Time.unscaledTime < _nextAutosaveTime) return;
+            _nextAutosaveTime = Time.unscaledTime + 5f;
+            SaveCurrentSnapshot();
+        }
+
+        private void BuildFloor(RunSnapshotData snapshot = null)
         {
             _waves.ResetForFloor();
             BloodDrop.ReleaseFloorDrops();
@@ -158,22 +172,65 @@ namespace DevouringBeast
             _clearedElites = 0;
             _demonRoomIndex = -1;
             _roomCombatLocked = false;
-            GenerateLayout();
+            GenerateLayout(snapshot);
             LayoutVersion++;
             CreateFloorTilemap();
             bool testMode = GameManager.Instance.IsTestMode;
             CreateStatues();
+            if (snapshot != null) _environmentItems?.RestoreSnapshots(snapshot.foodRooms);
             if (testMode) _environmentItems?.EnableTestMode();
             FloorMinimapUI.EnsureFor(this);
-            _currentRoom = 0;
-            EnterRoom(0, Vector2Int.zero, true);
+            _currentRoom = snapshot != null ? Mathf.Clamp(snapshot.currentRoom, 0, _rooms.Count - 1) : 0;
+            EnterRoom(_currentRoom, Vector2Int.zero, true);
+            if (snapshot != null && _player != null)
+            {
+                _player.position = new Vector2(snapshot.playerX, snapshot.playerY);
+                PlayerHealth health = _player.GetComponent<PlayerHealth>();
+                if (health != null && snapshot.playerMaxHealth > 0)
+                    health.RestoreHealth(snapshot.playerHealth, snapshot.playerMaxHealth);
+                SwallowContainer container = _player.GetComponent<SwallowContainer>();
+                if (container != null)
+                    container.RestoreProgress(snapshot.playerLevel, snapshot.playerMass, snapshot.playerRequiredMass);
+                RogueSkillManager skills = _player.GetComponent<RogueSkillManager>();
+                skills?.RestoreRuntimeProgress(snapshot.witchProgress, snapshot.popeProgress,
+                    snapshot.popeFollowersSummoned, snapshot.angelStatueUses);
+            }
+            if (snapshot != null)
+                for (int i = 0; i < _rooms.Count; i++)
+                    if (_rooms[i].HasFloorExit)
+                    {
+                        CreateFloorExit(GetRoomCenter(_rooms[i].Cell), i);
+                        break;
+                    }
+            _restoredSnapshot = null;
+            _nextAutosaveTime = Time.unscaledTime + 5f;
             if (testMode) DeveloperTestPanel.EnsureFor(this);
         }
 
-        private void GenerateLayout()
+        private void GenerateLayout(RunSnapshotData snapshot = null)
         {
             _rooms.Clear();
             _roomByCell.Clear();
+            if (snapshot?.rooms != null && snapshot.rooms.Count > 0)
+            {
+                foreach (RoomSnapshotData saved in snapshot.rooms)
+                {
+                    RoomState room = new()
+                    {
+                        Cell = new Vector2Int(saved.x, saved.y),
+                        Kind = Enum.IsDefined(typeof(RoomKind), saved.kind) ? (RoomKind)saved.kind : RoomKind.Normal,
+                        Cleared = saved.cleared,
+                        Visited = saved.visited,
+                        IsDemonRoom = saved.demon,
+                        HasFloorExit = saved.floorExit
+                    };
+                    _roomByCell[room.Cell] = _rooms.Count;
+                    _rooms.Add(room);
+                    if (room.Kind == RoomKind.Elite && room.Cleared) _clearedElites++;
+                    if (room.IsDemonRoom) _demonRoomIndex = _rooms.Count - 1;
+                }
+                return;
+            }
             AddRoom(Vector2Int.zero);
             if (GameManager.Instance.IsTestMode)
             {
@@ -478,9 +535,14 @@ namespace DevouringBeast
             {
                 _roomCombatLocked = true;
                 SetDoorsLocked(true);
-                _waves.BeginRoom(room.Kind, _floor, center, roomSize, HandleRoomCleared);
+                if (initial && _restoredSnapshot != null)
+                    _waves.BeginRestoredRoom(room.Kind, _floor, center, roomSize,
+                        _restoredSnapshot, HandleRoomCleared);
+                else
+                    _waves.BeginRoom(room.Kind, _floor, center, roomSize, HandleRoomCleared);
             }
             MinimapChanged?.Invoke();
+            SaveCurrentSnapshot();
             StartCoroutine(ReleaseTransitionLock());
         }
 
@@ -507,6 +569,7 @@ namespace DevouringBeast
                 CreateFloorExit(GetRoomCenter(room.Cell));
             }
             MinimapChanged?.Invoke();
+            SaveCurrentSnapshot();
         }
 
         public bool TryStartDemonChallenge(int touchCount, Action completed)
@@ -628,11 +691,12 @@ namespace DevouringBeast
             }
         }
 
-        private void CreateFloorExit(Vector2 center)
+        private void CreateFloorExit(Vector2 center, int roomIndex = -1)
         {
             if (_floorExit != null) return;
-            if (_currentRoom >= 0 && _currentRoom < _rooms.Count)
-                _rooms[_currentRoom].HasFloorExit = true;
+            int ownerRoom = roomIndex >= 0 ? roomIndex : _currentRoom;
+            if (ownerRoom >= 0 && ownerRoom < _rooms.Count)
+                _rooms[ownerRoom].HasFloorExit = true;
             _floorExit = new GameObject("NextFloorEntrance", typeof(SpriteRenderer), typeof(CircleCollider2D), typeof(FloorExitTrigger));
             _floorExit.transform.position = center + Vector2.up * 2f;
             SpriteRenderer renderer = _floorExit.GetComponent<SpriteRenderer>();
@@ -663,6 +727,74 @@ namespace DevouringBeast
             _transitioning = true;
             CompletedRunData history = SaveGameService.CompleteActiveRun();
             GameManager.Instance.CompleteRun(history);
+        }
+
+        public void SaveCurrentSnapshot()
+        {
+            if (GameManager.Existing == null || GameManager.Existing.IsTestMode ||
+                GameManager.Existing.IsGameOver || _restoredSnapshot != null || _rooms.Count == 0) return;
+            RunSnapshotData snapshot = new()
+            {
+                floor = _floor,
+                currentRoom = Mathf.Clamp(_currentRoom, 0, _rooms.Count - 1),
+                playerX = _player != null ? _player.position.x : 0f,
+                playerY = _player != null ? _player.position.y : 0f,
+                roomTimer = _waves != null ? _waves.Timer : 0f,
+                roomMaxTimer = _waves != null ? _waves.MaxTimer : 0f,
+                roomCrisis = _waves != null && _waves.IsCrisis,
+                enemies = _waves != null ? _waves.CaptureLivingEnemies() : new List<EnemySnapshotData>(),
+                foodRooms = _environmentItems != null
+                    ? _environmentItems.CaptureSnapshots() : new List<RoomFoodSnapshotData>()
+            };
+            if (_player != null)
+            {
+                RogueSkillManager skills = _player.GetComponent<RogueSkillManager>();
+                if (skills != null)
+                {
+                    snapshot.witchProgress = skills.WitchProgress;
+                    snapshot.popeProgress = skills.PopeProgress;
+                    snapshot.popeFollowersSummoned = skills.PopeFollowersSummoned;
+                    snapshot.angelStatueUses = skills.AngelStatueUsesThisRun;
+                }
+                PlayerHealth health = _player.GetComponent<PlayerHealth>();
+                if (health != null)
+                {
+                    snapshot.playerHealth = health.CurrentHealth;
+                    snapshot.playerMaxHealth = health.MaxHealth;
+                }
+                SwallowContainer container = _player.GetComponent<SwallowContainer>();
+                if (container != null)
+                {
+                    snapshot.playerLevel = container.CurrentLevel;
+                    snapshot.playerMass = container.CurrentMass;
+                    snapshot.playerRequiredMass = container.RequiredMass;
+                }
+            }
+            foreach (RoomState room in _rooms)
+                snapshot.rooms.Add(new RoomSnapshotData
+                {
+                    x = room.Cell.x,
+                    y = room.Cell.y,
+                    kind = (int)room.Kind,
+                    cleared = room.Cleared,
+                    visited = room.Visited,
+                    demon = room.IsDemonRoom,
+                    floorExit = room.HasFloorExit
+                });
+            SaveGameService.SaveSnapshot(snapshot);
+        }
+
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused) SaveCurrentSnapshot();
+        }
+
+        private void OnApplicationQuit() => SaveCurrentSnapshot();
+
+        private void OnDisable()
+        {
+            if (!Application.isPlaying) return;
+            SaveCurrentSnapshot();
         }
 
         private Vector2 GetRoomCenter(Vector2Int cell)

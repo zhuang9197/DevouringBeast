@@ -129,5 +129,14 @@ namespace DevouringBeast
             NotifyProgress();
         }
 
+        public void RestoreProgress(int level, float mass, float requiredMass)
+        {
+            Items.Clear();
+            CurrentLevel = Mathf.Max(1, level);
+            CurrentMass = Mathf.Max(0f, mass);
+            RequiredMass = requiredMass > 0f ? requiredMass : GetRequiredMassForLevel(CurrentLevel);
+            NotifyProgress();
+        }
+
     }
 }

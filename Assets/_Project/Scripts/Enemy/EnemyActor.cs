@@ -76,6 +76,8 @@ namespace DevouringBeast
             }
             _body.bodyType = RigidbodyType2D.Kinematic;
             _body.gravityScale = 0f;
+            _body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            _body.interpolation = RigidbodyInterpolation2D.Interpolate;
             _body.useFullKinematicContacts = true;
         }
 
@@ -183,7 +185,28 @@ namespace DevouringBeast
             Vector2 target = _body.position + _moveDirection * (speed * Time.fixedDeltaTime);
             if (MapBounds.Instance != null) target = MapBounds.Instance.ClampPosition(target);
             target = StatueController.ConstrainMovement(_collider, _body.position, target);
+            target = ConstrainAgainstPlayer(target);
             _body.MovePosition(target);
+        }
+
+        private Vector2 ConstrainAgainstPlayer(Vector2 target)
+        {
+            if (_player == null || _collider == null || !_collider.enabled ||
+                _playerCollider == null || !_playerCollider.enabled || _playerCollider.isTrigger ||
+                (_playerController != null && _playerController.IsBeastRolling)) return target;
+
+            float enemyRadius = Mathf.Min(_collider.bounds.extents.x, _collider.bounds.extents.y);
+            float playerRadius = Mathf.Min(_playerCollider.bounds.extents.x, _playerCollider.bounds.extents.y);
+            float minimumDistance = Mathf.Max(0.05f, enemyRadius + playerRadius);
+            Vector2 away = target - (Vector2)_player.position;
+            if (away.sqrMagnitude >= minimumDistance * minimumDistance) return target;
+            if (away.sqrMagnitude <= 0.0001f)
+            {
+                away = _body.position - (Vector2)_player.position;
+                if (away.sqrMagnitude <= 0.0001f)
+                    away = new Vector2(Mathf.Cos(_steeringPhase), Mathf.Sin(_steeringPhase));
+            }
+            return (Vector2)_player.position + away.normalized * minimumDistance;
         }
 
         private void LateUpdate()
@@ -1133,13 +1156,18 @@ namespace DevouringBeast
                 : delta.sqrMagnitude <= _commonBalance.fallbackContactRadius * _commonBalance.fallbackContactRadius;
             if (!touching) return;
             int damage = Mathf.Max(0, Mathf.RoundToInt(_enemy.Data != null ? _enemy.Data.attackDamage : 1f));
-            if (Archetype != EnemyArchetype.Mushroom && damage > 0) _playerHealth.TakeDamage(damage);
+            bool hasContactDamage = Archetype != EnemyArchetype.Mushroom && damage > 0;
+            if (hasContactDamage)
+                _playerHealth.TakeDamageFrom(damage, _enemy.Data != null ? _enemy.Data.displayName : Archetype.ToString());
             if (HasVariant(WhiteEnemyVariant.Green))
                 PlayerStatusEffects.Ensure(_playerHealth)?.ApplyPoison(1, 10f, 30f);
-            _playerInhale?.TryInterruptInhale();
-            if (delta.sqrMagnitude <= 0.001f)
-                delta = new Vector2(Mathf.Cos(_steeringPhase), Mathf.Sin(_steeringPhase));
-            _playerController?.ApplyKnockback(delta, _commonBalance.contactKnockbackDistance);
+            if (hasContactDamage)
+            {
+                _playerInhale?.TryInterruptInhale();
+                if (delta.sqrMagnitude <= 0.001f)
+                    delta = new Vector2(Mathf.Cos(_steeringPhase), Mathf.Sin(_steeringPhase));
+                _playerController?.ApplyKnockback(delta, _commonBalance.contactKnockbackDistance);
+            }
             _contactTimer = _commonBalance.contactCooldown;
         }
 

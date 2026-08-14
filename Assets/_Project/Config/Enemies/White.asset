@@ -65,8 +65,8 @@ MonoBehaviour:
   fakeDeathHoldSprite: {fileID: 0}
   phaseTwoIdleSprite: {fileID: 0}
   popInClip: {fileID: 0}
-  deathMode: 3
-  deathSprite: {fileID: 21300000, guid: f1089085d508be349a97060331f39f22, type: 3}
+  deathMode: 0
+  deathSprite: {fileID: 21300000, guid: b458c1c57d370774ab405ffb0bce2f59, type: 3}
   deathAnimationDuration: 0
   deathAnimationStartFrame: -1
   deathFrameIndex: -1

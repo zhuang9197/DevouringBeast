@@ -195,6 +195,108 @@ namespace DevouringBeast
             NotifyUI();
         }
 
+        public List<EnemySnapshotData> CaptureLivingEnemies()
+        {
+            List<EnemySnapshotData> snapshots = new(_activeEnemies.Count);
+            foreach (EnemyPoolMember member in _activeEnemies)
+            {
+                EnemyBase enemy = member != null ? member.Enemy : null;
+                if (enemy == null || enemy.IsDead || enemy.Data == null) continue;
+                snapshots.Add(new EnemySnapshotData
+                {
+                    archetype = (int)enemy.Data.archetype,
+                    x = enemy.transform.position.x,
+                    y = enemy.transform.position.y,
+                    currentHealth = enemy.CurrentHealth,
+                    maximumHealth = enemy.MaxHealth,
+                    moveSpeed = enemy.Data.moveSpeed,
+                    attackDamage = enemy.Data.attackDamage,
+                    mass = enemy.Data.massValue
+                });
+            }
+            return snapshots;
+        }
+
+        public void BeginRestoredRoom(RoomKind roomKind, int floor, Vector2 center, Vector2 size,
+            RunSnapshotData snapshot, Action roomCleared)
+        {
+            StopEncounter(false);
+            CurrentRoomKind = roomKind;
+            _currentFloor = Mathf.Max(1, floor);
+            _roomCenter = center;
+            _roomSize = size;
+            _roomCleared = roomCleared;
+            _allSpawned = false;
+            _isCrisis = false;
+            _enemiesRemaining = 0;
+            _activeBosses.Clear();
+            _bossMaxHealthTotal = 0f;
+            _roomTimer = snapshot != null && snapshot.roomTimer > 0f
+                ? snapshot.roomTimer : config.GetRoomTimer(roomKind);
+            _maxTimer = snapshot != null && snapshot.roomMaxTimer > 0f
+                ? snapshot.roomMaxTimer : config.GetRoomTimer(roomKind);
+            SetCrisisOverlay(false);
+            _currentPhase = Phase.Spawning;
+            AudioManager.Instance.SetBattleWave(roomKind == RoomKind.Boss ? 10 : 1);
+            _spawnRoutine = StartCoroutine(RestoreRoomRoutine(snapshot));
+            NotifyUI();
+        }
+
+        private IEnumerator RestoreRoomRoutine(RunSnapshotData snapshot)
+        {
+            while (!IsReady) yield return null;
+            IReadOnlyList<EnemySnapshotData> enemies = snapshot?.enemies;
+            if (enemies != null)
+                foreach (EnemySnapshotData enemy in enemies)
+                {
+                    SpawnRestoredEnemy(enemy);
+                    yield return null;
+                }
+            _spawnRoutine = null;
+            _allSpawned = true;
+            _currentPhase = Phase.Fighting;
+            if (snapshot != null && snapshot.roomCrisis) EnterCrisis();
+            onWaveStart?.RaiseEvent();
+            if (_enemiesRemaining <= 0) CompleteRoom();
+            NotifyUI();
+        }
+
+        private void SpawnRestoredEnemy(EnemySnapshotData snapshot)
+        {
+            if (snapshot == null || !Enum.IsDefined(typeof(EnemyArchetype), snapshot.archetype)) return;
+            EnemyArchetype archetype = (EnemyArchetype)snapshot.archetype;
+            if (!_contentByArchetype.TryGetValue(archetype, out EnemyContentDefinition content) ||
+                content == null || !content.IsValid) return;
+            GameObject prefab = content.Prefab;
+            Vector2 position = new(snapshot.x, snapshot.y);
+            EnemyPoolMember member = AcquireEnemy(prefab, position);
+            EnemyBase enemy = member.Enemy != null ? member.Enemy : member.GetComponent<EnemyBase>();
+            if (enemy == null) return;
+            EnemyData data = enemy.CreateScaledRuntimeData(content.Data, 1f, 1f);
+            data.maxHealth = Mathf.Max(1f, snapshot.maximumHealth);
+            data.moveSpeed = Mathf.Max(0f, snapshot.moveSpeed);
+            data.attackDamage = Mathf.Max(0f, snapshot.attackDamage);
+            data.massValue = Mathf.Max(0f, snapshot.mass);
+            data.detectRange = Mathf.Max(data.detectRange, Mathf.Max(_roomSize.x, _roomSize.y));
+            enemy.Initialize(data);
+            enemy.ReplaceHealth(snapshot.currentHealth, snapshot.maximumHealth);
+            PlaceEnemy(member, position);
+            enemy.OnDeath += OnEnemyKilled;
+            if (IsBossArchetype(archetype))
+            {
+                _activeBosses.Add(enemy);
+                _bossMaxHealthTotal += enemy.MaxHealth;
+            }
+            _enemiesRemaining++;
+        }
+
+        private static bool IsBossArchetype(EnemyArchetype archetype)
+        {
+            return archetype == EnemyArchetype.Baby || archetype == EnemyArchetype.SkeletonMan ||
+                archetype == EnemyArchetype.LittleSatan || archetype == EnemyArchetype.Satan ||
+                archetype == EnemyArchetype.MeatMountain;
+        }
+
         private IEnumerator BeginRoomWhenReadyRoutine()
         {
             while (!IsReady) yield return null;

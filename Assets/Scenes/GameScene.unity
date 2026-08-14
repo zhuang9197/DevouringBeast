@@ -1831,7 +1831,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   catalog: {fileID: 11400000, guid: 6fa1f4894ec832c4ea560c0a3a658349, type: 2}
   onLevelUp: {fileID: 11400000, guid: c007379fdd363764e86fca5c0f90421e, type: 2}
-  witchSwallowsRequired: 3
+  witchTransformProgressRequired: 3
+  witchBeastProgressMaximum: 100
+  witchBeastProgressDrainPerSecond: 12.5
   popeFollowerInitialProgress: 30
   popeFollowerProgressIncrease: 10
 --- !u!114 &1772682457
@@ -1863,6 +1865,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f81a5cb51883f1240b9a1d238606f454, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  normalDeathSprite: {fileID: 21300000, guid: e41548a78d4f4174da0a3fe245d1c79f, type: 3}
+  beastDeathSprite: {fileID: 21300000, guid: 58e3e31bc1641584fada7efcc89a72fd, type: 3}
   OnHealthChanged:
     m_PersistentCalls:
       m_Calls: []

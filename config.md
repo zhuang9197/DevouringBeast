@@ -8,6 +8,9 @@
 | --- | --- | --- |
 | 角色基础移动速度 | `Config/Resources/GameBalanceConfig.asset` | `player.baseMoveSpeed` |
 | 野兽滚动速度倍率 | 同上 | `player.beastRollingSpeedMultiplier` |
+| 女巫变身所需进度 | 同上 | `player.witchTransformProgressRequired` |
+| 野兽形态进度上限 | 同上 | `player.witchBeastProgressMaximum` |
+| 野兽形态每秒消耗 | 同上 | `player.witchBeastProgressDrainPerSecond` |
 | 玩家能量球速度 | 同上 | `spit.speed` |
 | 玩家能量球伤害 | 同上 | `player.baseEnergyBallDamage` |
 | 敌人移动速度 | `Config/Enemies/<Enemy>.asset` | `moveSpeed` |
@@ -38,6 +41,9 @@
 | `idleSoundDelay` | 静止多久后首次播放待机音。 |
 | `idleSoundRepeatInterval` | 持续静止时待机音的重复间隔。 |
 | `knockbackDuration` | 玩家受击击退的位移动画时长。 |
+| `witchTransformProgressRequired` | 女巫状态进入野兽形态前需要累计的吞噬进度。 |
+| `witchBeastProgressMaximum` | 变身成功后进度条填充的总值，也是野兽形态可补充进度的上限。 |
+| `witchBeastProgressDrainPerSecond` | 野兽形态维持期间每秒持续消耗的进度值。 |
 | `beastRollingSpeedMultiplier` | 女巫野兽形态滚动时的速度倍率；当前为 `1.5`。 |
 | `beastDamageReductionBase` | 野兽形态基础减伤；滚动时另有完全无敌。 |
 | `beastDamageReductionPerLevel` | 女巫每级增加的野兽形态减伤。 |

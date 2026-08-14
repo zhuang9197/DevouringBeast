@@ -9,6 +9,8 @@ namespace DevouringBeast
         private const string AngelKey = "rogue.unlock.angel";
         private const string PopeKey = "rogue.unlock.pope";
         private const string WitchKey = "rogue.unlock.witch";
+        private const string LittleSatanDefeatedKey = "rogue.progress.littleSatanDefeated";
+        private const string SatanDefeatedKey = "rogue.progress.satanDefeated";
 
         public static bool IsUnlocked(RogueSkillId id)
         {
@@ -30,6 +32,7 @@ namespace DevouringBeast
 
         public static void Unlock(RogueSkillId id)
         {
+            if (GameManager.Existing != null && GameManager.Existing.IsTestMode) return;
             string key = id switch
             {
                 RogueSkillId.FaithDemon => DemonKey,
@@ -43,12 +46,29 @@ namespace DevouringBeast
             PlayerPrefs.Save();
         }
 
+        public static void RecordEnemyDefeated(EnemyArchetype archetype)
+        {
+            if (GameManager.Existing != null && GameManager.Existing.IsTestMode) return;
+            if (archetype == EnemyArchetype.LittleSatan)
+                PlayerPrefs.SetInt(LittleSatanDefeatedKey, 1);
+            else if (archetype == EnemyArchetype.Satan)
+                PlayerPrefs.SetInt(SatanDefeatedKey, 1);
+            else
+                return;
+            PlayerPrefs.Save();
+            if (PlayerPrefs.GetInt(LittleSatanDefeatedKey, 0) != 0 &&
+                PlayerPrefs.GetInt(SatanDefeatedKey, 0) != 0)
+                Unlock(RogueSkillId.FaithDemon);
+        }
+
         public static void ResetForTesting()
         {
             PlayerPrefs.DeleteKey(DemonKey);
             PlayerPrefs.DeleteKey(AngelKey);
             PlayerPrefs.DeleteKey(PopeKey);
             PlayerPrefs.DeleteKey(WitchKey);
+            PlayerPrefs.DeleteKey(LittleSatanDefeatedKey);
+            PlayerPrefs.DeleteKey(SatanDefeatedKey);
             PlayerPrefs.Save();
         }
     }

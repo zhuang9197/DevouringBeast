@@ -45,6 +45,9 @@ namespace DevouringBeast
         [Min(0f)] public float knockbackDuration;
 
         [Header("野兽形态")]
+        [Min(1f)] public float witchTransformProgressRequired = 3f;
+        [Min(1f)] public float witchBeastProgressMaximum = 100f;
+        [Min(0.01f)] public float witchBeastProgressDrainPerSecond = 12.5f;
         [Min(1f)] public float beastRollingSpeedMultiplier;
         [Range(0f, 1f)] public float beastDamageReductionBase;
         [Range(0f, 1f)] public float beastDamageReductionPerLevel;

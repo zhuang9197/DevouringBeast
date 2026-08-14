@@ -41,6 +41,7 @@ SpriteAtlas:
     - {fileID: 102900000, guid: d5b8ee25bb9817448add3045372ee039, type: 3}
     - {fileID: 102900000, guid: 2b71d3216f19edf4f94ab93cdf0b1234, type: 3}
     - {fileID: 102900000, guid: 1bb0f307873691c42ac3119cdf71ca2c, type: 3}
+    - {fileID: 2800000, guid: e41548a78d4f4174da0a3fe245d1c79f, type: 3}
     bindAsDefault: 1
     isAtlasV2: 0
     cachedData: {fileID: 0}
@@ -114,6 +115,7 @@ SpriteAtlas:
     - eee280773f74e904393221005bf879c0: 21300000
     - d70ffe7736a05b0468957c0e8339e622: 21300000
     - f54664a7ac72d6d4ba6109ea624ef145: 21300000
+    - e41548a78d4f4174da0a3fe245d1c79f: 21300000
     - 8f5d5da77c5185e4380c71441ba986cd: 21300000
     - b7076bb766600a54e9da97f225cd6786: 21300000
     - 2d95b0d78c8ef0945a354f7f5874c6c7: 21300000
@@ -247,6 +249,7 @@ SpriteAtlas:
   - {fileID: 21300000, guid: eee280773f74e904393221005bf879c0, type: 3}
   - {fileID: 21300000, guid: d70ffe7736a05b0468957c0e8339e622, type: 3}
   - {fileID: 21300000, guid: f54664a7ac72d6d4ba6109ea624ef145, type: 3}
+  - {fileID: 21300000, guid: e41548a78d4f4174da0a3fe245d1c79f, type: 3}
   - {fileID: 21300000, guid: 8f5d5da77c5185e4380c71441ba986cd, type: 3}
   - {fileID: 21300000, guid: b7076bb766600a54e9da97f225cd6786, type: 3}
   - {fileID: 21300000, guid: 2d95b0d78c8ef0945a354f7f5874c6c7, type: 3}
@@ -379,6 +382,7 @@ SpriteAtlas:
   - front_run_compressed_5
   - side_suck_compressed_19
   - back_full_walk_compressed_2
+  - tuntun_die
   - back_suck_compressed_3
   - front_suck_compressed_8
   - back_suck_compressed_9

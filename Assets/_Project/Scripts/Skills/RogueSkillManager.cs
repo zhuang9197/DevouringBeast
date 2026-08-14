@@ -27,13 +27,15 @@ namespace DevouringBeast
         private int _angelStatueUsesThisRun;
         private float _popeProgress;
         private int _popeFollowersSummoned;
+        private int _pendingRestoredFollowers;
         private readonly System.Collections.Generic.HashSet<EnemyArchetype> _faithKills = new();
         private readonly System.Collections.Generic.HashSet<int> _demonKingDeaths = new();
-        [SerializeField, Min(1)] private int witchSwallowsRequired = 3;
+        [SerializeField, Min(1f)] private float witchTransformProgressRequired = 3f;
+        [SerializeField, Min(1f)] private float witchBeastProgressMaximum = 100f;
+        [SerializeField, Min(0.01f)] private float witchBeastProgressDrainPerSecond = 12.5f;
         [SerializeField, Min(1f)] private float popeFollowerInitialProgress = 30f;
         [SerializeField, Min(0f)] private float popeFollowerProgressIncrease = 10f;
         private const float FaithKillMassMultiplier = 2f;
-        private const float BaseBeastFormDuration = 8f;
 
         public RogueSkillCatalog Catalog => catalog;
         public bool IsChoiceOpen => _choiceOpen;
@@ -42,12 +44,39 @@ namespace DevouringBeast
         public event Action<IReadOnlyList<RogueSkillDefinition>> OnSkillChoiceRequired;
         public event Action<RogueSkillId, int> OnSkillLevelChanged;
         public event Action<float, bool> OnWitchProgressChanged;
-        public float WitchProgressNormalized => Mathf.Clamp01(_witchProgress / Mathf.Max(1f, witchSwallowsRequired));
+        public float WitchProgressNormalized => Mathf.Clamp01(_witchProgress / Mathf.Max(1f,
+            _controller != null && _controller.IsBeastForm
+                ? witchBeastProgressMaximum : witchTransformProgressRequired));
         public float PopeProgressRequired => Mathf.Max(1f,
             popeFollowerInitialProgress + _popeFollowersSummoned * popeFollowerProgressIncrease);
         public float PopeProgressNormalized => Mathf.Clamp01(_popeProgress / PopeProgressRequired);
         public float PopeProgress => _popeProgress;
+        public int PopeFollowersSummoned => _popeFollowersSummoned;
+        public int AngelStatueUsesThisRun => _angelStatueUsesThisRun;
         public float WitchProgress => _witchProgress;
+
+        public void RestoreRuntimeProgress(float witchProgress, float popeProgress, int popeFollowersSummoned,
+            int angelStatueUses)
+        {
+            _witchProgress = Mathf.Max(0f, witchProgress);
+            _popeProgress = Mathf.Max(0f, popeProgress);
+            _popeFollowersSummoned = Mathf.Max(0, popeFollowersSummoned);
+            _angelStatueUsesThisRun = Mathf.Max(0, angelStatueUses);
+            _pendingRestoredFollowers = _popeFollowersSummoned;
+            TryRestoreFollowers();
+            OnWitchProgressChanged?.Invoke(WitchProgressNormalized, Has(RogueSkillId.FaithWitch));
+        }
+
+        private void TryRestoreFollowers()
+        {
+            if (_pendingRestoredFollowers <= 0 || !Has(RogueSkillId.FaithPope)) return;
+            int count = _pendingRestoredFollowers;
+            _pendingRestoredFollowers = 0;
+            for (int i = 0; i < count; i++)
+                BelieverFollower.SpawnFollower(_controller != null ? _controller.transform : transform, false);
+            for (int i = 0; i < Mathf.Min(count, GetLevel(RogueSkillId.PopeBaptism)); i++)
+                BelieverFollower.BaptizeNext();
+        }
 
         private void Awake()
         {
@@ -65,6 +94,13 @@ namespace DevouringBeast
                 popeFollowerInitialProgress = Mathf.Max(1f, balance.popeFollowerInitialProgress);
                 popeFollowerProgressIncrease = Mathf.Max(0f, balance.popeFollowerProgressIncrease);
             }
+            PlayerBalanceSettings playerBalance = GameBalance.Current?.Player;
+            if (playerBalance != null)
+            {
+                witchTransformProgressRequired = Mathf.Max(1f, playerBalance.witchTransformProgressRequired);
+                witchBeastProgressMaximum = Mathf.Max(1f, playerBalance.witchBeastProgressMaximum);
+                witchBeastProgressDrainPerSecond = Mathf.Max(0.01f, playerBalance.witchBeastProgressDrainPerSecond);
+            }
         }
 
         private void Start()
@@ -74,13 +110,13 @@ namespace DevouringBeast
             StatueController.OnStatueUsed += HandleStatueUsed;
             StatueController.OnOfferingConsumed += HandleOfferingConsumed;
             RestoreFromActiveSave();
+            TryRestoreFollowers();
         }
 
         private void Update()
         {
             if (_controller == null || !_controller.IsBeastForm || _witchProgress <= 0f) return;
-            float drainPerSecond = witchSwallowsRequired / BaseBeastFormDuration;
-            _witchProgress = Mathf.Max(0f, _witchProgress - Time.deltaTime * drainPerSecond);
+            _witchProgress = Mathf.Max(0f, _witchProgress - Time.deltaTime * witchBeastProgressDrainPerSecond);
             OnWitchProgressChanged?.Invoke(WitchProgressNormalized, true);
         }
 
@@ -448,9 +484,9 @@ namespace DevouringBeast
             if (!Has(RogueSkillId.FaithWitch)) return;
             _witchProgress++;
             OnWitchProgressChanged?.Invoke(WitchProgressNormalized, true);
-            if (_witchProgress < witchSwallowsRequired) return;
-            _witchProgress = witchSwallowsRequired;
-            _controller?.EnterBeastForm();
+            if (_witchProgress < witchTransformProgressRequired) return;
+            _witchProgress = witchBeastProgressMaximum;
+            _controller?.EnterBeastForm(witchBeastProgressMaximum / witchBeastProgressDrainPerSecond);
             OnWitchProgressChanged?.Invoke(WitchProgressNormalized, true);
         }
 
@@ -458,7 +494,9 @@ namespace DevouringBeast
         {
             if (!Has(RogueSkillId.FaithWitch)) return 0f;
             float before = _witchProgress;
-            _witchProgress = Mathf.Clamp(_witchProgress + Mathf.Max(0f, amount), 0f, witchSwallowsRequired);
+            float maximum = _controller != null && _controller.IsBeastForm
+                ? witchBeastProgressMaximum : witchTransformProgressRequired;
+            _witchProgress = Mathf.Clamp(_witchProgress + Mathf.Max(0f, amount), 0f, maximum);
             OnWitchProgressChanged?.Invoke(WitchProgressNormalized, true);
             return _witchProgress - before;
         }
@@ -467,6 +505,7 @@ namespace DevouringBeast
         {
             if (enemy != null && enemy.Data != null)
             {
+                RogueUnlockService.RecordEnemyDefeated(enemy.Data.archetype);
                 _faithKills.Add(enemy.Data.archetype);
                 if (_faithKills.Contains(EnemyArchetype.LittleSatan) && _faithKills.Contains(EnemyArchetype.Satan))
                     RogueUnlockService.Unlock(RogueSkillId.FaithDemon);
@@ -475,7 +514,7 @@ namespace DevouringBeast
                 if (Has(RogueSkillId.WitchRoar) && _controller != null && _controller.IsBeastForm)
                 {
                     float gained = AddWitchProgress(4f + GetLevel(RogueSkillId.WitchRoar));
-                    _controller.ExtendBeastForm(gained * BaseBeastFormDuration / Mathf.Max(1f, witchSwallowsRequired));
+                    _controller.ExtendBeastForm(gained / witchBeastProgressDrainPerSecond);
                 }
                 if (_faith == RogueSkillId.FaithDemon && Has(RogueSkillId.DemonKing) && _spit != null &&
                     enemy != null && enemy.IsDead && _demonKingDeaths.Add(enemy.GetInstanceID()))

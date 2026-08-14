@@ -179,6 +179,7 @@ namespace DevouringBeast
             MovementSpeedSystem.SetPlayerSpeedUnit(moveSpeed);
             _rb = GetComponent<Rigidbody2D>();
             _rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+            _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
             _rb.useFullKinematicContacts = true;
             _movementCollider = GetComponent<Collider2D>();
             if (_movementCollider != null)

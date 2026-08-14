@@ -28,9 +28,9 @@ namespace DevouringBeast
             panelRect.offsetMin = panelRect.offsetMax = Vector2.zero;
 
             CreateText("Title", panel.transform, "挑战失败", 58, new Vector2(0.15f,0.68f), new Vector2(0.85f,0.9f));
-            Button restart = CreateButton(panel.transform, "重新开始", catalog, new Vector2(0.18f,0.38f), new Vector2(0.82f,0.56f));
-            restart.onClick.AddListener(GameManager.Instance.RestartGame);
-            Button menu = CreateButton(panel.transform, "返回主菜单", catalog, new Vector2(0.18f,0.14f), new Vector2(0.82f,0.32f));
+            CreateText("ArchiveHint", panel.transform, "本次探险已记录到探险历程", 25,
+                new Vector2(0.12f,0.48f), new Vector2(0.88f,0.62f));
+            Button menu = CreateButton(panel.transform, "返回主菜单", catalog, new Vector2(0.18f,0.22f), new Vector2(0.82f,0.42f));
             menu.onClick.AddListener(GameManager.Instance.ReturnToMainMenu);
         }
 

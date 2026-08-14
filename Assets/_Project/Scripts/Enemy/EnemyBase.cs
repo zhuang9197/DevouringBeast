@@ -205,6 +205,7 @@ namespace DevouringBeast
                 ? AudioCue.BossDie : AudioCue.EnemyDie);
 
             _isDead = true;
+            SaveGameService.RecordEnemyDefeated(data);
 
             // 更新 InhaleableItem：死后质量和阈值
             if (_item != null)

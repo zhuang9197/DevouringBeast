@@ -127,7 +127,11 @@ namespace DevouringBeast.Editor
             if (data.archetype != spec.Archetype)
                 throw new InvalidOperationException($"{dataPath} archetype is {data.archetype}; expected {spec.Archetype}.");
             int deathFrame = data.deathFrameIndex >= 0 ? data.deathFrameIndex : frames.Length - 1;
-            Sprite deathSprite = frames[Mathf.Clamp(deathFrame, 0, frames.Length - 1)];
+            Sprite deathSprite = spec.Archetype == EnemyArchetype.White
+                ? AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Sprites/Enemies/White/Textures/die.png")
+                : frames[Mathf.Clamp(deathFrame, 0, frames.Length - 1)];
+            if (deathSprite == null)
+                deathSprite = frames[Mathf.Clamp(deathFrame, 0, frames.Length - 1)];
             Sprite fakeDeathHoldSprite = spec.Archetype == EnemyArchetype.Skeleton ||
                 spec.Archetype == EnemyArchetype.SkeletonMan
                 ? frames[Mathf.Clamp(12, 0, frames.Length - 1)]

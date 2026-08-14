@@ -8,6 +8,10 @@ namespace DevouringBeast
     /// </summary>
     public class PlayerHealth : MonoBehaviour
     {
+        [Header("阵亡精灵")]
+        [SerializeField] private Sprite normalDeathSprite;
+        [SerializeField] private Sprite beastDeathSprite;
+
         private int maxHealth;
         private int currentHealth;
         private float invincibleDuration;
@@ -26,6 +30,7 @@ namespace DevouringBeast
         public int MaxHealth => maxHealth;
         public bool IsDead => currentHealth <= 0;
         public bool IsInvincible => _isInvincible;
+        public string LastDamageSource { get; private set; } = string.Empty;
         private bool IsTestMode => GameManager.Existing != null && GameManager.Existing.IsTestMode;
 
         private void Awake()
@@ -65,6 +70,11 @@ namespace DevouringBeast
         /// </summary>
         public void TakeDamage(int damage)
         {
+            TakeDamageFrom(damage, null);
+        }
+
+        public void TakeDamageFrom(int damage, string source)
+        {
             _controller?.NotifyPlayerActivity();
             if (IsTestMode || _isInvincible || IsDead || (_controller != null && _controller.IsBeastRolling)) return;
 
@@ -72,6 +82,7 @@ namespace DevouringBeast
                 damage = Mathf.Max(1, Mathf.CeilToInt(damage * (1f - _controller.BeastDamageReduction)));
 
             int healthBeforeDamage = currentHealth;
+            LastDamageSource = string.IsNullOrWhiteSpace(source) ? "环境或投射物" : source;
             currentHealth = Mathf.Max(0, currentHealth - damage);
             SaveGameService.RecordHealthSpent(healthBeforeDamage - currentHealth);
             OnHealthChanged?.Invoke(currentHealth, maxHealth);
@@ -117,6 +128,16 @@ namespace DevouringBeast
             OnHealthChanged?.Invoke(currentHealth, maxHealth);
         }
 
+        public void RestoreHealth(int current, int maximum)
+        {
+            maxHealth = Mathf.Max(1, maximum);
+            currentHealth = Mathf.Clamp(current, 1, maxHealth);
+            _isInvincible = false;
+            _invincibleTimer = 0f;
+            if (_spriteRenderer != null) _spriteRenderer.enabled = true;
+            OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        }
+
         private void StartInvincibility()
         {
             _isInvincible = true;
@@ -126,7 +147,20 @@ namespace DevouringBeast
         private void Die()
         {
             if (_spriteRenderer != null)
-                _spriteRenderer.transform.localRotation = _initialSpriteRotation * Quaternion.Euler(0f, 0f, 90f);
+            {
+                FrameAnimator frameAnimator = _spriteRenderer.GetComponent<FrameAnimator>();
+                if (frameAnimator == null) frameAnimator = _spriteRenderer.GetComponentInParent<FrameAnimator>();
+                if (frameAnimator != null) frameAnimator.enabled = false;
+                Sprite deathSprite = _controller != null && _controller.IsBeastForm
+                    ? beastDeathSprite : normalDeathSprite;
+                if (deathSprite != null)
+                {
+                    _spriteRenderer.sprite = deathSprite;
+                    _spriteRenderer.transform.localRotation = _initialSpriteRotation;
+                }
+                else
+                    _spriteRenderer.transform.localRotation = _initialSpriteRotation * Quaternion.Euler(0f, 0f, 90f);
+            }
             OnPlayerDeath?.Invoke();
             GameManager.Instance.HandlePlayerDeath();
         }

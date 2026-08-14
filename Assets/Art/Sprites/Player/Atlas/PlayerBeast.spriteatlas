@@ -35,6 +35,7 @@ SpriteAtlas:
     - {fileID: 102900000, guid: bcc46a19b803fa44fa977ee81ff76b17, type: 3}
     - {fileID: 102900000, guid: 52773810cec1e5e4eb9ca4e2156ab065, type: 3}
     - {fileID: 102900000, guid: 68a8b1968527bd04fbbef1eba3080d51, type: 3}
+    - {fileID: 2800000, guid: 58e3e31bc1641584fada7efcc89a72fd, type: 3}
     bindAsDefault: 1
     isAtlasV2: 0
     cachedData: {fileID: 0}
@@ -64,6 +65,7 @@ SpriteAtlas:
     - 13bf9fd9056caea42af57a7439a7d6ca: 21300000
     - c4cf983a3b3dd0b4787e40d6c87b60a5: 21300000
     - f066014a184f8ea499e792892f91c1e1: 21300000
+    - 58e3e31bc1641584fada7efcc89a72fd: 21300000
     - 64f5205b8476dcd4f93de6e6d856d693: 21300000
     - b04d08ab2e1f570419d94e0969316f5b: 21300000
     - 0e4be3eb8f50dc44ab771d4791ab26dc: 21300000
@@ -102,6 +104,7 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 13bf9fd9056caea42af57a7439a7d6ca, type: 3}
   - {fileID: 21300000, guid: c4cf983a3b3dd0b4787e40d6c87b60a5, type: 3}
   - {fileID: 21300000, guid: f066014a184f8ea499e792892f91c1e1, type: 3}
+  - {fileID: 21300000, guid: 58e3e31bc1641584fada7efcc89a72fd, type: 3}
   - {fileID: 21300000, guid: 64f5205b8476dcd4f93de6e6d856d693, type: 3}
   - {fileID: 21300000, guid: b04d08ab2e1f570419d94e0969316f5b, type: 3}
   - {fileID: 21300000, guid: 0e4be3eb8f50dc44ab771d4791ab26dc, type: 3}
@@ -139,6 +142,7 @@ SpriteAtlas:
   - spritesheet_1 1_4
   - spritesheet_1 2_7
   - spritesheet_1 2_2
+  - beast_die
   - spritesheet_1 2_1
   - spritesheet_1 2_10
   - spritesheet_1_6

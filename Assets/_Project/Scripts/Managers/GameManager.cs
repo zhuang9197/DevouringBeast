@@ -177,6 +177,11 @@ private void OnDestroy()
         public void HandlePlayerDeath()
         {
             if (IsGameOver) return;
+            if (!IsTestMode)
+            {
+                PlayerHealth player = FindFirstObjectByType<PlayerHealth>();
+                SaveGameService.FailActiveRun(player != null ? player.LastDamageSource : string.Empty);
+            }
             ChangeState(GameState.GameOver);
             Time.timeScale = 0f;
             AudioManager.Instance.EnterGameOverAudio();

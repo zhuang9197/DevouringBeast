@@ -27,6 +27,9 @@ MonoBehaviour:
     idleSoundDelay: 16
     idleSoundRepeatInterval: 20
     knockbackDuration: 0.3
+    witchTransformProgressRequired: 3
+    witchBeastProgressMaximum: 100
+    witchBeastProgressDrainPerSecond: 12.5
     beastRollingSpeedMultiplier: 1.5
     beastDamageReductionBase: 0.2
     beastDamageReductionPerLevel: 0.05

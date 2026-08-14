@@ -27,6 +27,7 @@ namespace DevouringBeast
         private readonly List<Selectable> _blockedMenuSelectables = new();
         private float _ignoreInputUntil;
         private ControlLayoutEditor _controlLayoutEditor;
+        private GameObject _historyPanel;
 
         private void Start()
         {
@@ -51,6 +52,7 @@ namespace DevouringBeast
             ConfigureControlLayoutEditor();
             ConfigureSaveListScrolling();
             BuildTestButton();
+            BuildHistoryButton();
         }
 
         private void BuildTestButton()
@@ -82,6 +84,112 @@ namespace DevouringBeast
             label.text = "\u6d4b\u8bd5\u623f\u95f4";
             buttonObject.GetComponent<Button>().onClick.AddListener(OnTestRoom);
         }
+
+        private void BuildHistoryButton()
+        {
+            if (GameObject.Find("RunHistoryButton") != null) return;
+            Canvas canvas = FindFirstObjectByType<Canvas>();
+            if (canvas == null) return;
+            GameObject buttonObject = new("RunHistoryButton", typeof(RectTransform), typeof(Image),
+                typeof(Button), typeof(UIButtonAudio));
+            Transform menu = canvas.transform.Find("Menu");
+            buttonObject.transform.SetParent(menu != null ? menu : canvas.transform, false);
+            RectTransform rect = buttonObject.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(-340f, -250f);
+            rect.sizeDelta = new Vector2(300f, 64f);
+            buttonObject.GetComponent<Image>().color = new Color(0.14f, 0.16f, 0.2f, 0.96f);
+            Text label = CreateRuntimeText(buttonObject.transform, "探险历程", 22, TextAnchor.MiddleCenter);
+            Stretch(label.rectTransform);
+            buttonObject.GetComponent<Button>().onClick.AddListener(ShowHistory);
+        }
+
+        public void ShowHistory()
+        {
+            if (Time.unscaledTime < _ignoreInputUntil) return;
+            HideAllPanels();
+            Canvas canvas = FindFirstObjectByType<Canvas>();
+            if (canvas == null) return;
+            _historyPanel = new GameObject("RunHistoryPanel", typeof(RectTransform), typeof(Image), typeof(CanvasGroup));
+            _historyPanel.transform.SetParent(canvas.transform, false);
+            Stretch(_historyPanel.GetComponent<RectTransform>());
+            _historyPanel.GetComponent<Image>().color = new Color(0.035f, 0.045f, 0.06f, 0.97f);
+            Text title = CreateRuntimeText(_historyPanel.transform, "探险历程", 38, TextAnchor.MiddleCenter);
+            SetRect(title.rectTransform, new Vector2(0.2f, 0.86f), new Vector2(0.8f, 0.97f));
+
+            IReadOnlyList<CompletedRunData> history = SaveGameService.GetHistory();
+            int shown = Mathf.Min(8, history.Count);
+            if (shown == 0)
+            {
+                Text empty = CreateRuntimeText(_historyPanel.transform, "暂无阵亡或通关记录", 24, TextAnchor.MiddleCenter);
+                SetRect(empty.rectTransform, new Vector2(0.2f, 0.42f), new Vector2(0.8f, 0.62f));
+            }
+            for (int row = 0; row < shown; row++)
+            {
+                int historyIndex = history.Count - 1 - row;
+                CompletedRunData run = history[historyIndex];
+                float top = 0.83f - row * 0.085f;
+                float bottom = top - 0.072f;
+                Text detail = CreateRuntimeText(_historyPanel.transform, FormatHistory(run), 20, TextAnchor.MiddleLeft);
+                SetRect(detail.rectTransform, new Vector2(0.12f, bottom), new Vector2(0.80f, top));
+                Button delete = CreateRuntimeButton(_historyPanel.transform, "删除", 18,
+                    new Vector2(0.82f, bottom + 0.008f), new Vector2(0.9f, top - 0.008f));
+                delete.onClick.AddListener(() =>
+                {
+                    SaveGameService.DeleteHistory(historyIndex);
+                    if (_historyPanel != null) Destroy(_historyPanel);
+                    _historyPanel = null;
+                    ShowHistory();
+                });
+            }
+            Button close = CreateRuntimeButton(_historyPanel.transform, "返回", 22,
+                new Vector2(0.42f, 0.05f), new Vector2(0.58f, 0.12f));
+            close.onClick.AddListener(HideAllPanels);
+            BlockUnderlyingMenuInput();
+        }
+
+        private static string FormatHistory(CompletedRunData run)
+        {
+            string result = run.cleared ? "通关" : "阵亡";
+            string cause = run.cleared ? (string.IsNullOrWhiteSpace(run.finalBoss) ? "最终 Boss" : run.finalBoss)
+                : "被 " + (string.IsNullOrWhiteSpace(run.defeatedBy) ? "未知" : run.defeatedBy) + " 击败";
+            return $"{result}  第 {Mathf.Max(1, run.finalFloor)} 层 / 房间 {Mathf.Max(1, run.finalRoom)}  " +
+                $"消灭 {run.enemiesDefeated}  {cause}  {run.clearTimeSeconds:0}s";
+        }
+
+        private static Text CreateRuntimeText(Transform parent, string value, int size, TextAnchor alignment)
+        {
+            Text text = new GameObject("Text", typeof(RectTransform), typeof(Text)).GetComponent<Text>();
+            text.transform.SetParent(parent, false);
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = size;
+            text.alignment = alignment;
+            text.color = Color.white;
+            text.text = value;
+            text.raycastTarget = false;
+            return text;
+        }
+
+        private static Button CreateRuntimeButton(Transform parent, string label, int size, Vector2 min, Vector2 max)
+        {
+            GameObject go = new(label, typeof(RectTransform), typeof(Image), typeof(Button), typeof(UIButtonAudio));
+            go.transform.SetParent(parent, false);
+            go.GetComponent<Image>().color = new Color(0.18f, 0.52f, 0.48f, 1f);
+            SetRect(go.GetComponent<RectTransform>(), min, max);
+            Text text = CreateRuntimeText(go.transform, label, size, TextAnchor.MiddleCenter);
+            Stretch(text.rectTransform);
+            return go.GetComponent<Button>();
+        }
+
+        private static void SetRect(RectTransform rect, Vector2 min, Vector2 max)
+        {
+            rect.anchorMin = min;
+            rect.anchorMax = max;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+        }
+
+        private static void Stretch(RectTransform rect) => SetRect(rect, Vector2.zero, Vector2.one);
 
         public void OnTestRoom()
         {
@@ -183,9 +291,12 @@ namespace DevouringBeast
                 SaveSlotData data = slots[i];
                 if (label != null)
                 {
+                    string progress = data?.snapshot != null
+                        ? $"第 {data.snapshot.floor} 层 / 房间 {data.snapshot.currentRoom + 1}"
+                        : "波次 " + (data != null ? data.completedWave : 0);
                     label.text = data == null
                         ? "存档 " + (i + 1) + "　空"
-                        : data.displayName + "　波次 " + data.completedWave + "\n" +
+                        : data.displayName + "　" + progress + "\n" +
                           new DateTime(data.updatedTicks, DateTimeKind.Utc).ToLocalTime().ToString("yyyy-MM-dd HH:mm");
                 }
                 buttonObject.GetComponent<Button>().onClick.AddListener(() => OnSlotSelected(slotIndex));
@@ -233,6 +344,8 @@ namespace DevouringBeast
             if (actionPanel != null) actionPanel.SetActive(false);
             if (confirmPanel != null) confirmPanel.SetActive(false);
             if (optionsPanel != null) optionsPanel.SetActive(false);
+            if (_historyPanel != null) Destroy(_historyPanel);
+            _historyPanel = null;
         }
 
         private static void ConfigureSliderRaycasts(Slider slider)
@@ -311,6 +424,8 @@ namespace DevouringBeast
                 if (selectable == null || !selectable.gameObject.activeInHierarchy || !selectable.interactable)
                     continue;
                 if (optionsPanel != null && selectable.transform.IsChildOf(optionsPanel.transform))
+                    continue;
+                if (_historyPanel != null && selectable.transform.IsChildOf(_historyPanel.transform))
                     continue;
 
                 selectable.interactable = false;

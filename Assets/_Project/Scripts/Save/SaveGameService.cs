@@ -28,7 +28,78 @@ namespace DevouringBeast
         public long updatedTicks;
         public float elapsedSeconds;
         public int healthSpent;
+        public int enemiesDefeated;
+        public string finalBoss = string.Empty;
         public List<RogueSkillSaveEntry> rogueSkills = new List<RogueSkillSaveEntry>();
+        public RunSnapshotData snapshot;
+    }
+
+    [Serializable]
+    public sealed class RunSnapshotData
+    {
+        public int version = 1;
+        public int floor = 1;
+        public int currentRoom;
+        public float playerX;
+        public float playerY;
+        public int playerHealth;
+        public int playerMaxHealth;
+        public int playerLevel = 1;
+        public float playerMass;
+        public float playerRequiredMass;
+        public float witchProgress;
+        public float popeProgress;
+        public int popeFollowersSummoned;
+        public int angelStatueUses;
+        public float roomTimer;
+        public float roomMaxTimer;
+        public bool roomCrisis;
+        public List<RoomSnapshotData> rooms = new();
+        public List<EnemySnapshotData> enemies = new();
+        public List<RoomFoodSnapshotData> foodRooms = new();
+    }
+
+    [Serializable]
+    public sealed class RoomSnapshotData
+    {
+        public int x;
+        public int y;
+        public int kind;
+        public bool cleared;
+        public bool visited;
+        public bool demon;
+        public bool floorExit;
+    }
+
+    [Serializable]
+    public sealed class EnemySnapshotData
+    {
+        public int archetype;
+        public float x;
+        public float y;
+        public float currentHealth;
+        public float maximumHealth;
+        public float moveSpeed;
+        public float attackDamage;
+        public float mass;
+    }
+
+    [Serializable]
+    public sealed class RoomFoodSnapshotData
+    {
+        public int x;
+        public int y;
+        public bool cleared;
+        public int remaining;
+        public List<FoodSnapshotData> active = new();
+    }
+
+    [Serializable]
+    public sealed class FoodSnapshotData
+    {
+        public int kind;
+        public float x;
+        public float y;
     }
 
     [Serializable]
@@ -39,6 +110,12 @@ namespace DevouringBeast
         public long completedTicks;
         public float clearTimeSeconds;
         public int healthSpent;
+        public bool cleared;
+        public int enemiesDefeated;
+        public string finalBoss;
+        public string defeatedBy;
+        public int finalFloor;
+        public int finalRoom;
     }
 
     public static class SaveGameService
@@ -131,7 +208,10 @@ namespace DevouringBeast
             data.completedWave = 0;
             data.elapsedSeconds = 0f;
             data.healthSpent = 0;
+            data.enemiesDefeated = 0;
+            data.finalBoss = string.Empty;
             data.rogueSkills = new List<RogueSkillSaveEntry>();
+            data.snapshot = null;
             data.createdTicks = now;
             data.updatedTicks = now;
             if (_sessionStartedAt >= 0d) _sessionStartedAt = Time.realtimeSinceStartupAsDouble;
@@ -144,6 +224,30 @@ namespace DevouringBeast
             SaveSlotData data = GetActiveSlot();
             if (data == null) return;
             data.healthSpent += amount;
+            CommitElapsedTime(data);
+            data.updatedTicks = DateTime.UtcNow.Ticks;
+            Write(data);
+        }
+
+        public static void RecordEnemyDefeated(EnemyData enemy)
+        {
+            if (enemy == null || GameManager.Existing == null || GameManager.Existing.IsTestMode) return;
+            SaveSlotData data = GetActiveSlot();
+            if (data == null) return;
+            data.enemiesDefeated++;
+            if (IsBoss(enemy.archetype)) data.finalBoss = string.IsNullOrWhiteSpace(enemy.displayName)
+                ? enemy.archetype.ToString() : enemy.displayName;
+            data.updatedTicks = DateTime.UtcNow.Ticks;
+            Write(data);
+        }
+
+        public static void SaveSnapshot(RunSnapshotData snapshot)
+        {
+            if (snapshot == null || GameManager.Existing == null || GameManager.Existing.IsTestMode) return;
+            SaveSlotData data = GetActiveSlot();
+            if (data == null) return;
+            data.snapshot = snapshot;
+            data.completedWave = Mathf.Max(0, snapshot.floor - 1);
             CommitElapsedTime(data);
             data.updatedTicks = DateTime.UtcNow.Ticks;
             Write(data);
@@ -182,7 +286,18 @@ namespace DevouringBeast
             string json = PlayerPrefs.GetString(HistoryKey, string.Empty);
             if (string.IsNullOrEmpty(json)) return Array.Empty<CompletedRunData>();
             HistoryContainer container = JsonUtility.FromJson<HistoryContainer>(json);
-            return container?.runs ?? new List<CompletedRunData>();
+            List<CompletedRunData> runs = container?.runs ?? new List<CompletedRunData>();
+            foreach (CompletedRunData run in runs)
+            {
+                if (run == null) continue;
+                // Legacy history only contained successful completions and had no outcome fields.
+                if (run.finalFloor <= 0 && string.IsNullOrEmpty(run.defeatedBy))
+                {
+                    run.cleared = true;
+                    run.finalFloor = 5;
+                }
+            }
+            return runs;
         }
 
         public static CompletedRunData CompleteActiveRun()
@@ -197,16 +312,49 @@ namespace DevouringBeast
                 displayName = data.displayName,
                 completedTicks = data.updatedTicks,
                 clearTimeSeconds = data.elapsedSeconds,
-                healthSpent = data.healthSpent
+                healthSpent = data.healthSpent,
+                cleared = true,
+                enemiesDefeated = data.enemiesDefeated,
+                finalBoss = data.finalBoss,
+                defeatedBy = string.Empty,
+                finalFloor = data.snapshot != null ? data.snapshot.floor : FinalFloorFallback(data),
+                finalRoom = data.snapshot != null ? data.snapshot.currentRoom + 1 : 0
             };
-            List<CompletedRunData> runs = new(GetHistory());
-            runs.Add(history);
-            PlayerPrefs.SetString(HistoryKey, JsonUtility.ToJson(new HistoryContainer { runs = runs }));
-            PlayerPrefs.DeleteKey(SlotPrefix + data.slotIndex);
-            PlayerPrefs.SetInt(ActiveSlotKey, -1);
-            PlayerPrefs.Save();
-            _sessionStartedAt = -1d;
+            ArchiveAndRemoveActive(data, history);
             return history;
+        }
+
+        public static CompletedRunData FailActiveRun(string defeatedBy)
+        {
+            SaveSlotData data = GetActiveSlot();
+            if (data == null) return null;
+            CommitElapsedTime(data, false);
+            data.updatedTicks = DateTime.UtcNow.Ticks;
+            CompletedRunData history = new CompletedRunData
+            {
+                slotIndex = data.slotIndex,
+                displayName = data.displayName,
+                completedTicks = data.updatedTicks,
+                clearTimeSeconds = data.elapsedSeconds,
+                healthSpent = data.healthSpent,
+                cleared = false,
+                enemiesDefeated = data.enemiesDefeated,
+                finalBoss = data.finalBoss,
+                defeatedBy = string.IsNullOrWhiteSpace(defeatedBy) ? "未知" : defeatedBy,
+                finalFloor = data.snapshot != null ? data.snapshot.floor : FinalFloorFallback(data),
+                finalRoom = data.snapshot != null ? data.snapshot.currentRoom + 1 : 0
+            };
+            ArchiveAndRemoveActive(data, history);
+            return history;
+        }
+
+        public static void DeleteHistory(int index)
+        {
+            List<CompletedRunData> runs = new(GetHistory());
+            if (index < 0 || index >= runs.Count) return;
+            runs.RemoveAt(index);
+            PlayerPrefs.SetString(HistoryKey, JsonUtility.ToJson(new HistoryContainer { runs = runs }));
+            PlayerPrefs.Save();
         }
 
         public static void DeleteSlot(int slotIndex)
@@ -229,6 +377,26 @@ namespace DevouringBeast
         {
             PlayerPrefs.SetString(SlotPrefix + data.slotIndex, JsonUtility.ToJson(data));
             PlayerPrefs.Save();
+        }
+
+        private static void ArchiveAndRemoveActive(SaveSlotData data, CompletedRunData history)
+        {
+            List<CompletedRunData> runs = new(GetHistory());
+            runs.Add(history);
+            PlayerPrefs.SetString(HistoryKey, JsonUtility.ToJson(new HistoryContainer { runs = runs }));
+            PlayerPrefs.DeleteKey(SlotPrefix + data.slotIndex);
+            PlayerPrefs.SetInt(ActiveSlotKey, -1);
+            PlayerPrefs.Save();
+            _sessionStartedAt = -1d;
+        }
+
+        private static int FinalFloorFallback(SaveSlotData data) => Mathf.Max(1, data.completedWave + 1);
+
+        private static bool IsBoss(EnemyArchetype archetype)
+        {
+            return archetype == EnemyArchetype.Baby || archetype == EnemyArchetype.SkeletonMan ||
+                archetype == EnemyArchetype.LittleSatan || archetype == EnemyArchetype.Satan ||
+                archetype == EnemyArchetype.MeatMountain;
         }
 
         private static void CommitElapsedTime(SaveSlotData data, bool continueSession = true)

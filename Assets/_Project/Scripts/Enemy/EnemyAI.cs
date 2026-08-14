@@ -229,7 +229,11 @@ namespace DevouringBeast
             {
                 _hasDealtDamage = true;
                 if (_playerHealth != null)
-                    _playerHealth.TakeDamage(Mathf.RoundToInt(AttackDamage));
+                {
+                    EnemyBase source = GetComponent<EnemyBase>();
+                    _playerHealth.TakeDamageFrom(Mathf.RoundToInt(AttackDamage),
+                        source != null && source.Data != null ? source.Data.displayName : gameObject.name);
+                }
             }
 
             // 每个攻击周期都显式重播非循环 attack 动画，保证连续贴身时不会只攻击一次。

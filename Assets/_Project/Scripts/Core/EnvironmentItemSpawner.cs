@@ -193,6 +193,60 @@ namespace DevouringBeast
             CurrentRoomFoodChanged?.Invoke(0);
         }
 
+        public List<RoomFoodSnapshotData> CaptureSnapshots()
+        {
+            List<RoomFoodSnapshotData> snapshots = new(_rooms.Count);
+            foreach (KeyValuePair<Vector2Int, RoomFoodState> pair in _rooms)
+            {
+                RoomFoodSnapshotData snapshot = new()
+                {
+                    x = pair.Key.x,
+                    y = pair.Key.y,
+                    cleared = pair.Value.Cleared,
+                    remaining = pair.Value.Remaining
+                };
+                foreach (WorldItemPoolMember member in pair.Value.Active)
+                {
+                    if (member == null || !member.gameObject.activeSelf) continue;
+                    snapshot.active.Add(new FoodSnapshotData
+                    {
+                        kind = member.Kind,
+                        x = member.transform.position.x,
+                        y = member.transform.position.y
+                    });
+                }
+                snapshots.Add(snapshot);
+            }
+            return snapshots;
+        }
+
+        public void RestoreSnapshots(IReadOnlyList<RoomFoodSnapshotData> snapshots)
+        {
+            ResetForFloor();
+            if (snapshots == null) return;
+            foreach (RoomFoodSnapshotData snapshot in snapshots)
+            {
+                if (snapshot == null) continue;
+                Vector2Int key = new(snapshot.x, snapshot.y);
+                RoomFoodState state = new()
+                {
+                    Cleared = snapshot.cleared,
+                    Remaining = Mathf.Max(0, snapshot.remaining),
+                    NextRefreshTime = Time.time + 0.25f
+                };
+                _rooms[key] = state;
+                foreach (FoodSnapshotData food in snapshot.active ?? new List<FoodSnapshotData>())
+                {
+                    if (!Enum.IsDefined(typeof(FoodKind), food.kind)) continue;
+                    Vector2 position = new(food.x, food.y);
+                    Vector2Int cell = new(
+                        Mathf.RoundToInt(position.x / Mathf.Max(0.25f, _minimumSpacing)),
+                        Mathf.RoundToInt(position.y / Mathf.Max(0.25f, _minimumSpacing)));
+                    Spawn(key, state, (FoodKind)food.kind, position, cell);
+                }
+            }
+        }
+
         private bool TrySpawn(Vector2Int roomKey, RoomFoodState state)
         {
             if (!TryFindPosition(state, out Vector2 position, out Vector2Int cell)) return false;
