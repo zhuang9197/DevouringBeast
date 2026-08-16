@@ -16,7 +16,8 @@ MonoBehaviour:
     baseMoveSpeed: 8
     baseSuction: 100
     baseEnergyBallDamage: 25
-    firstLevelRequiredMass: 35
+    levelRequirementBase: 35
+    levelRequirementIncrement: 15
     maxHealth: 10
     invincibleDuration: 1
     visualColliderRadiusScale: 0.8

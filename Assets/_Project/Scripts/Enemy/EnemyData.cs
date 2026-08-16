@@ -69,6 +69,16 @@ namespace DevouringBeast
         [Header("动作节奏")]
         [Min(0f)] public float specialAttackCooldown;
 
+        [Header("特殊投射物")]
+        [Min(0)] public int specialProjectileWaves;
+        [Min(0)] public int specialProjectileCount;
+        [Min(0f)] public float specialProjectileInterval;
+        [Range(0f, 360f)] public float specialProjectileAngle = 360f;
+        [Range(-360f, 360f)] public float specialProjectileAngleStep;
+        [Min(0)] public int fireballCount;
+        [Min(0f)] public float fireballInterval;
+        [Min(0)] public int fireballRadialBulletCount;
+
         [Header("离地动作")]
         [Min(0f)] public float jumpHeight;
         [Min(0f)] public float takeoffDuration;
@@ -113,6 +123,14 @@ namespace DevouringBeast
                 orbitTangentWeight = orbitTangentWeight,
                 orbitSeparationWeight = orbitSeparationWeight,
                 specialAttackCooldown = specialAttackCooldown,
+                specialProjectileWaves = specialProjectileWaves,
+                specialProjectileCount = specialProjectileCount,
+                specialProjectileInterval = specialProjectileInterval,
+                specialProjectileAngle = specialProjectileAngle,
+                specialProjectileAngleStep = specialProjectileAngleStep,
+                fireballCount = fireballCount,
+                fireballInterval = fireballInterval,
+                fireballRadialBulletCount = fireballRadialBulletCount,
                 jumpHeight = jumpHeight,
                 takeoffDuration = takeoffDuration,
                 airborneDuration = airborneDuration,

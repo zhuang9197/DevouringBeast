@@ -43,6 +43,14 @@ MonoBehaviour:
     orbitTangentWeight: 0.82
     orbitSeparationWeight: 0.3
     specialAttackCooldown: 3
+    specialProjectileWaves: 0
+    specialProjectileCount: 0
+    specialProjectileInterval: 0
+    specialProjectileAngle: 360
+    specialProjectileAngleStep: 0
+    fireballCount: 5
+    fireballInterval: 0.45
+    fireballRadialBulletCount: 4
     jumpHeight: 3.5
     takeoffDuration: 1
     airborneDuration: 3

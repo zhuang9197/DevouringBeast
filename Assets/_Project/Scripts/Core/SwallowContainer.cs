@@ -13,9 +13,8 @@ namespace DevouringBeast
         private PlayerHealth _playerHealth;
         private PlayerInhale _playerInhale;
         [Header("升级进度")]
-        [SerializeField, Min(1f)] private float firstLevelRequirement = 35f;
-        [SerializeField, Min(1f)] private float initialLevelRequirement = 100f;
-        [SerializeField, Min(1.01f)] private float levelGrowthMultiplier = 1.1f;
+        [SerializeField, Min(1f)] private float levelRequirementBase = 35f;
+        [SerializeField, Min(0f)] private float levelRequirementIncrement = 15f;
         [field: SerializeField] public float RequiredMass { get; set; } = 100f;
         [field: SerializeField] public float CurrentMass { get; set; } = 0f;
         [field: SerializeField] public int CurrentLevel { get; private set; } = 1;
@@ -36,8 +35,23 @@ namespace DevouringBeast
             _playerInhale = GetComponent<PlayerInhale>();
             PlayerBalanceSettings config = GameBalance.Current?.Player;
             if (config != null)
-                firstLevelRequirement = Mathf.Max(1f, config.firstLevelRequiredMass);
+            {
+                levelRequirementBase = Mathf.Max(1f, config.levelRequirementBase);
+                levelRequirementIncrement = Mathf.Max(0f, config.levelRequirementIncrement);
+            }
             RequiredMass = GetRequiredMassForLevel(CurrentLevel);
+        }
+
+        public float LevelRequirementBase
+        {
+            get => levelRequirementBase;
+            set => levelRequirementBase = Mathf.Max(1f, value);
+        }
+
+        public float LevelRequirementIncrement
+        {
+            get => levelRequirementIncrement;
+            set => levelRequirementIncrement = Mathf.Max(0f, value);
         }
 
         /// <summary>
@@ -108,16 +122,14 @@ namespace DevouringBeast
         public float GetRequiredMassForLevel(int level)
         {
             level = Mathf.Max(1, level);
-            if (level == 1) return firstLevelRequirement;
-            if (level == 2) return 50f;
-            if (level == 3) return 65f;
-            if (level == 4) return 80f;
-            if (level == 5) return 100f;
-            float required = Mathf.Max(1f, initialLevelRequirement);
-            float growth = Mathf.Max(1.01f, levelGrowthMultiplier);
-            for (int currentLevel = 6; currentLevel <= level; currentLevel++)
-                required = (float)decimal.Ceiling((decimal)required * (decimal)growth);
-            return required;
+            return Mathf.Max(1f, levelRequirementBase +
+                (level - 1) * Mathf.Max(0f, levelRequirementIncrement));
+        }
+
+        public void RefreshLevelRequirement()
+        {
+            RequiredMass = GetRequiredMassForLevel(CurrentLevel);
+            NotifyProgress();
         }
 
         private void NotifyProgress() => OnProgressChanged?.Invoke(CurrentMass, RequiredMass, CurrentLevel);
@@ -138,7 +150,7 @@ namespace DevouringBeast
             Items.Clear();
             CurrentLevel = Mathf.Max(1, level);
             CurrentMass = Mathf.Max(0f, mass);
-            RequiredMass = requiredMass > 0f ? requiredMass : GetRequiredMassForLevel(CurrentLevel);
+            RequiredMass = GetRequiredMassForLevel(CurrentLevel);
             NotifyProgress();
         }
 

@@ -1848,9 +1848,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3400f85a4e74a834fbfd27cf96a6258c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  initialLevelRequirement: 100
-  levelGrowthMultiplier: 1.1
-  <RequiredMass>k__BackingField: 50
+  levelRequirementBase: 35
+  levelRequirementIncrement: 15
+  <RequiredMass>k__BackingField: 35
   <CurrentMass>k__BackingField: 0
   <CurrentLevel>k__BackingField: 1
 --- !u!114 &1772682458

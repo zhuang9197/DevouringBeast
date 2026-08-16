@@ -284,10 +284,14 @@ namespace DevouringBeast
             }
             else if (type == EnemyArchetype.Spider)
             {
-                _movementTimer = (_movementTimer + Time.deltaTime) % Behavior.movementCycleDuration;
-                _moveDirection = _movementTimer < Behavior.movementActiveDuration
+                float cycleDuration = Mathf.Max(0.01f, Behavior != null ? Behavior.movementCycleDuration : 3f);
+                float activeDuration = Mathf.Clamp(Behavior != null ? Behavior.movementActiveDuration : cycleDuration,
+                    0f, cycleDuration);
+                _movementTimer = (_movementTimer + Time.deltaTime) % cycleDuration;
+                _moveDirection = _movementTimer < activeDuration
                     ? ApplyChaseSteering(toPlayer.normalized) : Vector2.zero;
-                if (toPlayer.sqrMagnitude < Behavior.proximityRange * Behavior.proximityRange && _attackTimer <= 0f)
+                float jumpTriggerRange = Behavior != null ? Mathf.Max(0f, Behavior.proximityRange) : 0f;
+                if (toPlayer.sqrMagnitude < jumpTriggerRange * jumpTriggerRange && _attackTimer <= 0f)
                     StartCoroutine(SpiderJumpRoutine());
             }
             else
@@ -457,10 +461,14 @@ namespace DevouringBeast
             else
             {
                 yield return new WaitForSeconds(0.5f);
-                for (int wave = 0; wave < 3; wave++)
+                int waves = GetSpecialProjectileWaves(3);
+                int count = GetSpecialProjectileCount(16);
+                float interval = GetSpecialProjectileInterval(1f);
+                for (int wave = 0; wave < waves; wave++)
                 {
-                    ShootRadial(16, 1f);
-                    yield return new WaitForSeconds(1f);
+                    ShootRadial(count, 1f, GetSpecialProjectileAngleStep() * wave,
+                        GetSpecialProjectileAngle());
+                    if (wave + 1 < waves) yield return new WaitForSeconds(interval);
                 }
             }
             AudioManager.Existing?.StopIntervalLoop(AudioCue.BabyCry);
@@ -475,7 +483,15 @@ namespace DevouringBeast
             if (!hasBat)
             {
                 PlayState("SkillA");
-                for (int i = 0; i < 3; i++) { ShootRadial(8, 1f); yield return new WaitForSeconds(0.5f); }
+                int waves = GetSpecialProjectileWaves(3);
+                int count = GetSpecialProjectileCount(8);
+                float interval = GetSpecialProjectileInterval(0.5f);
+                for (int i = 0; i < waves; i++)
+                {
+                    ShootRadial(count, 1f, GetSpecialProjectileAngleStep() * i,
+                        GetSpecialProjectileAngle());
+                    if (i + 1 < waves) yield return new WaitForSeconds(interval);
+                }
                 Summon(EnemyArchetype.Bat, 3);
             }
             else
@@ -494,13 +510,17 @@ namespace DevouringBeast
             if (invulnerableInAir) _enemy.IsInvulnerable = true;
             yield return MoveVisualHeight(0f, Behavior.jumpHeight, Behavior.takeoffDuration, true);
             float airborneStarted = Time.time;
-            for (int i = 0; i < count; i++)
+            int fireballCount = GetFireballCount(count);
+            float fireballInterval = GetFireballInterval(0.45f);
+            int radialBulletCount = Behavior != null && Behavior.fireballRadialBulletCount > 0
+                ? Behavior.fireballRadialBulletCount : radialOnLand ? 4 : 0;
+            for (int i = 0; i < fireballCount; i++)
             {
                 Vector2 center = MapBounds.Instance != null ? (MapBounds.Instance.Min + MapBounds.Instance.Max) * 0.5f : (Vector2)transform.position;
                 Vector2 half = MapBounds.Instance != null ? (MapBounds.Instance.Max - MapBounds.Instance.Min) * 0.42f : Vector2.one * 5f;
                 Vector2 target = center + new Vector2(Random.Range(-half.x, half.x), Random.Range(-half.y, half.y));
-                SpawnFireball(target, radialOnLand ? 4 : 0);
-                yield return new WaitForSeconds(0.45f);
+                SpawnFireball(target, radialBulletCount);
+                if (i + 1 < fireballCount) yield return new WaitForSeconds(fireballInterval);
             }
             float remainingAirTime = Behavior.airborneDuration - (Time.time - airborneStarted);
             if (remainingAirTime > 0f) yield return new WaitForSeconds(remainingAirTime);
@@ -539,11 +559,19 @@ namespace DevouringBeast
                 SpawnMeatMountainLandingVfx();
                 Camera.main?.GetComponent<CameraFollow>()?.Shake(0.5f, 0.22f);
                 DamagePlayerInRadius(2f, 4, true);
-                ShootRadial(16, 1f);
+                ShootRadial(GetSpecialProjectileCount(16), 1f, 0f, GetSpecialProjectileAngle());
             }
             else
             {
-                for (int i = 0; i < 3; i++) { ShootRadial(8, 1f); yield return new WaitForSeconds(0.6f); }
+                int waves = GetSpecialProjectileWaves(3);
+                int count = GetSpecialProjectileCount(8);
+                float interval = GetSpecialProjectileInterval(0.6f);
+                for (int i = 0; i < waves; i++)
+                {
+                    ShootRadial(count, 1f, GetSpecialProjectileAngleStep() * i,
+                        GetSpecialProjectileAngle());
+                    if (i + 1 < waves) yield return new WaitForSeconds(interval);
+                }
             }
             _busy = false;
             ResetAttackTimer();
@@ -1216,6 +1244,47 @@ namespace DevouringBeast
         private float GetDashSpeed() => Behavior != null && Behavior.dashSpeed > 0f
             ? Behavior.dashSpeed : Behavior != null ? Behavior.specialMoveSpeed : 0f;
 
+        private int GetSpecialProjectileWaves(int fallback)
+        {
+            return Behavior != null && Behavior.specialProjectileWaves > 0
+                ? Behavior.specialProjectileWaves : Mathf.Max(1, fallback);
+        }
+
+        private int GetSpecialProjectileCount(int fallback)
+        {
+            return Behavior != null && Behavior.specialProjectileCount > 0
+                ? Behavior.specialProjectileCount : Mathf.Max(1, fallback);
+        }
+
+        private float GetSpecialProjectileInterval(float fallback)
+        {
+            return Behavior != null && Behavior.specialProjectileInterval > 0f
+                ? Behavior.specialProjectileInterval : Mathf.Max(0.01f, fallback);
+        }
+
+        private float GetSpecialProjectileAngle()
+        {
+            return Behavior != null && Behavior.specialProjectileAngle > 0f
+                ? Mathf.Clamp(Behavior.specialProjectileAngle, 0f, 360f) : 360f;
+        }
+
+        private float GetSpecialProjectileAngleStep()
+        {
+            return Behavior != null ? Behavior.specialProjectileAngleStep : 0f;
+        }
+
+        private int GetFireballCount(int fallback)
+        {
+            return Behavior != null && Behavior.fireballCount > 0
+                ? Behavior.fireballCount : Mathf.Max(1, fallback);
+        }
+
+        private float GetFireballInterval(float fallback)
+        {
+            return Behavior != null && Behavior.fireballInterval > 0f
+                ? Behavior.fireballInterval : Mathf.Max(0.01f, fallback);
+        }
+
         private float GetAimedProjectileSpeed() => _enemy != null && _enemy.Data != null &&
             _enemy.Data.aimedProjectileSpeed > 0f ? _enemy.Data.aimedProjectileSpeed :
             _commonBalance != null ? _commonBalance.aimedProjectileSpeed : 8f;
@@ -1234,16 +1303,18 @@ namespace DevouringBeast
                 GetAimedProjectileSpeed(), GetConfiguredAttackDamage(), false);
         }
 
-        private void ShootRadial(int count, float damage)
+        private void ShootRadial(int count, float damage, float angleOffset = 0f, float angleOverride = -1f)
         {
-            if (_enemy != null && _enemy.Data != null && _enemy.Data.radialProjectileCount > 0)
+            if (angleOverride < 0f && _enemy != null && _enemy.Data != null &&
+                _enemy.Data.radialProjectileCount > 0)
                 count = _enemy.Data.radialProjectileCount;
-            float arc = _enemy != null && _enemy.Data != null
+            float arc = angleOverride >= 0f ? angleOverride : _enemy != null && _enemy.Data != null
                 ? Mathf.Clamp(_enemy.Data.radialProjectileAngle, 0f, 360f) : 360f;
             if (arc <= 0f) arc = 360f;
             for (int i = 0; i < count; i++)
             {
-                float angle = (arc >= 359.99f ? 360f : arc) * Mathf.Deg2Rad *
+                float angle = angleOffset * Mathf.Deg2Rad +
+                    (arc >= 359.99f ? 360f : arc) * Mathf.Deg2Rad *
                     (i / (float)Mathf.Max(1, count) - 0.5f);
                 SpawnProjectile(transform.position, new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)),
                     GetRadialProjectileSpeed(), GetConfiguredAttackDamage() * damage, false);

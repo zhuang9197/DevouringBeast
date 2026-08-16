@@ -140,7 +140,8 @@ namespace DevouringBeast
             AddField(content.transform, "player.maxHealth", "血量", 1f);
             AddField(content.transform, "player.moveSpeed", "移动速度", 0.01f);
             AddField(content.transform, "player.suction", "吸力", 0f);
-            AddField(content.transform, "player.levelMass", "升级所需质量", 1f);
+            AddField(content.transform, "player.levelBaseMass", "升级初始质量", 1f);
+            AddField(content.transform, "player.levelIncrement", "每级递增质量", 0f);
             AddField(content.transform, "player.energyDamage", "能量球伤害", 0f);
             AddField(content.transform, "player.suctionDamage", "吸力伤害倍率", 0f);
             AddField(content.transform, "player.inhaleRadius", "吸力范围", 0f);
@@ -154,14 +155,59 @@ namespace DevouringBeast
             AddField(content.transform, "enemy.attackCooldown", "技能触发间隔", 0.01f);
             AddField(content.transform, "enemy.attackRange", "攻击范围", 0f);
             AddField(content.transform, "enemy.detectRange", "追踪范围", 0f);
+
+            AddSection(content.transform, "投射物与特殊攻击");
             AddField(content.transform, "enemy.aimedSpeed", "追踪子弹速度", 0f);
             AddField(content.transform, "enemy.radialSpeed", "环形子弹速度", 0f);
             AddField(content.transform, "enemy.radialCount", "环形子弹数量", 0f);
             AddField(content.transform, "enemy.radialAngle", "环形子弹角度", 0f);
             AddField(content.transform, "enemy.specialCooldown", "特殊技能间隔", 0.01f);
+            AddField(content.transform, "enemy.specialWaves", "特殊攻击波数", 0f);
+            AddField(content.transform, "enemy.specialBulletCount", "每波子弹数量", 0f);
+            AddField(content.transform, "enemy.specialBulletInterval", "每波子弹间隔", 0.01f);
+            AddField(content.transform, "enemy.specialBulletAngle", "每波子弹角度", 0f);
+            AddField(content.transform, "enemy.specialBulletAngleStep", "每波旋转角度", 0f);
+            AddField(content.transform, "enemy.fireballCount", "火球数量", 0f);
+            AddField(content.transform, "enemy.fireballInterval", "火球间隔", 0.01f);
+            AddField(content.transform, "enemy.fireballRadialCount", "火球落地子弹数", 0f);
+
+            AddSection(content.transform, "特殊移动与跳跃");
             AddField(content.transform, "enemy.proximityRange", "蜘蛛触发距离", 0f);
             AddField(content.transform, "enemy.jumpSpeed", "蜘蛛跳跃速度", 0f);
             AddField(content.transform, "enemy.dashSpeed", "冲刺速度", 0f);
+            AddField(content.transform, "enemy.specialMoveSpeed", "特殊移动速度", 0f);
+            AddField(content.transform, "enemy.dashDuration", "跳跃/冲刺时长", 0.01f);
+            AddField(content.transform, "enemy.movementCycle", "移动循环时长", 0.01f);
+            AddField(content.transform, "enemy.movementActive", "移动激活时长", 0f);
+            AddField(content.transform, "enemy.movementIdle", "移动停顿时长", 0f);
+            AddField(content.transform, "enemy.actionsPerSpecial", "每几次触发特殊", 0f);
+            AddField(content.transform, "enemy.jumpHeight", "跳跃高度", 0f);
+            AddField(content.transform, "enemy.takeoffDuration", "起跳时长", 0.01f);
+            AddField(content.transform, "enemy.airborneDuration", "空中时长", 0f);
+            AddField(content.transform, "enemy.landingDuration", "落地时长", 0.01f);
+            AddField(content.transform, "enemy.dashPreparation", "冲刺准备时长", 0f);
+            AddField(content.transform, "enemy.dashRecovery", "冲刺恢复时长", 0f);
+            AddField(content.transform, "enemy.fireballFallDuration", "火球下落时长", 0f);
+            AddField(content.transform, "enemy.offscreenPadding", "飞天屏外距离", 0f);
+            AddField(content.transform, "enemy.stateTransition", "阶段切换时长", 0f);
+            AddField(content.transform, "enemy.stateHold", "阶段保持时长", 0f);
+
+            AddSection(content.transform, "环绕、游走与受伤触发");
+            AddField(content.transform, "enemy.orbitAngularSpeed", "环绕角速度", 0f);
+            AddField(content.transform, "enemy.orbitPursuitWeight", "环绕追踪权重", 0f);
+            AddField(content.transform, "enemy.orbitTangentWeight", "环绕切向权重", 0f);
+            AddField(content.transform, "enemy.orbitSeparationWeight", "环绕避让权重", 0f);
+            AddField(content.transform, "enemy.wanderMinInterval", "游走最短间隔", 0f);
+            AddField(content.transform, "enemy.wanderMaxInterval", "游走最长间隔", 0f);
+            AddField(content.transform, "enemy.wanderTurnAngle", "游走最大转角", 0f);
+            AddField(content.transform, "enemy.wanderTurnSpeed", "游走转向速度", 0f);
+            AddField(content.transform, "enemy.evasiveTurnSpeed", "规避转向速度", 0f);
+            AddField(content.transform, "enemy.healthLossInterval", "受伤触发间隔", 0f);
+            AddField(content.transform, "enemy.healthLossMaxTriggers", "受伤最多触发次数", 0f);
+            AddField(content.transform, "enemy.healthLossBulletCount", "受伤触发子弹数", 0f);
+            AddField(content.transform, "enemy.healthLossSummonMeatball", "受伤召唤肉球(0/1)", 0f);
+            AddField(content.transform, "enemy.healthLossMaxScale", "受伤最大膨胀倍率", 1f);
+            AddField(content.transform, "enemy.healthLossPulseDuration", "受伤回弹时长", 0.01f);
 
             Button applyPlayer = CreateButton("ApplyPlayer", panel.transform, new Vector2(0.04f, 0.08f),
                 new Vector2(0.48f, 0.14f), "应用玩家配置");
@@ -238,8 +284,13 @@ namespace DevouringBeast
         {
             return key switch
             {
-                "player.maxHealth" or "player.levelMass" or "enemy.maxHealth" => 1f,
-                "player.moveSpeed" or "enemy.attackCooldown" or "enemy.specialCooldown" => 0.01f,
+                "player.maxHealth" or "player.levelBaseMass" or "enemy.maxHealth" or
+                    "enemy.healthLossMaxScale" => 1f,
+                "player.moveSpeed" or "enemy.attackCooldown" or "enemy.specialCooldown" or
+                    "enemy.specialBulletInterval" or "enemy.fireballInterval" or
+                    "enemy.dashDuration" or "enemy.movementCycle" or
+                    "enemy.takeoffDuration" or "enemy.landingDuration" or
+                    "enemy.healthLossPulseDuration" => 0.01f,
                 _ => 0f
             };
         }
@@ -312,7 +363,8 @@ namespace DevouringBeast
             SetField("player.maxHealth", health != null ? health.MaxHealth : 0f, force);
             SetField("player.moveSpeed", controller != null ? controller.MoveSpeed : 0f, force);
             SetField("player.suction", inhale != null ? inhale.MaxSuctionForce : 0f, force);
-            SetField("player.levelMass", container != null ? container.RequiredMass : 0f, force);
+            SetField("player.levelBaseMass", container != null ? container.LevelRequirementBase : 0f, force);
+            SetField("player.levelIncrement", container != null ? container.LevelRequirementIncrement : 0f, force);
             SetField("player.energyDamage", spit != null ? spit.BaseDamage : 0f, force);
             SetField("player.suctionDamage", inhale != null ? inhale.BaseDamageMultiplier : 0f, force);
             SetField("player.inhaleRadius", inhale != null ? inhale.InhaleRadius : 0f, force);
@@ -345,6 +397,51 @@ namespace DevouringBeast
             SetField("enemy.proximityRange", data.behavior != null ? data.behavior.proximityRange : 0f, force);
             SetField("enemy.jumpSpeed", data.behavior != null ? data.behavior.jumpSpeed : 0f, force);
             SetField("enemy.dashSpeed", data.behavior != null ? data.behavior.dashSpeed : 0f, force);
+            RefreshBehaviorFields(data.behavior, force);
+        }
+
+        private void RefreshBehaviorFields(EnemyBehaviorSettings behavior, bool force)
+        {
+            if (behavior == null) return;
+            SetField("enemy.specialWaves", behavior.specialProjectileWaves, force);
+            SetField("enemy.specialBulletCount", behavior.specialProjectileCount, force);
+            SetField("enemy.specialBulletInterval", behavior.specialProjectileInterval, force);
+            SetField("enemy.specialBulletAngle", behavior.specialProjectileAngle, force);
+            SetField("enemy.specialBulletAngleStep", behavior.specialProjectileAngleStep, force);
+            SetField("enemy.fireballCount", behavior.fireballCount, force);
+            SetField("enemy.fireballInterval", behavior.fireballInterval, force);
+            SetField("enemy.fireballRadialCount", behavior.fireballRadialBulletCount, force);
+            SetField("enemy.specialMoveSpeed", behavior.specialMoveSpeed, force);
+            SetField("enemy.dashDuration", behavior.dashDuration, force);
+            SetField("enemy.movementCycle", behavior.movementCycleDuration, force);
+            SetField("enemy.movementActive", behavior.movementActiveDuration, force);
+            SetField("enemy.movementIdle", behavior.movementIdleDuration, force);
+            SetField("enemy.actionsPerSpecial", behavior.actionsPerSpecial, force);
+            SetField("enemy.jumpHeight", behavior.jumpHeight, force);
+            SetField("enemy.takeoffDuration", behavior.takeoffDuration, force);
+            SetField("enemy.airborneDuration", behavior.airborneDuration, force);
+            SetField("enemy.landingDuration", behavior.landingDuration, force);
+            SetField("enemy.dashPreparation", behavior.dashPreparationDuration, force);
+            SetField("enemy.dashRecovery", behavior.dashRecoveryDuration, force);
+            SetField("enemy.fireballFallDuration", behavior.fireballFallDuration, force);
+            SetField("enemy.offscreenPadding", behavior.offscreenPadding, force);
+            SetField("enemy.stateTransition", behavior.stateTransitionDuration, force);
+            SetField("enemy.stateHold", behavior.stateHoldDuration, force);
+            SetField("enemy.orbitAngularSpeed", behavior.orbitAngularSpeed, force);
+            SetField("enemy.orbitPursuitWeight", behavior.orbitPursuitWeight, force);
+            SetField("enemy.orbitTangentWeight", behavior.orbitTangentWeight, force);
+            SetField("enemy.orbitSeparationWeight", behavior.orbitSeparationWeight, force);
+            SetField("enemy.wanderMinInterval", behavior.wanderIntervalRange.x, force);
+            SetField("enemy.wanderMaxInterval", behavior.wanderIntervalRange.y, force);
+            SetField("enemy.wanderTurnAngle", behavior.wanderMaximumTurnAngle, force);
+            SetField("enemy.wanderTurnSpeed", behavior.wanderTurnSpeed, force);
+            SetField("enemy.evasiveTurnSpeed", behavior.evasiveTurnSpeed, force);
+            SetField("enemy.healthLossInterval", behavior.healthLossEffectInterval, force);
+            SetField("enemy.healthLossMaxTriggers", behavior.healthLossEffectMaximumTriggers, force);
+            SetField("enemy.healthLossBulletCount", behavior.healthLossEffectBulletCount, force);
+            SetField("enemy.healthLossSummonMeatball", behavior.healthLossEffectSummonsMeatball ? 1f : 0f, force);
+            SetField("enemy.healthLossMaxScale", behavior.healthLossEffectMaximumScale, force);
+            SetField("enemy.healthLossPulseDuration", behavior.healthLossEffectPulseDuration, force);
         }
 
         private void ApplyFieldImmediately(string key, float minimum)
@@ -369,7 +466,8 @@ namespace DevouringBeast
             ApplyPlayerRuntimeValue("player.maxHealth", ReadField("player.maxHealth", health != null ? health.MaxHealth : 1f));
             ApplyPlayerRuntimeValue("player.moveSpeed", ReadField("player.moveSpeed", controller != null ? controller.MoveSpeed : 0f));
             ApplyPlayerRuntimeValue("player.suction", ReadField("player.suction", inhale != null ? inhale.MaxSuctionForce : 0f));
-            ApplyPlayerRuntimeValue("player.levelMass", ReadField("player.levelMass", container != null ? container.RequiredMass : 1f));
+            ApplyPlayerRuntimeValue("player.levelBaseMass", ReadField("player.levelBaseMass", container != null ? container.LevelRequirementBase : 1f));
+            ApplyPlayerRuntimeValue("player.levelIncrement", ReadField("player.levelIncrement", container != null ? container.LevelRequirementIncrement : 0f));
             ApplyPlayerRuntimeValue("player.energyDamage", ReadField("player.energyDamage", spit != null ? spit.BaseDamage : 0f));
             ApplyPlayerRuntimeValue("player.suctionDamage", ReadField("player.suctionDamage", inhale != null ? inhale.BaseDamageMultiplier : 1f));
             ApplyPlayerRuntimeValue("player.inhaleRadius", ReadField("player.inhaleRadius", inhale != null ? inhale.InhaleRadius : 0f));
@@ -379,7 +477,8 @@ namespace DevouringBeast
             config.Player.baseMoveSpeed = Mathf.Max(0.01f, ReadField("player.moveSpeed", config.Player.baseMoveSpeed));
             config.Player.baseSuction = Mathf.Max(0f, ReadField("player.suction", config.Player.baseSuction));
             config.Player.baseEnergyBallDamage = Mathf.Max(0f, ReadField("player.energyDamage", config.Player.baseEnergyBallDamage));
-            config.Player.firstLevelRequiredMass = Mathf.Max(1f, ReadField("player.levelMass", config.Player.firstLevelRequiredMass));
+            config.Player.levelRequirementBase = Mathf.Max(1f, ReadField("player.levelBaseMass", config.Player.levelRequirementBase));
+            config.Player.levelRequirementIncrement = Mathf.Max(0f, ReadField("player.levelIncrement", config.Player.levelRequirementIncrement));
             config.Inhale.maximumSuctionForce = Mathf.Max(0f, ReadField("player.suction", config.Inhale.maximumSuctionForce));
             config.Inhale.suctionDamageMultiplier = Mathf.Max(0f, ReadField("player.suctionDamage", config.Inhale.suctionDamageMultiplier));
             config.Inhale.radius = Mathf.Max(0f, ReadField("player.inhaleRadius", config.Inhale.radius));
@@ -408,6 +507,7 @@ namespace DevouringBeast
             ApplyEnemyRuntimeValue("enemy.proximityRange", ReadField("enemy.proximityRange", data.behavior.proximityRange));
             ApplyEnemyRuntimeValue("enemy.jumpSpeed", ReadField("enemy.jumpSpeed", data.behavior.jumpSpeed));
             ApplyEnemyRuntimeValue("enemy.dashSpeed", ReadField("enemy.dashSpeed", data.behavior.dashSpeed));
+            ApplyBehaviorFields(data.behavior);
 
             EnemyData template = _trackedEnemy.TemplateData;
             if (template != null && template != data)
@@ -417,6 +517,49 @@ namespace DevouringBeast
             }
             _trackedEnemy.GetComponent<EnemyActor>()?.RefreshTestConfiguration();
             RefreshEnemyFields(true);
+        }
+
+        private void ApplyBehaviorFields(EnemyBehaviorSettings behavior)
+        {
+            ApplyEnemyRuntimeValue("enemy.specialWaves", ReadField("enemy.specialWaves", behavior.specialProjectileWaves));
+            ApplyEnemyRuntimeValue("enemy.specialBulletCount", ReadField("enemy.specialBulletCount", behavior.specialProjectileCount));
+            ApplyEnemyRuntimeValue("enemy.specialBulletInterval", ReadField("enemy.specialBulletInterval", behavior.specialProjectileInterval));
+            ApplyEnemyRuntimeValue("enemy.specialBulletAngle", ReadField("enemy.specialBulletAngle", behavior.specialProjectileAngle));
+            ApplyEnemyRuntimeValue("enemy.specialBulletAngleStep", ReadField("enemy.specialBulletAngleStep", behavior.specialProjectileAngleStep));
+            ApplyEnemyRuntimeValue("enemy.fireballCount", ReadField("enemy.fireballCount", behavior.fireballCount));
+            ApplyEnemyRuntimeValue("enemy.fireballInterval", ReadField("enemy.fireballInterval", behavior.fireballInterval));
+            ApplyEnemyRuntimeValue("enemy.fireballRadialCount", ReadField("enemy.fireballRadialCount", behavior.fireballRadialBulletCount));
+            ApplyEnemyRuntimeValue("enemy.specialMoveSpeed", ReadField("enemy.specialMoveSpeed", behavior.specialMoveSpeed));
+            ApplyEnemyRuntimeValue("enemy.dashDuration", ReadField("enemy.dashDuration", behavior.dashDuration));
+            ApplyEnemyRuntimeValue("enemy.movementCycle", ReadField("enemy.movementCycle", behavior.movementCycleDuration));
+            ApplyEnemyRuntimeValue("enemy.movementActive", ReadField("enemy.movementActive", behavior.movementActiveDuration));
+            ApplyEnemyRuntimeValue("enemy.movementIdle", ReadField("enemy.movementIdle", behavior.movementIdleDuration));
+            ApplyEnemyRuntimeValue("enemy.actionsPerSpecial", ReadField("enemy.actionsPerSpecial", behavior.actionsPerSpecial));
+            ApplyEnemyRuntimeValue("enemy.jumpHeight", ReadField("enemy.jumpHeight", behavior.jumpHeight));
+            ApplyEnemyRuntimeValue("enemy.takeoffDuration", ReadField("enemy.takeoffDuration", behavior.takeoffDuration));
+            ApplyEnemyRuntimeValue("enemy.airborneDuration", ReadField("enemy.airborneDuration", behavior.airborneDuration));
+            ApplyEnemyRuntimeValue("enemy.landingDuration", ReadField("enemy.landingDuration", behavior.landingDuration));
+            ApplyEnemyRuntimeValue("enemy.dashPreparation", ReadField("enemy.dashPreparation", behavior.dashPreparationDuration));
+            ApplyEnemyRuntimeValue("enemy.dashRecovery", ReadField("enemy.dashRecovery", behavior.dashRecoveryDuration));
+            ApplyEnemyRuntimeValue("enemy.fireballFallDuration", ReadField("enemy.fireballFallDuration", behavior.fireballFallDuration));
+            ApplyEnemyRuntimeValue("enemy.offscreenPadding", ReadField("enemy.offscreenPadding", behavior.offscreenPadding));
+            ApplyEnemyRuntimeValue("enemy.stateTransition", ReadField("enemy.stateTransition", behavior.stateTransitionDuration));
+            ApplyEnemyRuntimeValue("enemy.stateHold", ReadField("enemy.stateHold", behavior.stateHoldDuration));
+            ApplyEnemyRuntimeValue("enemy.orbitAngularSpeed", ReadField("enemy.orbitAngularSpeed", behavior.orbitAngularSpeed));
+            ApplyEnemyRuntimeValue("enemy.orbitPursuitWeight", ReadField("enemy.orbitPursuitWeight", behavior.orbitPursuitWeight));
+            ApplyEnemyRuntimeValue("enemy.orbitTangentWeight", ReadField("enemy.orbitTangentWeight", behavior.orbitTangentWeight));
+            ApplyEnemyRuntimeValue("enemy.orbitSeparationWeight", ReadField("enemy.orbitSeparationWeight", behavior.orbitSeparationWeight));
+            ApplyEnemyRuntimeValue("enemy.wanderMinInterval", ReadField("enemy.wanderMinInterval", behavior.wanderIntervalRange.x));
+            ApplyEnemyRuntimeValue("enemy.wanderMaxInterval", ReadField("enemy.wanderMaxInterval", behavior.wanderIntervalRange.y));
+            ApplyEnemyRuntimeValue("enemy.wanderTurnAngle", ReadField("enemy.wanderTurnAngle", behavior.wanderMaximumTurnAngle));
+            ApplyEnemyRuntimeValue("enemy.wanderTurnSpeed", ReadField("enemy.wanderTurnSpeed", behavior.wanderTurnSpeed));
+            ApplyEnemyRuntimeValue("enemy.evasiveTurnSpeed", ReadField("enemy.evasiveTurnSpeed", behavior.evasiveTurnSpeed));
+            ApplyEnemyRuntimeValue("enemy.healthLossInterval", ReadField("enemy.healthLossInterval", behavior.healthLossEffectInterval));
+            ApplyEnemyRuntimeValue("enemy.healthLossMaxTriggers", ReadField("enemy.healthLossMaxTriggers", behavior.healthLossEffectMaximumTriggers));
+            ApplyEnemyRuntimeValue("enemy.healthLossBulletCount", ReadField("enemy.healthLossBulletCount", behavior.healthLossEffectBulletCount));
+            ApplyEnemyRuntimeValue("enemy.healthLossSummonMeatball", ReadField("enemy.healthLossSummonMeatball", behavior.healthLossEffectSummonsMeatball ? 1f : 0f));
+            ApplyEnemyRuntimeValue("enemy.healthLossMaxScale", ReadField("enemy.healthLossMaxScale", behavior.healthLossEffectMaximumScale));
+            ApplyEnemyRuntimeValue("enemy.healthLossPulseDuration", ReadField("enemy.healthLossPulseDuration", behavior.healthLossEffectPulseDuration));
         }
 
         private void ApplyPlayerRuntimeValue(string key, float value)
@@ -433,7 +576,20 @@ namespace DevouringBeast
                 case "player.maxHealth": health?.SetMaxHealthForTesting(Mathf.Max(1, Mathf.RoundToInt(value))); break;
                 case "player.moveSpeed": if (controller != null) controller.MoveSpeed = Mathf.Max(0.01f, value); break;
                 case "player.suction": if (inhale != null) inhale.MaxSuctionForce = Mathf.Max(0f, value); break;
-                case "player.levelMass": if (container != null) container.RequiredMass = Mathf.Max(1f, value); break;
+                case "player.levelBaseMass":
+                    if (container != null)
+                    {
+                        container.LevelRequirementBase = value;
+                        container.RefreshLevelRequirement();
+                    }
+                    break;
+                case "player.levelIncrement":
+                    if (container != null)
+                    {
+                        container.LevelRequirementIncrement = value;
+                        container.RefreshLevelRequirement();
+                    }
+                    break;
                 case "player.energyDamage": if (spit != null) spit.BaseDamage = Mathf.Max(0f, value); break;
                 case "player.suctionDamage": if (inhale != null) inhale.BaseDamageMultiplier = Mathf.Max(0f, value); break;
                 case "player.inhaleRadius": if (inhale != null) inhale.InhaleRadius = Mathf.Max(0f, value); break;
@@ -472,6 +628,45 @@ namespace DevouringBeast
                 case "enemy.proximityRange": data.behavior.proximityRange = Mathf.Max(0f, value); break;
                 case "enemy.jumpSpeed": data.behavior.jumpSpeed = Mathf.Max(0f, value); break;
                 case "enemy.dashSpeed": data.behavior.dashSpeed = Mathf.Max(0f, value); break;
+                case "enemy.specialWaves": data.behavior.specialProjectileWaves = Mathf.Max(0, Mathf.RoundToInt(value)); break;
+                case "enemy.specialBulletCount": data.behavior.specialProjectileCount = Mathf.Max(0, Mathf.RoundToInt(value)); break;
+                case "enemy.specialBulletInterval": data.behavior.specialProjectileInterval = Mathf.Max(0f, value); break;
+                case "enemy.specialBulletAngle": data.behavior.specialProjectileAngle = Mathf.Clamp(value, 0f, 360f); break;
+                case "enemy.specialBulletAngleStep": data.behavior.specialProjectileAngleStep = Mathf.Clamp(value, -360f, 360f); break;
+                case "enemy.fireballCount": data.behavior.fireballCount = Mathf.Max(0, Mathf.RoundToInt(value)); break;
+                case "enemy.fireballInterval": data.behavior.fireballInterval = Mathf.Max(0f, value); break;
+                case "enemy.fireballRadialCount": data.behavior.fireballRadialBulletCount = Mathf.Max(0, Mathf.RoundToInt(value)); break;
+                case "enemy.specialMoveSpeed": data.behavior.specialMoveSpeed = Mathf.Max(0f, value); break;
+                case "enemy.dashDuration": data.behavior.dashDuration = Mathf.Max(0f, value); break;
+                case "enemy.movementCycle": data.behavior.movementCycleDuration = Mathf.Max(0.01f, value); break;
+                case "enemy.movementActive": data.behavior.movementActiveDuration = Mathf.Max(0f, value); break;
+                case "enemy.movementIdle": data.behavior.movementIdleDuration = Mathf.Max(0f, value); break;
+                case "enemy.actionsPerSpecial": data.behavior.actionsPerSpecial = Mathf.Max(0, Mathf.RoundToInt(value)); break;
+                case "enemy.jumpHeight": data.behavior.jumpHeight = Mathf.Max(0f, value); break;
+                case "enemy.takeoffDuration": data.behavior.takeoffDuration = Mathf.Max(0f, value); break;
+                case "enemy.airborneDuration": data.behavior.airborneDuration = Mathf.Max(0f, value); break;
+                case "enemy.landingDuration": data.behavior.landingDuration = Mathf.Max(0f, value); break;
+                case "enemy.dashPreparation": data.behavior.dashPreparationDuration = Mathf.Max(0f, value); break;
+                case "enemy.dashRecovery": data.behavior.dashRecoveryDuration = Mathf.Max(0f, value); break;
+                case "enemy.fireballFallDuration": data.behavior.fireballFallDuration = Mathf.Max(0f, value); break;
+                case "enemy.offscreenPadding": data.behavior.offscreenPadding = Mathf.Max(0f, value); break;
+                case "enemy.stateTransition": data.behavior.stateTransitionDuration = Mathf.Max(0f, value); break;
+                case "enemy.stateHold": data.behavior.stateHoldDuration = Mathf.Max(0f, value); break;
+                case "enemy.orbitAngularSpeed": data.behavior.orbitAngularSpeed = Mathf.Max(0f, value); break;
+                case "enemy.orbitPursuitWeight": data.behavior.orbitPursuitWeight = Mathf.Max(0f, value); break;
+                case "enemy.orbitTangentWeight": data.behavior.orbitTangentWeight = Mathf.Max(0f, value); break;
+                case "enemy.orbitSeparationWeight": data.behavior.orbitSeparationWeight = Mathf.Max(0f, value); break;
+                case "enemy.wanderMinInterval": data.behavior.wanderIntervalRange.x = Mathf.Max(0f, value); break;
+                case "enemy.wanderMaxInterval": data.behavior.wanderIntervalRange.y = Mathf.Max(0f, value); break;
+                case "enemy.wanderTurnAngle": data.behavior.wanderMaximumTurnAngle = Mathf.Clamp(value, 0f, 180f); break;
+                case "enemy.wanderTurnSpeed": data.behavior.wanderTurnSpeed = Mathf.Max(0f, value); break;
+                case "enemy.evasiveTurnSpeed": data.behavior.evasiveTurnSpeed = Mathf.Max(0f, value); break;
+                case "enemy.healthLossInterval": data.behavior.healthLossEffectInterval = Mathf.Clamp01(value); break;
+                case "enemy.healthLossMaxTriggers": data.behavior.healthLossEffectMaximumTriggers = Mathf.Max(0, Mathf.RoundToInt(value)); break;
+                case "enemy.healthLossBulletCount": data.behavior.healthLossEffectBulletCount = Mathf.Max(0, Mathf.RoundToInt(value)); break;
+                case "enemy.healthLossSummonMeatball": data.behavior.healthLossEffectSummonsMeatball = value >= 0.5f; break;
+                case "enemy.healthLossMaxScale": data.behavior.healthLossEffectMaximumScale = Mathf.Max(1f, value); break;
+                case "enemy.healthLossPulseDuration": data.behavior.healthLossEffectPulseDuration = Mathf.Max(0.01f, value); break;
             }
             _trackedEnemy.GetComponent<EnemyActor>()?.RefreshTestConfiguration();
         }

@@ -13,6 +13,8 @@
 | 野兽形态每秒消耗 | 同上 | `player.witchBeastProgressDrainPerSecond` |
 | 玩家能量球速度 | 同上 | `spit.speed` |
 | 玩家能量球伤害 | 同上 | `player.baseEnergyBallDamage` |
+| 玩家升级初始质量 | 同上 | `player.levelRequirementBase` |
+| 玩家每级递增质量 | 同上 | `player.levelRequirementIncrement` |
 | 敌人移动速度 | `Config/Enemies/<Enemy>.asset` | `moveSpeed` |
 | 敌人瞄准子弹速度 | 同上 | `aimedProjectileSpeed`；为 `0` 时使用全局 `enemy.aimedProjectileSpeed` |
 | 敌人环形子弹速度 | 同上 | `radialProjectileSpeed`；为 `0` 时使用全局 `enemy.radialProjectileSpeed` |
@@ -30,6 +32,8 @@
 | `baseMoveSpeed` | 玩家基础世界移动速度，也是敌人归一化速度换算的玩家基准。 |
 | `baseSuction` | 玩家基础吸力。 |
 | `baseEnergyBallDamage` | 普通能量球基础伤害。 |
+| `levelRequirementBase` | 1 级升级所需质量。 |
+| `levelRequirementIncrement` | 每提高一级增加的升级质量；公式为 `初始质量 + (等级 - 1) × 递增质量`。 |
 | `maxHealth` | 初始最大生命值。 |
 | `invincibleDuration` | 普通受伤后的无敌时间（秒）。 |
 | `visualColliderRadiusScale` | 以当前精灵较短边的一半为基准计算圆形碰撞半径时的倍率。 |
@@ -198,6 +202,8 @@
 | `attackCooldown` | 两次攻击动作开始之间的间隔。 |
 | `detectRange` | 发现玩家的范围。 |
 | `aimedProjectileSpeed` / `radialProjectileSpeed` | 本敌人的瞄准/环形子弹速度；大于 0 时覆盖全局值。 |
+| `radialProjectileCount` | 普通环形攻击子弹数；为 0 时使用具体攻击逻辑的默认数量。 |
+| `radialProjectileAngle` | 普通环形攻击覆盖角度。 |
 | `massValue` | 吞噬后提供的质量。 |
 | `aliveInhaleThreshold` / `deadInhaleThreshold` | 活体/尸体可被吸动需要的吸力门槛。 |
 
@@ -206,9 +212,9 @@
 | 字段 | 含义 |
 | --- | --- |
 | `wanderIntervalRange` | 每次重新选择游走方向的时间范围。 |
-| `proximityRange` | 行为近距离半径；Fly 使用它作为本地绕圈半径。 |
+| `proximityRange` | 行为近距离半径；Fly 使用它作为本地绕圈半径，Spider 使用它作为跳跃触发距离。 |
 | `specialMoveSpeed` | 特殊移动速度。 |
-| `dashSpeed` / `jumpSpeed` | 冲刺/跳跃速度。 |
+| `dashSpeed` / `jumpSpeed` | 冲刺/跳跃速度；Spider 的 `jumpSpeed` 大于 0 时按距离实时计算扑击时长。 |
 | `fireballFallDuration` | 本敌人的火球下落时间；为 0 时使用全局值。 |
 | `dashDuration` | 固定时长冲刺动作的持续时间。 |
 | `movementCycleDuration` | 周期移动总时长。 |
@@ -219,6 +225,13 @@
 | `orbitAngularSpeed` | 圆周行为转向强度/角速度参数。 |
 | `orbitPursuitWeight` / `orbitTangentWeight` / `orbitSeparationWeight` | 圆周追踪的追击、切向和分离权重。 |
 | `specialAttackCooldown` | 特殊攻击冷却；为 0 时回退到 `attackCooldown`。 |
+| `specialProjectileWaves` | 特殊环形攻击的波数，例如宝宝默认 3 波。 |
+| `specialProjectileCount` | 特殊环形攻击每波子弹数。 |
+| `specialProjectileInterval` | 特殊环形攻击波与波之间的间隔。 |
+| `specialProjectileAngle` | 每波子弹覆盖的扇区角度。 |
+| `specialProjectileAngleStep` | 后一波相对前一波旋转的角度，避免连续波次保持同一弹道。 |
+| `fireballCount` / `fireballInterval` | 飞天火球技能的火球数量与生成间隔。 |
+| `fireballRadialBulletCount` | 每颗火球落地后发射的环形子弹数量；为 0 表示不发射。 |
 | `jumpHeight` | 视觉离地高度。 |
 | `takeoffDuration` / `airborneDuration` / `landingDuration` | 起飞、滞空、落地时间。 |
 | `offscreenPadding` | 飞出屏幕时超出可视边界的距离。 |
