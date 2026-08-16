@@ -58,6 +58,10 @@ namespace DevouringBeast
         public EnemyArchetype Archetype => _enemy != null && _enemy.Data != null
             ? _enemy.Data.archetype : EnemyArchetype.Bat;
         public bool IsYellowVariant => HasVariant(WhiteEnemyVariant.Yellow);
+        public int EffectiveRadialProjectileCount => _enemy != null && _enemy.Data != null
+            ? _enemy.Data.radialProjectileCount : 0;
+        public float EffectiveRadialProjectileAngle => _enemy != null && _enemy.Data != null
+            ? _enemy.Data.radialProjectileAngle : 360f;
         private EnemyBehaviorSettings Behavior => _enemy != null && _enemy.Data != null
             ? _enemy.Data.behavior : null;
 
@@ -154,6 +158,17 @@ namespace DevouringBeast
             GetComponent<GroundShadow>()?.SetVisible(true);
             ConfigureWhiteVariants();
             FindPlayer();
+        }
+
+        public void RefreshTestConfiguration()
+        {
+            if (_enemy == null || _enemy.Data == null) return;
+            _movementSpeedRatio = _enemy.Data.moveSpeed;
+            bool hasContactDamage = Archetype != EnemyArchetype.Mushroom && _enemy.Data.attackDamage > 0f;
+            _body.bodyType = hasContactDamage ? RigidbodyType2D.Kinematic : RigidbodyType2D.Dynamic;
+            float cooldown = Behavior != null && Behavior.specialAttackCooldown > 0f
+                ? Behavior.specialAttackCooldown : _enemy.Data.attackCooldown;
+            _attackTimer = Mathf.Min(_attackTimer, Mathf.Max(0.01f, cooldown));
         }
 
         private void FindPlayer()
@@ -1221,9 +1236,15 @@ namespace DevouringBeast
 
         private void ShootRadial(int count, float damage)
         {
+            if (_enemy != null && _enemy.Data != null && _enemy.Data.radialProjectileCount > 0)
+                count = _enemy.Data.radialProjectileCount;
+            float arc = _enemy != null && _enemy.Data != null
+                ? Mathf.Clamp(_enemy.Data.radialProjectileAngle, 0f, 360f) : 360f;
+            if (arc <= 0f) arc = 360f;
             for (int i = 0; i < count; i++)
             {
-                float angle = Mathf.PI * 2f * i / Mathf.Max(1, count);
+                float angle = (arc >= 359.99f ? 360f : arc) * Mathf.Deg2Rad *
+                    (i / (float)Mathf.Max(1, count) - 0.5f);
                 SpawnProjectile(transform.position, new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)),
                     GetRadialProjectileSpeed(), GetConfiguredAttackDamage() * damage, false);
             }

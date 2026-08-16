@@ -156,6 +156,8 @@ namespace DevouringBeast
         [Header("投射物")]
         [Min(0f)] public float aimedProjectileSpeed = 8f;
         [Min(0f)] public float radialProjectileSpeed = 7f;
+        [Min(0)] public int radialProjectileCount;
+        [Range(0f, 360f)] public float radialProjectileAngle = 360f;
 
         [Header("行为参数")]
         public EnemyBehaviorSettings behavior = new();
@@ -200,6 +202,8 @@ namespace DevouringBeast
             copy.detectRange = detectRange;
             copy.aimedProjectileSpeed = aimedProjectileSpeed;
             copy.radialProjectileSpeed = radialProjectileSpeed;
+            copy.radialProjectileCount = radialProjectileCount;
+            copy.radialProjectileAngle = radialProjectileAngle;
             copy.behavior = behavior != null ? behavior.Copy(speedMul) : new EnemyBehaviorSettings();
             copy.massValue = massValue;
             copy.aliveInhaleThreshold = aliveInhaleThreshold;

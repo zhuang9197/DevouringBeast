@@ -30,6 +30,8 @@ namespace DevouringBeast
 
         [field: SerializeField] public GameState CurrentState { get; private set; } = GameState.Menu;
         public bool IsTestMode { get; private set; }
+        /// <summary>测试房间专用：控制敌人伤害是否能扣除玩家生命。</summary>
+        public bool TestDamageEnabled { get; private set; } = true;
 
         /// <summary>状态变更事件</summary>
         public event Action<GameState, GameState> OnStateChanged; // (from, to)
@@ -130,13 +132,20 @@ private void OnDestroy()
         public void StartGame()
         {
             IsTestMode = false;
+            TestDamageEnabled = true;
             ChangeState(GameState.Playing);
         }
 
         public void StartTestGame()
         {
             IsTestMode = true;
+            TestDamageEnabled = true;
             ChangeState(GameState.Playing);
+        }
+
+        public void SetTestDamageEnabled(bool enabled)
+        {
+            if (IsTestMode) TestDamageEnabled = enabled;
         }
         public void PauseGame()
         {
@@ -214,6 +223,7 @@ private void OnDestroy()
             Time.timeScale = 1f;
             AudioManager.Instance.SetSfxSuppressed(false);
             IsTestMode = false;
+            TestDamageEnabled = true;
             SceneManager.LoadScene(SceneNames.Menu);
         }
 

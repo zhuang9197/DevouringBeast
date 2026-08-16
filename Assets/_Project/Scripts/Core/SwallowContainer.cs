@@ -13,6 +13,7 @@ namespace DevouringBeast
         private PlayerHealth _playerHealth;
         private PlayerInhale _playerInhale;
         [Header("升级进度")]
+        [SerializeField, Min(1f)] private float firstLevelRequirement = 35f;
         [SerializeField, Min(1f)] private float initialLevelRequirement = 100f;
         [SerializeField, Min(1.01f)] private float levelGrowthMultiplier = 1.1f;
         [field: SerializeField] public float RequiredMass { get; set; } = 100f;
@@ -33,6 +34,9 @@ namespace DevouringBeast
         {
             _playerHealth = GetComponent<PlayerHealth>();
             _playerInhale = GetComponent<PlayerInhale>();
+            PlayerBalanceSettings config = GameBalance.Current?.Player;
+            if (config != null)
+                firstLevelRequirement = Mathf.Max(1f, config.firstLevelRequiredMass);
             RequiredMass = GetRequiredMassForLevel(CurrentLevel);
         }
 
@@ -104,7 +108,7 @@ namespace DevouringBeast
         public float GetRequiredMassForLevel(int level)
         {
             level = Mathf.Max(1, level);
-            if (level == 1) return 35f;
+            if (level == 1) return firstLevelRequirement;
             if (level == 2) return 50f;
             if (level == 3) return 65f;
             if (level == 4) return 80f;

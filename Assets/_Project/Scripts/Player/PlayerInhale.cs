@@ -46,6 +46,7 @@ namespace DevouringBeast
         private readonly Collider2D[] _overlapBuffer = new Collider2D[256];
         private float _skillSuctionMultiplier = 1f;
         private float _skillDamageMultiplier = 1f;
+        private float _baseDamageMultiplier = 1f;
         private float _bonusInhaleDuration;
         private bool _damageOnlyMode;
         private bool _externalInterruptImmune;
@@ -73,6 +74,11 @@ namespace DevouringBeast
         }
         public float SkillSuctionMultiplier { get => _skillSuctionMultiplier; set => _skillSuctionMultiplier = Mathf.Max(0f, value); }
         public float SkillDamageMultiplier { get => _skillDamageMultiplier; set => _skillDamageMultiplier = Mathf.Max(0f, value); }
+        public float BaseDamageMultiplier
+        {
+            get => _baseDamageMultiplier;
+            set => _baseDamageMultiplier = Mathf.Max(0f, value);
+        }
         public float BonusInhaleDuration { get => _bonusInhaleDuration; set => _bonusInhaleDuration = Mathf.Max(0f, value); }
         public bool DamageOnlyMode { get => _damageOnlyMode; set => _damageOnlyMode = value; }
         public bool ExternalInterruptImmune { get => _externalInterruptImmune; set => _externalInterruptImmune = value; }
@@ -80,6 +86,16 @@ namespace DevouringBeast
         public float SuctionSlowPercent { get => _suctionSlowPercent; set => _suctionSlowPercent = Mathf.Clamp01(value); }
         public float CurrentInhaleRadius => inhaleRadius * _skillSuctionMultiplier;
         public float CurrentInhaleAngle => Mathf.Clamp(inhaleAngle + _skillAngleBonus, 0f, 360f);
+        public float InhaleRadius
+        {
+            get => inhaleRadius;
+            set => inhaleRadius = Mathf.Max(0f, value);
+        }
+        public float InhaleAngle
+        {
+            get => inhaleAngle;
+            set => inhaleAngle = Mathf.Clamp(value, 0f, 360f);
+        }
 
         public event Action<float> OnProgressChanged;
         public event Action<bool> OnSuctionMaxedChanged; // true=达到最大, false=未达到
@@ -93,6 +109,7 @@ namespace DevouringBeast
                 inhaleRadius = config.radius;
                 maxInhaleDuration = config.maximumDuration;
                 maxSuctionForce = config.maximumSuctionForce;
+                _baseDamageMultiplier = Mathf.Max(0f, config.suctionDamageMultiplier);
                 suctionRampTime = config.suctionRampTime;
                 intakeDistance = config.intakeDistance;
                 minimumPullSpeed = config.minimumPullSpeed;
@@ -236,7 +253,7 @@ namespace DevouringBeast
                     var enemy = item.GetComponent<EnemyBase>();
                     if (enemy != null && !enemy.IsDead)
                     {
-                        float damage = _currentSuctionForce * _skillDamageMultiplier * dt;
+                        float damage = _currentSuctionForce * _baseDamageMultiplier * _skillDamageMultiplier * dt;
                         enemy.TakeDamage(damage);
                         if (_suctionSlowPercent > 0f)
                             EnemyStatusEffects.EnsureFor(enemy).ApplySlow(_suctionSlowPercent, 0.4f);

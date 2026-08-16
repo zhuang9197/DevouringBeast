@@ -27,11 +27,12 @@ namespace DevouringBeast
         protected float _maxHealth;
         private Quaternion _initialSpriteRotation;
         private EnemyData _runtimeData;
+        private EnemyData _templateData;
         private int _livingLayer;
 
         public bool IsDead => _isDead;
         public EnemyData Data => data;
-        public EnemyData TemplateData => data;
+        public EnemyData TemplateData => _templateData != null ? _templateData : data;
         public bool IsInvulnerable { get; set; }
         public float HealthPercent => _maxHealth > 0 ? _currentHealth / _maxHealth : 0f;
         public float CurrentHealth => _currentHealth;
@@ -71,6 +72,7 @@ namespace DevouringBeast
 
         public EnemyData CreateScaledRuntimeData(EnemyData source, float healthMultiplier, float speedMultiplier)
         {
+            if (source != null) _templateData = source;
             EnemyData runtime = source != null
                 ? source.ApplyScaling(Mathf.Max(0.01f, healthMultiplier), 1f, Mathf.Max(0.01f, speedMultiplier))
                 : GetOrCreateRuntimeData();

@@ -76,7 +76,8 @@ namespace DevouringBeast
         public void TakeDamageFrom(int damage, string source)
         {
             _controller?.NotifyPlayerActivity();
-            if (IsTestMode || _isInvincible || IsDead || (_controller != null && _controller.IsBeastRolling)) return;
+            if ((IsTestMode && !GameManager.Existing.TestDamageEnabled) ||
+                _isInvincible || IsDead || (_controller != null && _controller.IsBeastRolling)) return;
 
             if (_controller != null && _controller.IsBeastForm)
                 damage = Mathf.Max(1, Mathf.CeilToInt(damage * (1f - _controller.BeastDamageReduction)));
@@ -117,6 +118,23 @@ namespace DevouringBeast
         {
             if (amount <= 0) return;
             currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
+            OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        }
+
+        public void RestoreFullHealth()
+        {
+            if (maxHealth <= 0) return;
+            currentHealth = maxHealth;
+            _isInvincible = false;
+            _invincibleTimer = 0f;
+            if (_spriteRenderer != null) _spriteRenderer.enabled = true;
+            OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        }
+
+        public void SetMaxHealthForTesting(int maximum)
+        {
+            maxHealth = Mathf.Max(1, maximum);
+            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
             OnHealthChanged?.Invoke(currentHealth, maxHealth);
         }
 

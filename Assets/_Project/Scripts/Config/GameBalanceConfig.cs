@@ -30,6 +30,7 @@ namespace DevouringBeast
         [Min(0.01f)] public float baseMoveSpeed;
         [Min(0f)] public float baseSuction;
         [Min(0f)] public float baseEnergyBallDamage;
+        [Min(1f)] public float firstLevelRequiredMass = 35f;
         [Min(1)] public int maxHealth;
         [Min(0f)] public float invincibleDuration;
         [Range(0.1f, 1f)] public float visualColliderRadiusScale = 0.8f;
@@ -65,6 +66,7 @@ namespace DevouringBeast
         [Min(0f)] public float radius;
         [Min(0f)] public float maximumDuration;
         [Min(0f)] public float maximumSuctionForce;
+        [Min(0f)] public float suctionDamageMultiplier = 1f;
         [Min(0.01f)] public float suctionRampTime;
         [Min(0.05f)] public float intakeDistance;
         [Min(0.1f)] public float minimumPullSpeed;
