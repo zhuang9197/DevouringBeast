@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player:
     baseMoveSpeed: 8
-    baseSuction: 100
-    baseEnergyBallDamage: 25
+    baseSuction: 10
+    baseEnergyBallDamage: 5
     levelRequirementBase: 35
-    levelRequirementIncrement: 15
+    levelRequirementIncrement1To5: 15
+    levelRequirementIncrement6To10: 25
+    levelRequirementIncrement11To15: 35
+    levelRequirementIncrement16To20: 45
+    levelRequirementIncrement21Plus: 50
     maxHealth: 10
     invincibleDuration: 1
     visualColliderRadiusScale: 0.8
@@ -42,9 +46,9 @@ MonoBehaviour:
     beastHitSoundCooldown: 0.25
   inhale:
     angle: 60
-    radius: 5
+    radius: 6
     maximumDuration: 3
-    maximumSuctionForce: 100
+    maximumSuctionForce: 10
     suctionDamageMultiplier: 1
     suctionRampTime: 1.5
     intakeDistance: 0.65
@@ -64,9 +68,8 @@ MonoBehaviour:
     bigMassThreshold: 30
     spreadAngle: 10
     angelShotCooldown: 0.5
-    popeDamageMultiplier: 0.5
-    popeFollowerInitialProgress: 30
-    popeFollowerProgressIncrease: 10
+    popeFollowerInitialProgress: 50
+    popeFollowerProgressIncrease: 50
     chargeBonusPerLevel: 0.1
     multipleMouthPerBallMultiplier: 0.6
     multipleMouthPowerPerLevel: 0.1
@@ -84,10 +87,10 @@ MonoBehaviour:
     landingDuration: 0.25
     colliderRadius: 0.42
     worldScale: 0.72
-    riceBallMass: 10
-    baoziMass: 8
-    hotDogMass: 15
-    sushiMass: 15
+    riceBallMass: 2
+    baoziMass: 3
+    hotDogMass: 4
+    sushiMass: 4
   statues:
     healthCost: 1
     angelBreakHits: 100

@@ -32,6 +32,7 @@ namespace DevouringBeast
         private Vector2 _spawnPoint;
         private Vector2 _wanderDirection;
         private float _attackTimer;
+        private float _spiderJumpCooldownTimer;
         private float _contactTimer;
         private float _movementTimer;
         private float _movementSpeedRatio;
@@ -113,6 +114,7 @@ namespace DevouringBeast
             Vector2 initialDelay = _commonBalance != null
                 ? _commonBalance.initialAttackDelayRange : Vector2.zero;
             _attackTimer = Random.Range(initialDelay.x, initialDelay.y);
+            _spiderJumpCooldownTimer = 0f;
             _contactTimer = 0f;
             _movementTimer = 0f;
             _movementSpeedRatio = _enemy != null && _enemy.Data != null ? _enemy.Data.moveSpeed : 1f;
@@ -190,6 +192,7 @@ namespace DevouringBeast
 
             _contactTimer -= Time.deltaTime;
             _attackTimer -= Time.deltaTime;
+            _spiderJumpCooldownTimer -= Time.deltaTime;
             if (!_busy) UpdateMovement();
             UpdateFacingAndAnimation();
             TryContactDamage();
@@ -284,14 +287,11 @@ namespace DevouringBeast
             }
             else if (type == EnemyArchetype.Spider)
             {
-                float cycleDuration = Mathf.Max(0.01f, Behavior != null ? Behavior.movementCycleDuration : 3f);
-                float activeDuration = Mathf.Clamp(Behavior != null ? Behavior.movementActiveDuration : cycleDuration,
-                    0f, cycleDuration);
-                _movementTimer = (_movementTimer + Time.deltaTime) % cycleDuration;
-                _moveDirection = _movementTimer < activeDuration
-                    ? ApplyChaseSteering(toPlayer.normalized) : Vector2.zero;
-                float jumpTriggerRange = Behavior != null ? Mathf.Max(0f, Behavior.proximityRange) : 0f;
-                if (toPlayer.sqrMagnitude < jumpTriggerRange * jumpTriggerRange && _attackTimer <= 0f)
+                _moveDirection = ApplyChaseSteering(toPlayer.normalized);
+                float jumpTriggerRange = Behavior != null
+                    ? Mathf.Clamp(Behavior.proximityRange, 0f, 12f) : 0f;
+                if (toPlayer.sqrMagnitude <= jumpTriggerRange * jumpTriggerRange &&
+                    _spiderJumpCooldownTimer <= 0f)
                     StartCoroutine(SpiderJumpRoutine());
             }
             else
@@ -763,10 +763,22 @@ namespace DevouringBeast
         {
             if (_busy) yield break;
             _busy = true;
+            _moveDirection = Vector2.zero;
             PlayState("SkillA");
+
+            Vector2 preparationRange = Behavior != null
+                ? Behavior.spiderJumpPreparationRange : new Vector2(0.1f, 0.5f);
+            float preparationMinimum = Mathf.Clamp(Mathf.Min(preparationRange.x, preparationRange.y), 0.1f, 0.5f);
+            float preparationMaximum = Mathf.Clamp(Mathf.Max(preparationRange.x, preparationRange.y),
+                preparationMinimum, 0.5f);
+            yield return new WaitForSeconds(Random.Range(preparationMinimum, preparationMaximum));
+
             Vector2 start = _body.position;
             Vector2 target = _player != null ? (Vector2)_player.position : start;
             if (MapBounds.Instance != null) target = MapBounds.Instance.ClampPosition(target);
+            _moveDirection = (target - start).normalized;
+            _spiderJumpCooldownTimer = Mathf.Max(3f,
+                Behavior != null ? Behavior.spiderJumpMinimumInterval : 3f);
             float duration = Mathf.Max(0.05f, Behavior.dashDuration);
             if (Behavior.jumpSpeed > 0f)
                 duration = Mathf.Max(0.05f, Vector2.Distance(start, target) /
@@ -789,9 +801,9 @@ namespace DevouringBeast
                 yield return null;
             }
             _body.position = target;
+            _moveDirection = Vector2.zero;
             SetVisualHeight(0f);
             _busy = false;
-            ResetAttackTimer();
         }
 
         private IEnumerator MoveVisualHeight(float from, float to, float duration, bool takingOff)

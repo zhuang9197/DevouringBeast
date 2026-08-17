@@ -107,7 +107,7 @@ namespace DevouringBeast
 
             GameObject viewport = new("ConfigurationViewport", typeof(RectTransform), typeof(RectMask2D), typeof(ScrollRect));
             viewport.transform.SetParent(panel.transform, false);
-            SetRect(viewport.GetComponent<RectTransform>(), new Vector2(0.04f, 0.16f), new Vector2(0.96f, 0.85f));
+            SetRect(viewport.GetComponent<RectTransform>(), new Vector2(0.04f, 0.16f), new Vector2(0.93f, 0.85f));
 
             GameObject content = new("ConfigurationContent", typeof(RectTransform), typeof(VerticalLayoutGroup),
                 typeof(ContentSizeFitter));
@@ -134,14 +134,37 @@ namespace DevouringBeast
             scroll.horizontal = false;
             scroll.vertical = true;
             scroll.movementType = ScrollRect.MovementType.Clamped;
-            scroll.scrollSensitivity = 30f;
+            scroll.scrollSensitivity = 8f;
+
+            GameObject scrollbarObject = new("ConfigurationScrollbar", typeof(RectTransform), typeof(Image),
+                typeof(Scrollbar));
+            scrollbarObject.transform.SetParent(panel.transform, false);
+            SetRect(scrollbarObject.GetComponent<RectTransform>(), new Vector2(0.94f, 0.16f),
+                new Vector2(0.965f, 0.85f));
+            scrollbarObject.GetComponent<Image>().color = new Color(0.12f, 0.14f, 0.17f, 0.9f);
+            GameObject handleObject = new("Handle", typeof(RectTransform), typeof(Image));
+            handleObject.transform.SetParent(scrollbarObject.transform, false);
+            SetRect(handleObject.GetComponent<RectTransform>(), Vector2.zero, Vector2.one);
+            Image handleImage = handleObject.GetComponent<Image>();
+            handleImage.color = new Color(0.45f, 0.5f, 0.58f, 1f);
+            Scrollbar scrollbar = scrollbarObject.GetComponent<Scrollbar>();
+            scrollbar.handleRect = handleObject.GetComponent<RectTransform>();
+            scrollbar.targetGraphic = handleImage;
+            scrollbar.direction = Scrollbar.Direction.BottomToTop;
+            scrollbar.value = 1f;
+            scroll.verticalScrollbar = scrollbar;
+            scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
 
             AddSection(content.transform, "玩家角色");
             AddField(content.transform, "player.maxHealth", "血量", 1f);
             AddField(content.transform, "player.moveSpeed", "移动速度", 0.01f);
             AddField(content.transform, "player.suction", "吸力", 0f);
             AddField(content.transform, "player.levelBaseMass", "升级初始质量", 1f);
-            AddField(content.transform, "player.levelIncrement", "每级递增质量", 0f);
+            AddField(content.transform, "player.levelIncrement1To5", "1~5级递增质量", 0f);
+            AddField(content.transform, "player.levelIncrement6To10", "6~10级递增质量", 0f);
+            AddField(content.transform, "player.levelIncrement11To15", "11~15级递增质量", 0f);
+            AddField(content.transform, "player.levelIncrement16To20", "16~20级递增质量", 0f);
+            AddField(content.transform, "player.levelIncrement21Plus", "21级以上递增质量", 0f);
             AddField(content.transform, "player.energyDamage", "能量球伤害", 0f);
             AddField(content.transform, "player.suctionDamage", "吸力伤害倍率", 0f);
             AddField(content.transform, "player.inhaleRadius", "吸力范围", 0f);
@@ -174,6 +197,9 @@ namespace DevouringBeast
             AddSection(content.transform, "特殊移动与跳跃");
             AddField(content.transform, "enemy.proximityRange", "蜘蛛触发距离", 0f);
             AddField(content.transform, "enemy.jumpSpeed", "蜘蛛跳跃速度", 0f);
+            AddField(content.transform, "enemy.spiderJumpInterval", "蜘蛛最短跳跃间隔", 3f);
+            AddField(content.transform, "enemy.spiderPreparationMin", "蜘蛛前摇最短时长", 0.1f);
+            AddField(content.transform, "enemy.spiderPreparationMax", "蜘蛛前摇最长时长", 0.1f);
             AddField(content.transform, "enemy.dashSpeed", "冲刺速度", 0f);
             AddField(content.transform, "enemy.specialMoveSpeed", "特殊移动速度", 0f);
             AddField(content.transform, "enemy.dashDuration", "跳跃/冲刺时长", 0.01f);
@@ -364,7 +390,11 @@ namespace DevouringBeast
             SetField("player.moveSpeed", controller != null ? controller.MoveSpeed : 0f, force);
             SetField("player.suction", inhale != null ? inhale.MaxSuctionForce : 0f, force);
             SetField("player.levelBaseMass", container != null ? container.LevelRequirementBase : 0f, force);
-            SetField("player.levelIncrement", container != null ? container.LevelRequirementIncrement : 0f, force);
+            SetField("player.levelIncrement1To5", container != null ? container.LevelRequirementIncrement1To5 : 0f, force);
+            SetField("player.levelIncrement6To10", container != null ? container.LevelRequirementIncrement6To10 : 0f, force);
+            SetField("player.levelIncrement11To15", container != null ? container.LevelRequirementIncrement11To15 : 0f, force);
+            SetField("player.levelIncrement16To20", container != null ? container.LevelRequirementIncrement16To20 : 0f, force);
+            SetField("player.levelIncrement21Plus", container != null ? container.LevelRequirementIncrement21Plus : 0f, force);
             SetField("player.energyDamage", spit != null ? spit.BaseDamage : 0f, force);
             SetField("player.suctionDamage", inhale != null ? inhale.BaseDamageMultiplier : 0f, force);
             SetField("player.inhaleRadius", inhale != null ? inhale.InhaleRadius : 0f, force);
@@ -396,6 +426,9 @@ namespace DevouringBeast
             SetField("enemy.specialCooldown", data.behavior != null ? data.behavior.specialAttackCooldown : 0f, force);
             SetField("enemy.proximityRange", data.behavior != null ? data.behavior.proximityRange : 0f, force);
             SetField("enemy.jumpSpeed", data.behavior != null ? data.behavior.jumpSpeed : 0f, force);
+            SetField("enemy.spiderJumpInterval", data.behavior != null ? data.behavior.spiderJumpMinimumInterval : 3f, force);
+            SetField("enemy.spiderPreparationMin", data.behavior != null ? data.behavior.spiderJumpPreparationRange.x : 0.1f, force);
+            SetField("enemy.spiderPreparationMax", data.behavior != null ? data.behavior.spiderJumpPreparationRange.y : 0.5f, force);
             SetField("enemy.dashSpeed", data.behavior != null ? data.behavior.dashSpeed : 0f, force);
             RefreshBehaviorFields(data.behavior, force);
         }
@@ -467,7 +500,11 @@ namespace DevouringBeast
             ApplyPlayerRuntimeValue("player.moveSpeed", ReadField("player.moveSpeed", controller != null ? controller.MoveSpeed : 0f));
             ApplyPlayerRuntimeValue("player.suction", ReadField("player.suction", inhale != null ? inhale.MaxSuctionForce : 0f));
             ApplyPlayerRuntimeValue("player.levelBaseMass", ReadField("player.levelBaseMass", container != null ? container.LevelRequirementBase : 1f));
-            ApplyPlayerRuntimeValue("player.levelIncrement", ReadField("player.levelIncrement", container != null ? container.LevelRequirementIncrement : 0f));
+            ApplyPlayerRuntimeValue("player.levelIncrement1To5", ReadField("player.levelIncrement1To5", container != null ? container.LevelRequirementIncrement1To5 : 0f));
+            ApplyPlayerRuntimeValue("player.levelIncrement6To10", ReadField("player.levelIncrement6To10", container != null ? container.LevelRequirementIncrement6To10 : 0f));
+            ApplyPlayerRuntimeValue("player.levelIncrement11To15", ReadField("player.levelIncrement11To15", container != null ? container.LevelRequirementIncrement11To15 : 0f));
+            ApplyPlayerRuntimeValue("player.levelIncrement16To20", ReadField("player.levelIncrement16To20", container != null ? container.LevelRequirementIncrement16To20 : 0f));
+            ApplyPlayerRuntimeValue("player.levelIncrement21Plus", ReadField("player.levelIncrement21Plus", container != null ? container.LevelRequirementIncrement21Plus : 0f));
             ApplyPlayerRuntimeValue("player.energyDamage", ReadField("player.energyDamage", spit != null ? spit.BaseDamage : 0f));
             ApplyPlayerRuntimeValue("player.suctionDamage", ReadField("player.suctionDamage", inhale != null ? inhale.BaseDamageMultiplier : 1f));
             ApplyPlayerRuntimeValue("player.inhaleRadius", ReadField("player.inhaleRadius", inhale != null ? inhale.InhaleRadius : 0f));
@@ -478,7 +515,11 @@ namespace DevouringBeast
             config.Player.baseSuction = Mathf.Max(0f, ReadField("player.suction", config.Player.baseSuction));
             config.Player.baseEnergyBallDamage = Mathf.Max(0f, ReadField("player.energyDamage", config.Player.baseEnergyBallDamage));
             config.Player.levelRequirementBase = Mathf.Max(1f, ReadField("player.levelBaseMass", config.Player.levelRequirementBase));
-            config.Player.levelRequirementIncrement = Mathf.Max(0f, ReadField("player.levelIncrement", config.Player.levelRequirementIncrement));
+            config.Player.levelRequirementIncrement1To5 = Mathf.Max(0f, ReadField("player.levelIncrement1To5", config.Player.levelRequirementIncrement1To5));
+            config.Player.levelRequirementIncrement6To10 = Mathf.Max(0f, ReadField("player.levelIncrement6To10", config.Player.levelRequirementIncrement6To10));
+            config.Player.levelRequirementIncrement11To15 = Mathf.Max(0f, ReadField("player.levelIncrement11To15", config.Player.levelRequirementIncrement11To15));
+            config.Player.levelRequirementIncrement16To20 = Mathf.Max(0f, ReadField("player.levelIncrement16To20", config.Player.levelRequirementIncrement16To20));
+            config.Player.levelRequirementIncrement21Plus = Mathf.Max(0f, ReadField("player.levelIncrement21Plus", config.Player.levelRequirementIncrement21Plus));
             config.Inhale.maximumSuctionForce = Mathf.Max(0f, ReadField("player.suction", config.Inhale.maximumSuctionForce));
             config.Inhale.suctionDamageMultiplier = Mathf.Max(0f, ReadField("player.suctionDamage", config.Inhale.suctionDamageMultiplier));
             config.Inhale.radius = Mathf.Max(0f, ReadField("player.inhaleRadius", config.Inhale.radius));
@@ -506,6 +547,9 @@ namespace DevouringBeast
             ApplyEnemyRuntimeValue("enemy.specialCooldown", ReadField("enemy.specialCooldown", data.behavior.specialAttackCooldown));
             ApplyEnemyRuntimeValue("enemy.proximityRange", ReadField("enemy.proximityRange", data.behavior.proximityRange));
             ApplyEnemyRuntimeValue("enemy.jumpSpeed", ReadField("enemy.jumpSpeed", data.behavior.jumpSpeed));
+            ApplyEnemyRuntimeValue("enemy.spiderJumpInterval", ReadField("enemy.spiderJumpInterval", data.behavior.spiderJumpMinimumInterval));
+            ApplyEnemyRuntimeValue("enemy.spiderPreparationMin", ReadField("enemy.spiderPreparationMin", data.behavior.spiderJumpPreparationRange.x));
+            ApplyEnemyRuntimeValue("enemy.spiderPreparationMax", ReadField("enemy.spiderPreparationMax", data.behavior.spiderJumpPreparationRange.y));
             ApplyEnemyRuntimeValue("enemy.dashSpeed", ReadField("enemy.dashSpeed", data.behavior.dashSpeed));
             ApplyBehaviorFields(data.behavior);
 
@@ -583,10 +627,38 @@ namespace DevouringBeast
                         container.RefreshLevelRequirement();
                     }
                     break;
-                case "player.levelIncrement":
+                case "player.levelIncrement1To5":
                     if (container != null)
                     {
-                        container.LevelRequirementIncrement = value;
+                        container.LevelRequirementIncrement1To5 = value;
+                        container.RefreshLevelRequirement();
+                    }
+                    break;
+                case "player.levelIncrement6To10":
+                    if (container != null)
+                    {
+                        container.LevelRequirementIncrement6To10 = value;
+                        container.RefreshLevelRequirement();
+                    }
+                    break;
+                case "player.levelIncrement11To15":
+                    if (container != null)
+                    {
+                        container.LevelRequirementIncrement11To15 = value;
+                        container.RefreshLevelRequirement();
+                    }
+                    break;
+                case "player.levelIncrement16To20":
+                    if (container != null)
+                    {
+                        container.LevelRequirementIncrement16To20 = value;
+                        container.RefreshLevelRequirement();
+                    }
+                    break;
+                case "player.levelIncrement21Plus":
+                    if (container != null)
+                    {
+                        container.LevelRequirementIncrement21Plus = value;
                         container.RefreshLevelRequirement();
                     }
                     break;
@@ -625,8 +697,18 @@ namespace DevouringBeast
                 case "enemy.radialCount": data.radialProjectileCount = Mathf.Max(0, Mathf.RoundToInt(value)); break;
                 case "enemy.radialAngle": data.radialProjectileAngle = Mathf.Clamp(value, 0f, 360f); break;
                 case "enemy.specialCooldown": data.behavior.specialAttackCooldown = Mathf.Max(0.01f, value); break;
-                case "enemy.proximityRange": data.behavior.proximityRange = Mathf.Max(0f, value); break;
+                case "enemy.proximityRange":
+                    data.behavior.proximityRange = data.archetype == EnemyArchetype.Spider
+                        ? Mathf.Clamp(value, 0f, 12f) : Mathf.Max(0f, value);
+                    break;
                 case "enemy.jumpSpeed": data.behavior.jumpSpeed = Mathf.Max(0f, value); break;
+                case "enemy.spiderJumpInterval": data.behavior.spiderJumpMinimumInterval = Mathf.Max(3f, value); break;
+                case "enemy.spiderPreparationMin":
+                    data.behavior.spiderJumpPreparationRange.x = Mathf.Clamp(value, 0.1f, 0.5f);
+                    break;
+                case "enemy.spiderPreparationMax":
+                    data.behavior.spiderJumpPreparationRange.y = Mathf.Clamp(value, 0.1f, 0.5f);
+                    break;
                 case "enemy.dashSpeed": data.behavior.dashSpeed = Mathf.Max(0f, value); break;
                 case "enemy.specialWaves": data.behavior.specialProjectileWaves = Mathf.Max(0, Mathf.RoundToInt(value)); break;
                 case "enemy.specialBulletCount": data.behavior.specialProjectileCount = Mathf.Max(0, Mathf.RoundToInt(value)); break;

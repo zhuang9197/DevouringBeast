@@ -23,6 +23,8 @@ MonoBehaviour:
   detectRange: 40
   aimedProjectileSpeed: 8
   radialProjectileSpeed: 7
+  radialProjectileCount: 0
+  radialProjectileAngle: 360
   behavior:
     wanderIntervalRange: {x: 1.2, y: 1.2}
     proximityRange: 2.5
@@ -43,6 +45,14 @@ MonoBehaviour:
     orbitTangentWeight: 0.82
     orbitSeparationWeight: 0.3
     specialAttackCooldown: 1
+    specialProjectileWaves: 0
+    specialProjectileCount: 0
+    specialProjectileInterval: 0
+    specialProjectileAngle: 360
+    specialProjectileAngleStep: 0
+    fireballCount: 0
+    fireballInterval: 0
+    fireballRadialBulletCount: 0
     jumpHeight: 0
     takeoffDuration: 0
     airborneDuration: 0
@@ -58,7 +68,7 @@ MonoBehaviour:
     healthLossEffectSummonsMeatball: 0
     healthLossEffectMaximumScale: 1.35
     healthLossEffectPulseDuration: 0.12
-  massValue: 10
+  massValue: 8
   aliveInhaleThreshold: 3.4028235e+38
   deadInhaleThreshold: 10
   animatorController: {fileID: 9100000, guid: 6fca6d6eda5af6d4f87c08917b482e5a, type: 2}

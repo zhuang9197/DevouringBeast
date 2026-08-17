@@ -14,7 +14,7 @@
 | 玩家能量球速度 | 同上 | `spit.speed` |
 | 玩家能量球伤害 | 同上 | `player.baseEnergyBallDamage` |
 | 玩家升级初始质量 | 同上 | `player.levelRequirementBase` |
-| 玩家每级递增质量 | 同上 | `player.levelRequirementIncrement` |
+| 玩家阶段递增质量 | 同上 | `player.levelRequirementIncrement1To5` 等五个阶段字段 |
 | 敌人移动速度 | `Config/Enemies/<Enemy>.asset` | `moveSpeed` |
 | 敌人瞄准子弹速度 | 同上 | `aimedProjectileSpeed`；为 `0` 时使用全局 `enemy.aimedProjectileSpeed` |
 | 敌人环形子弹速度 | 同上 | `radialProjectileSpeed`；为 `0` 时使用全局 `enemy.radialProjectileSpeed` |
@@ -33,7 +33,11 @@
 | `baseSuction` | 玩家基础吸力。 |
 | `baseEnergyBallDamage` | 普通能量球基础伤害。 |
 | `levelRequirementBase` | 1 级升级所需质量。 |
-| `levelRequirementIncrement` | 每提高一级增加的升级质量；公式为 `初始质量 + (等级 - 1) × 递增质量`。 |
+| `levelRequirementIncrement1To5` | 1~5 级区间内每提高一级增加的升级质量，默认 15。 |
+| `levelRequirementIncrement6To10` | 6~10 级区间内每提高一级增加的升级质量，默认 25。 |
+| `levelRequirementIncrement11To15` | 11~15 级区间内每提高一级增加的升级质量，默认 35。 |
+| `levelRequirementIncrement16To20` | 16~20 级区间内每提高一级增加的升级质量，默认 45。 |
+| `levelRequirementIncrement21Plus` | 21 级及以上每提高一级增加的升级质量，默认 50。 |
 | `maxHealth` | 初始最大生命值。 |
 | `invincibleDuration` | 普通受伤后的无敌时间（秒）。 |
 | `visualColliderRadiusScale` | 以当前精灵较短边的一半为基准计算圆形碰撞半径时的倍率。 |
@@ -87,7 +91,6 @@
 | `bigMassThreshold` | 判定为大质量吐出的质量门槛。 |
 | `spreadAngle` | 多发能量球之间的散射角。 |
 | `angelShotCooldown` | 天使自动射击间隔。 |
-| `popeDamageMultiplier` | 教皇教化球伤害倍率。 |
 | `popeFollowerInitialProgress` | 教皇召唤第一名信徒所需的吞噬进度。 |
 | `popeFollowerProgressIncrease` | 每召唤一名信徒后，下一名信徒所需进度的增加值。 |
 | `chargeBonusPerLevel` | 蓄力技能每级增加的伤害比例。 |
@@ -212,7 +215,7 @@
 | 字段 | 含义 |
 | --- | --- |
 | `wanderIntervalRange` | 每次重新选择游走方向的时间范围。 |
-| `proximityRange` | 行为近距离半径；Fly 使用它作为本地绕圈半径，Spider 使用它作为跳跃触发距离。 |
+| `proximityRange` | 行为近距离半径；Fly 使用它作为本地绕圈半径，Spider 使用它作为跳跃触发距离且限制为 0~12。 |
 | `specialMoveSpeed` | 特殊移动速度。 |
 | `dashSpeed` / `jumpSpeed` | 冲刺/跳跃速度；Spider 的 `jumpSpeed` 大于 0 时按距离实时计算扑击时长。 |
 | `fireballFallDuration` | 本敌人的火球下落时间；为 0 时使用全局值。 |
@@ -225,6 +228,8 @@
 | `orbitAngularSpeed` | 圆周行为转向强度/角速度参数。 |
 | `orbitPursuitWeight` / `orbitTangentWeight` / `orbitSeparationWeight` | 圆周追踪的追击、切向和分离权重。 |
 | `specialAttackCooldown` | 特殊攻击冷却；为 0 时回退到 `attackCooldown`。 |
+| `spiderJumpMinimumInterval` | Spider 两次起跳之间的最短间隔，运行时不会低于 3 秒。 |
+| `spiderJumpPreparationRange` | Spider 起跳前原地停顿的随机时间范围，运行时限制为 0.1~0.5 秒。 |
 | `specialProjectileWaves` | 特殊环形攻击的波数，例如宝宝默认 3 波。 |
 | `specialProjectileCount` | 特殊环形攻击每波子弹数。 |
 | `specialProjectileInterval` | 特殊环形攻击波与波之间的间隔。 |

@@ -68,6 +68,8 @@ namespace DevouringBeast
 
         [Header("动作节奏")]
         [Min(0f)] public float specialAttackCooldown;
+        [Min(3f)] public float spiderJumpMinimumInterval = 3f;
+        public Vector2 spiderJumpPreparationRange = new(0.1f, 0.5f);
 
         [Header("特殊投射物")]
         [Min(0)] public int specialProjectileWaves;
@@ -123,6 +125,8 @@ namespace DevouringBeast
                 orbitTangentWeight = orbitTangentWeight,
                 orbitSeparationWeight = orbitSeparationWeight,
                 specialAttackCooldown = specialAttackCooldown,
+                spiderJumpMinimumInterval = spiderJumpMinimumInterval,
+                spiderJumpPreparationRange = spiderJumpPreparationRange,
                 specialProjectileWaves = specialProjectileWaves,
                 specialProjectileCount = specialProjectileCount,
                 specialProjectileInterval = specialProjectileInterval,

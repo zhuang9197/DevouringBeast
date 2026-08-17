@@ -30,6 +30,7 @@ namespace DevouringBeast
 
         // 键盘当前移动值
         private Vector2 _keyboardMove;
+        private bool _keyboardFacingLock;
         private bool _primaryActionHeld;
         private bool _swallowActionHeld;
         public bool IsPrimaryActionHeld => _primaryActionHeld;
@@ -104,7 +105,7 @@ namespace DevouringBeast
             }
             else if (_keyboardMove != Vector2.zero)
             {
-                playerController.SetMoveInput(_keyboardMove);
+                playerController.SetMoveInput(_keyboardMove, _keyboardFacingLock);
             }
             else
             {
@@ -120,11 +121,13 @@ namespace DevouringBeast
         {
             if (!GameManager.Instance.IsPlaying) return;
             _keyboardMove = ctx.ReadValue<Vector2>();
+            _keyboardFacingLock = ctx.control?.device is Keyboard;
         }
 
         private void OnMoveCanceled(InputAction.CallbackContext ctx)
         {
             _keyboardMove = Vector2.zero;
+            _keyboardFacingLock = false;
         }
 
         private void OnInhaleSpitStarted(InputAction.CallbackContext ctx)

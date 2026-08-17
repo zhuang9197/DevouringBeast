@@ -21,6 +21,7 @@ namespace DevouringBeast
             public Vector2 Center;
             public Vector2 Size;
             public bool Cleared;
+            public bool PopeGuaranteeActive;
             public int Remaining;
             public float NextRefreshTime;
             public readonly HashSet<WorldItemPoolMember> Active = new();
@@ -110,7 +111,7 @@ namespace DevouringBeast
                 NotifyCurrentRoom(state);
                 state.NextRefreshTime = Time.time + (_testMode ? 0.1f : GetRefreshSeconds(state));
             }
-            else if (!state.Cleared && state.Active.Count == 0)
+            else if (state.PopeGuaranteeActive && !state.Cleared && state.Active.Count == 0)
             {
                 if (Time.time < state.NextRefreshTime) return;
                 TrySpawn(_currentRoom, state);
@@ -175,6 +176,20 @@ namespace DevouringBeast
         {
             return _hasCurrentRoom && _rooms.TryGetValue(_currentRoom, out RoomFoodState state) &&
                 !state.Cleared && state.Remaining == 0 && state.Active.Count == 0;
+        }
+
+        public bool IsCurrentRoomFoodDepleted()
+        {
+            return _hasCurrentRoom && _rooms.TryGetValue(_currentRoom, out RoomFoodState state) &&
+                state.Remaining == 0 && state.Active.Count == 0;
+        }
+
+        public void SetCurrentRoomPopeGuarantee(bool enabled)
+        {
+            if (!_hasCurrentRoom || !_rooms.TryGetValue(_currentRoom, out RoomFoodState state)) return;
+            state.PopeGuaranteeActive = enabled;
+            if (enabled && !state.Cleared && state.Remaining == 0 && state.Active.Count == 0)
+                state.NextRefreshTime = Mathf.Min(state.NextRefreshTime, Time.time);
         }
 
         public bool IsCurrentRoom(Vector2Int room) => _hasCurrentRoom && _currentRoom == room;
@@ -338,6 +353,7 @@ namespace DevouringBeast
                 if (_memberCells.TryGetValue(member, out Vector2Int cell) &&
                     room.OccupiedCells.TryGetValue(cell, out WorldItemPoolMember occupant) && occupant == member)
                     room.OccupiedCells.Remove(cell);
+                NotifyCurrentRoom(room);
             }
             _memberRooms.Remove(member);
             _memberCells.Remove(member);

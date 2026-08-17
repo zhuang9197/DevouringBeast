@@ -1849,7 +1849,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   levelRequirementBase: 35
-  levelRequirementIncrement: 15
+  levelRequirementIncrement1To5: 15
+  levelRequirementIncrement6To10: 25
+  levelRequirementIncrement11To15: 35
+  levelRequirementIncrement16To20: 45
+  levelRequirementIncrement21Plus: 50
   <RequiredMass>k__BackingField: 35
   <CurrentMass>k__BackingField: 0
   <CurrentLevel>k__BackingField: 1

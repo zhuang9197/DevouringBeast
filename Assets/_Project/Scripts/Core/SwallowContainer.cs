@@ -14,7 +14,11 @@ namespace DevouringBeast
         private PlayerInhale _playerInhale;
         [Header("升级进度")]
         [SerializeField, Min(1f)] private float levelRequirementBase = 35f;
-        [SerializeField, Min(0f)] private float levelRequirementIncrement = 15f;
+        [SerializeField, Min(0f)] private float levelRequirementIncrement1To5 = 15f;
+        [SerializeField, Min(0f)] private float levelRequirementIncrement6To10 = 25f;
+        [SerializeField, Min(0f)] private float levelRequirementIncrement11To15 = 35f;
+        [SerializeField, Min(0f)] private float levelRequirementIncrement16To20 = 45f;
+        [SerializeField, Min(0f)] private float levelRequirementIncrement21Plus = 50f;
         [field: SerializeField] public float RequiredMass { get; set; } = 100f;
         [field: SerializeField] public float CurrentMass { get; set; } = 0f;
         [field: SerializeField] public int CurrentLevel { get; private set; } = 1;
@@ -37,7 +41,11 @@ namespace DevouringBeast
             if (config != null)
             {
                 levelRequirementBase = Mathf.Max(1f, config.levelRequirementBase);
-                levelRequirementIncrement = Mathf.Max(0f, config.levelRequirementIncrement);
+                levelRequirementIncrement1To5 = Mathf.Max(0f, config.levelRequirementIncrement1To5);
+                levelRequirementIncrement6To10 = Mathf.Max(0f, config.levelRequirementIncrement6To10);
+                levelRequirementIncrement11To15 = Mathf.Max(0f, config.levelRequirementIncrement11To15);
+                levelRequirementIncrement16To20 = Mathf.Max(0f, config.levelRequirementIncrement16To20);
+                levelRequirementIncrement21Plus = Mathf.Max(0f, config.levelRequirementIncrement21Plus);
             }
             RequiredMass = GetRequiredMassForLevel(CurrentLevel);
         }
@@ -48,11 +56,11 @@ namespace DevouringBeast
             set => levelRequirementBase = Mathf.Max(1f, value);
         }
 
-        public float LevelRequirementIncrement
-        {
-            get => levelRequirementIncrement;
-            set => levelRequirementIncrement = Mathf.Max(0f, value);
-        }
+        public float LevelRequirementIncrement1To5 { get => levelRequirementIncrement1To5; set => levelRequirementIncrement1To5 = Mathf.Max(0f, value); }
+        public float LevelRequirementIncrement6To10 { get => levelRequirementIncrement6To10; set => levelRequirementIncrement6To10 = Mathf.Max(0f, value); }
+        public float LevelRequirementIncrement11To15 { get => levelRequirementIncrement11To15; set => levelRequirementIncrement11To15 = Mathf.Max(0f, value); }
+        public float LevelRequirementIncrement16To20 { get => levelRequirementIncrement16To20; set => levelRequirementIncrement16To20 = Mathf.Max(0f, value); }
+        public float LevelRequirementIncrement21Plus { get => levelRequirementIncrement21Plus; set => levelRequirementIncrement21Plus = Mathf.Max(0f, value); }
 
         /// <summary>
         /// 吸入物品 — 仅暂存到口中，不累积升级质量
@@ -122,8 +130,13 @@ namespace DevouringBeast
         public float GetRequiredMassForLevel(int level)
         {
             level = Mathf.Max(1, level);
-            return Mathf.Max(1f, levelRequirementBase +
-                (level - 1) * Mathf.Max(0f, levelRequirementIncrement));
+            float required = levelRequirementBase +
+                Mathf.Clamp(level - 1, 0, 4) * levelRequirementIncrement1To5 +
+                Mathf.Clamp(level - 5, 0, 5) * levelRequirementIncrement6To10 +
+                Mathf.Clamp(level - 10, 0, 5) * levelRequirementIncrement11To15 +
+                Mathf.Clamp(level - 15, 0, 5) * levelRequirementIncrement16To20 +
+                Mathf.Max(0, level - 20) * levelRequirementIncrement21Plus;
+            return Mathf.Max(1f, required);
         }
 
         public void RefreshLevelRequirement()

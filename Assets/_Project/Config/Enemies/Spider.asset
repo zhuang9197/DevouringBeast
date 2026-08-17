@@ -23,10 +23,12 @@ MonoBehaviour:
   detectRange: 40
   aimedProjectileSpeed: 8
   radialProjectileSpeed: 7
+  radialProjectileCount: 0
+  radialProjectileAngle: 360
   behavior:
     wanderIntervalRange: {x: 1.5, y: 1.5}
-    proximityRange: 4
-    specialMoveSpeed: 1.2
+    proximityRange: 12
+    specialMoveSpeed: 2
     dashSpeed: 0
     jumpSpeed: 2
     fireballFallDuration: 0
@@ -43,6 +45,16 @@ MonoBehaviour:
     orbitTangentWeight: 0.82
     orbitSeparationWeight: 0.3
     specialAttackCooldown: 1.5
+    spiderJumpMinimumInterval: 3
+    spiderJumpPreparationRange: {x: 0.1, y: 0.5}
+    specialProjectileWaves: 0
+    specialProjectileCount: 0
+    specialProjectileInterval: 0
+    specialProjectileAngle: 360
+    specialProjectileAngleStep: 0
+    fireballCount: 0
+    fireballInterval: 0
+    fireballRadialBulletCount: 0
     jumpHeight: 2.2
     takeoffDuration: 0.2
     airborneDuration: 0

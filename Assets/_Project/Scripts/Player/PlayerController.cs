@@ -386,14 +386,22 @@ namespace DevouringBeast
         /// </summary>
         public void SetMoveInput(Vector2 input)
         {
+            SetMoveInput(input, false);
+        }
+
+        public void SetMoveInput(Vector2 input, bool preserveFacingOnAdditionalAxis)
+        {
             if (input.sqrMagnitude > 0.001f)
                 NotifyPlayerActivity();
+            Vector2 previousInput = _moveInput;
             _moveInput = input.normalized;
 
             if (!_isInhaling)
             {
-                // 非吸入状态：根据输入更新朝向
-                UpdateFacing(input);
+                bool keepFirstKeyboardFacing = preserveFacingOnAdditionalAxis &&
+                    previousInput.sqrMagnitude > 0.001f &&
+                    Mathf.Abs(input.x) > 0.001f && Mathf.Abs(input.y) > 0.001f;
+                if (!keepFirstKeyboardFacing) UpdateFacing(input);
             }
             // 吸入状态：朝向锁定，不调用 UpdateFacing
 

@@ -32,7 +32,11 @@ namespace DevouringBeast
         [Min(0f)] public float baseEnergyBallDamage;
         [Header("升级质量")]
         [Min(1f)] public float levelRequirementBase = 35f;
-        [Min(0f)] public float levelRequirementIncrement = 15f;
+        [Min(0f)] public float levelRequirementIncrement1To5 = 15f;
+        [Min(0f)] public float levelRequirementIncrement6To10 = 25f;
+        [Min(0f)] public float levelRequirementIncrement11To15 = 35f;
+        [Min(0f)] public float levelRequirementIncrement16To20 = 45f;
+        [Min(0f)] public float levelRequirementIncrement21Plus = 50f;
         [Min(1)] public int maxHealth;
         [Min(0f)] public float invincibleDuration;
         [Range(0.1f, 1f)] public float visualColliderRadiusScale = 0.8f;
@@ -91,7 +95,6 @@ namespace DevouringBeast
         [Min(0f)] public float bigMassThreshold;
         [Min(0f)] public float spreadAngle;
         [Min(0f)] public float angelShotCooldown;
-        [Min(0f)] public float popeDamageMultiplier;
         [Min(1f)] public float popeFollowerInitialProgress = 30f;
         [Min(0f)] public float popeFollowerProgressIncrease = 10f;
         [Min(0f)] public float chargeBonusPerLevel;

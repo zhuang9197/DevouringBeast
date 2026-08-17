@@ -37,7 +37,7 @@ namespace DevouringBeast
     [Serializable]
     public sealed class RunSnapshotData
     {
-        public int version = 1;
+        public int version = 2;
         public int floor = 1;
         public int currentRoom;
         public float playerX;
@@ -68,6 +68,8 @@ namespace DevouringBeast
         public bool cleared;
         public bool visited;
         public bool demon;
+        public bool angelStatue;
+        public bool popeStatue;
         public bool floorExit;
     }
 

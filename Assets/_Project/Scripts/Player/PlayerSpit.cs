@@ -22,7 +22,6 @@ namespace DevouringBeast
         private float maxChargeBonus;
         private float spreadAngle;
         private float angelShotCooldown;
-        private float popeDamageMultiplier;
         private float chargeBonusPerLevel;
         private float multipleMouthPerBallMultiplier;
         private float multipleMouthPowerPerLevel;
@@ -41,7 +40,6 @@ namespace DevouringBeast
         private float _chargeTimer;
         private bool _isCharging;
         private float _nextAngelShotTime;
-        private float _extraDamageMultiplier;
         private bool _angelFireHeld;
 
         public float SpitSpeed
@@ -81,7 +79,6 @@ public float BaseDamage
                 bigMassThreshold = config.bigMassThreshold;
                 spreadAngle = config.spreadAngle;
                 angelShotCooldown = config.angelShotCooldown;
-                popeDamageMultiplier = config.popeDamageMultiplier;
                 chargeBonusPerLevel = config.chargeBonusPerLevel;
                 multipleMouthPerBallMultiplier = config.multipleMouthPerBallMultiplier;
                 multipleMouthPowerPerLevel = config.multipleMouthPowerPerLevel;
@@ -142,7 +139,7 @@ public void Spit()
 
             float currentBaseDamage = _baseAttributes != null
                 ? _baseAttributes.EnergyBallBaseDamage : baseDamage;
-            float extraDamageMultiplier = _extraDamageMultiplier + GetChargeBonus();
+            float extraDamageMultiplier = GetChargeBonus();
 
             float fullDamageMultiplier = GetPerBallDamageMultiplier(ballCount);
             EnergyBallShotSnapshot snapshot = _skillManager != null
@@ -185,7 +182,6 @@ public void Spit()
         public void RefreshSkillModifiers()
         {
             if (_skillManager == null) return;
-            _extraDamageMultiplier = _skillManager.Has(RogueSkillId.FaithPope) ? popeDamageMultiplier : 0f;
             int chargedLevel = _skillManager.GetLevel(RogueSkillId.EvolutionCharged);
             maxChargeBonus = chargedLevel * chargeBonusPerLevel;
         }
@@ -201,7 +197,10 @@ public void Spit()
 
         private void SpawnEnergyBall(EnergyBallShotSnapshot snapshot, int index, int total)
         {
-            Vector2 dir = _playerController.FacingDirection;
+            Vector2 movement = _playerController != null ? _playerController.MoveDirection : Vector2.zero;
+            Vector2 dir = movement.sqrMagnitude > 0.001f
+                ? movement.normalized
+                : _playerController != null ? _playerController.FacingDirection : Vector2.right;
 
             // 多颗球时略微偏移方向
             if (total > 1)

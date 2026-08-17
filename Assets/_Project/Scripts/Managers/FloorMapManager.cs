@@ -19,6 +19,8 @@ namespace DevouringBeast
             public bool Cleared;
             public bool Visited;
             public bool IsDemonRoom;
+            public bool HasAngelStatue;
+            public bool HasPopeStatue;
             public bool HasFloorExit;
         }
 
@@ -61,9 +63,16 @@ namespace DevouringBeast
         private int _clearedElites;
         private int _demonRoomIndex = -1;
         private bool _transitioning;
+        private bool _buildingFloor;
         private bool _roomCombatLocked;
         private GameObject _floorExit;
         private RunSnapshotData _restoredSnapshot;
+        private Sprite _angelStatueSprite;
+        private Sprite _angelStatueDestroyedSprite;
+        private Sprite _demonStatueSprite;
+        private Sprite _demonStatueDestroyedSprite;
+        private Sprite _popeStatueSprite;
+        private Sprite _popeStatueDestroyedSprite;
         private float _nextAutosaveTime;
 
         public int CurrentFloor => _floor;
@@ -126,6 +135,8 @@ namespace DevouringBeast
             _waves = FindObjectOfType<WaveManager>();
             _mapBounds = FindObjectOfType<MapBounds>();
             _environmentItems = FindObjectOfType<EnvironmentItemSpawner>();
+            if (_environmentItems != null)
+                _environmentItems.CurrentRoomFoodChanged += HandleCurrentRoomFoodChanged;
             GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
             _player = playerObject != null ? playerObject.transform : null;
             _playerController = playerObject != null ? playerObject.GetComponent<PlayerController>() : null;
@@ -159,6 +170,7 @@ namespace DevouringBeast
 
         private void BuildFloor(RunSnapshotData snapshot = null)
         {
+            _buildingFloor = true;
             _waves.ResetForFloor();
             BloodDrop.ReleaseFloorDrops();
             EnemyRewardChest.ReleaseFloorChests();
@@ -176,8 +188,8 @@ namespace DevouringBeast
             LayoutVersion++;
             CreateFloorTilemap();
             bool testMode = GameManager.Instance.IsTestMode;
-            CreateStatues();
             if (snapshot != null) _environmentItems?.RestoreSnapshots(snapshot.foodRooms);
+            CreateStatues();
             if (testMode) _environmentItems?.EnableTestMode();
             FloorMinimapUI.EnsureFor(this);
             _currentRoom = snapshot != null ? Mathf.Clamp(snapshot.currentRoom, 0, _rooms.Count - 1) : 0;
@@ -202,6 +214,9 @@ namespace DevouringBeast
                         CreateFloorExit(GetRoomCenter(_rooms[i].Cell), i);
                         break;
                     }
+            _buildingFloor = false;
+            if (_environmentItems != null)
+                HandleCurrentRoomFoodChanged(_environmentItems.CurrentRoomRemaining);
             _restoredSnapshot = null;
             _nextAutosaveTime = Time.unscaledTime + 5f;
             if (testMode) DeveloperTestPanel.EnsureFor(this);
@@ -222,6 +237,8 @@ namespace DevouringBeast
                         Cleared = saved.cleared,
                         Visited = saved.visited,
                         IsDemonRoom = saved.demon,
+                        HasAngelStatue = saved.angelStatue,
+                        HasPopeStatue = saved.popeStatue,
                         HasFloorExit = saved.floorExit
                     };
                     _roomByCell[room.Cell] = _rooms.Count;
@@ -273,13 +290,13 @@ namespace DevouringBeast
 
         private void CreateStatues()
         {
-            Sprite angel = Resources.Load<Sprite>("Statues/angel_statue");
-            Sprite angelDestroyed = Resources.Load<Sprite>("Statues/angel_statue_destory");
-            Sprite demon = Resources.Load<Sprite>("Statues/demon_statue");
-            Sprite demonDestroyed = Resources.Load<Sprite>("Statues/demon_statue_destory");
-            Sprite pope = Resources.Load<Sprite>("Statues/pope_statue");
-            Sprite popeDestroyed = Resources.Load<Sprite>("Statues/pope_statue_destory");
-            if (angel == null || demon == null || pope == null)
+            _angelStatueSprite = Resources.Load<Sprite>("Statues/angel_statue");
+            _angelStatueDestroyedSprite = Resources.Load<Sprite>("Statues/angel_statue_destory");
+            _demonStatueSprite = Resources.Load<Sprite>("Statues/demon_statue");
+            _demonStatueDestroyedSprite = Resources.Load<Sprite>("Statues/demon_statue_destory");
+            _popeStatueSprite = Resources.Load<Sprite>("Statues/pope_statue");
+            _popeStatueDestroyedSprite = Resources.Load<Sprite>("Statues/pope_statue_destory");
+            if (_angelStatueSprite == null || _demonStatueSprite == null || _popeStatueSprite == null)
             {
                 Debug.LogWarning("[FloorMapManager] Statue sprites are missing from Resources/Statues.");
                 return;
@@ -289,24 +306,55 @@ namespace DevouringBeast
             {
                 RoomState room = _rooms[0];
                 Vector2 center = GetRoomCenter(room.Cell);
-                _demonRoomIndex = 0;
-                room.IsDemonRoom = true;
-                CreateStatue(StatueKind.Pope, room, center + Vector2.left * 5f, pope, popeDestroyed);
-                CreateStatue(StatueKind.Angel, room, center + Vector2.up * 3f, angel, angelDestroyed);
-                CreateStatue(StatueKind.Demon, room, center + Vector2.right * 5f, demon, demonDestroyed);
+                CreateStatue(StatueKind.Pope, room, center + Vector2.left * 5f,
+                    _popeStatueSprite, _popeStatueDestroyedSprite);
+                CreateStatue(StatueKind.Angel, room, center + Vector2.up * 3f,
+                    _angelStatueSprite, _angelStatueDestroyedSprite);
+                CreateStatue(StatueKind.Demon, room, center + Vector2.right * 5f,
+                    _demonStatueSprite, _demonStatueDestroyedSprite);
                 return;
             }
 
-            int demonRoom = UnityEngine.Random.Range(1, _rooms.Count);
-            _demonRoomIndex = demonRoom;
-            _rooms[demonRoom].IsDemonRoom = true;
             foreach (RoomState room in _rooms)
             {
-                CreateStatue(StatueKind.Pope, room, GetRoomCenter(room.Cell) + Vector2.left * 5f, pope, popeDestroyed);
-                if (room == _rooms[0])
-                    CreateStatue(StatueKind.Angel, room, GetRoomCenter(room.Cell) + Vector2.up * 3f, angel, angelDestroyed);
-                if (_rooms.IndexOf(room) == demonRoom)
-                    CreateStatue(StatueKind.Demon, room, GetRoomCenter(room.Cell) + Vector2.right * 5f, demon, demonDestroyed);
+                if (room.HasPopeStatue)
+                {
+                    room.HasPopeStatue = false;
+                    CreateStatueForRoom(StatueKind.Pope, room);
+                }
+                if (room.HasAngelStatue)
+                {
+                    room.HasAngelStatue = false;
+                    CreateStatueForRoom(StatueKind.Angel, room);
+                }
+                if (room.IsDemonRoom)
+                {
+                    room.IsDemonRoom = false;
+                    CreateStatueForRoom(StatueKind.Demon, room);
+                }
+            }
+        }
+
+        private void CreateStatueForRoom(StatueKind kind, RoomState room)
+        {
+            Vector2 center = GetRoomCenter(room.Cell);
+            switch (kind)
+            {
+                case StatueKind.Angel:
+                    if (room.HasAngelStatue) return;
+                    CreateStatue(kind, room, center + Vector2.up * 3f,
+                        _angelStatueSprite, _angelStatueDestroyedSprite);
+                    break;
+                case StatueKind.Demon:
+                    if (room.IsDemonRoom) return;
+                    CreateStatue(kind, room, center + Vector2.right * 5f,
+                        _demonStatueSprite, _demonStatueDestroyedSprite);
+                    break;
+                case StatueKind.Pope:
+                    if (room.HasPopeStatue) return;
+                    CreateStatue(kind, room, center + Vector2.left * 5f,
+                        _popeStatueSprite, _popeStatueDestroyedSprite);
+                    break;
             }
         }
 
@@ -318,6 +366,38 @@ namespace DevouringBeast
             StatueController statue = statueObject.GetComponent<StatueController>();
             statue.Initialize(kind, room.Cell, this, _environmentItems, intact, destroyed);
             _statues.Add(statue);
+            switch (kind)
+            {
+                case StatueKind.Angel:
+                    room.HasAngelStatue = true;
+                    break;
+                case StatueKind.Demon:
+                    room.IsDemonRoom = true;
+                    _demonRoomIndex = _rooms.IndexOf(room);
+                    break;
+                case StatueKind.Pope:
+                    room.HasPopeStatue = true;
+                    if (_environmentItems != null && _environmentItems.IsCurrentRoom(room.Cell))
+                        _environmentItems.SetCurrentRoomPopeGuarantee(true);
+                    break;
+            }
+        }
+
+        private void HandleCurrentRoomFoodChanged(int remaining)
+        {
+            if (_buildingFloor || GameManager.Existing == null || GameManager.Existing.IsTestMode ||
+                _currentRoom < 0 || _currentRoom >= _rooms.Count || _environmentItems == null) return;
+            RoomState room = _rooms[_currentRoom];
+            if (room.HasPopeStatue)
+            {
+                _environmentItems.SetCurrentRoomPopeGuarantee(true);
+                return;
+            }
+            if (remaining == 0 && _environmentItems.IsCurrentRoomFoodDepleted())
+            {
+                CreateStatueForRoom(StatueKind.Pope, room);
+                SaveCurrentSnapshot();
+            }
         }
 
         private void AddRoom(Vector2Int cell)
@@ -560,6 +640,10 @@ namespace DevouringBeast
             if (room.Kind == RoomKind.Elite) _clearedElites++;
             SetDoorsLocked(false);
             _environmentItems?.SetCurrentRoomCleared(true);
+            if (_currentRoom == 0 && !room.HasAngelStatue)
+                CreateStatueForRoom(StatueKind.Angel, room);
+            if (!room.IsDemonRoom && AreAllRoomsCleared())
+                CreateStatueForRoom(StatueKind.Demon, room);
             if (_floor >= FinalFloor && room.Kind == RoomKind.Boss)
             {
                 CompleteRun();
@@ -570,6 +654,13 @@ namespace DevouringBeast
             }
             MinimapChanged?.Invoke();
             SaveCurrentSnapshot();
+        }
+
+        private bool AreAllRoomsCleared()
+        {
+            foreach (RoomState room in _rooms)
+                if (!room.Cleared) return false;
+            return _rooms.Count > 0;
         }
 
         public bool TryStartDemonChallenge(int touchCount, Action completed)
@@ -779,6 +870,8 @@ namespace DevouringBeast
                     cleared = room.Cleared,
                     visited = room.Visited,
                     demon = room.IsDemonRoom,
+                    angelStatue = room.HasAngelStatue,
+                    popeStatue = room.HasPopeStatue,
                     floorExit = room.HasFloorExit
                 });
             SaveGameService.SaveSnapshot(snapshot);
@@ -795,6 +888,12 @@ namespace DevouringBeast
         {
             if (!Application.isPlaying) return;
             SaveCurrentSnapshot();
+        }
+
+        private void OnDestroy()
+        {
+            if (_environmentItems != null)
+                _environmentItems.CurrentRoomFoodChanged -= HandleCurrentRoomFoodChanged;
         }
 
         private Vector2 GetRoomCenter(Vector2Int cell)
